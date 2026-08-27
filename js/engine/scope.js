@@ -80,10 +80,22 @@ function isValueNotPopulation(doc, quote, start) {
 const ROLE_SUFFIX =
   /^(?:\s+\w+){0,2}\s+(?:teacher|teachers|coordinator|coordinators|head|tutor|mentor|supervisor|convenor)\b/;
 
+/**
+ * "everyone else Outlook is working" names the unaffected comparison group,
+ * not the affected population. In that construction, the requester is the
+ * only person reported as affected.
+ */
+const UNAFFECTED_COMPARISON_SUFFIX =
+  /^\s+else\b[^.;!?]{0,48}\b(?:(?:is|are|was|were)\s+(?:still\s+)?(?:working|fine|ok|okay|healthy|normal|unaffected|unimpacted)|can\s+(?:still\s+)?(?:work|use|access|log in|sign in|proceed))\b/;
+
 function isComparison(doc, start, end) {
   const before = doc.text.slice(Math.max(0, start - 48), start);
   if (COMPARISON_CONTEXT.test(before) || DESCRIPTOR_CONTEXT.test(before)) return true;
   return ROLE_SUFFIX.test(doc.text.slice(end, end + 40));
+}
+
+function isUnaffectedComparison(doc, end) {
+  return UNAFFECTED_COMPARISON_SUFFIX.test(doc.text.slice(end, end + 80));
 }
 
 /**
@@ -98,6 +110,18 @@ export function detectScope(doc) {
   for (const hit of scanPositive(doc, SCOPE_PHRASES)) {
     if (isComparison(doc, hit.start, hit.end)) continue;
     if (isValueNotPopulation(doc, hit.quote, hit.start)) continue;
+
+    if (isUnaffectedComparison(doc, hit.end)) {
+      candidates.push({
+        scope: 'individual',
+        rank: scopeDefinition('individual').rank,
+        weight: 3,
+        quote: hit.quote + ' else',
+        meaning: 'everyone except the requester is unaffected'
+      });
+      continue;
+    }
+
     candidates.push({
       scope: hit.entry.v,
       rank: scopeDefinition(hit.entry.v).rank,

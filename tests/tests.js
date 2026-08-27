@@ -108,6 +108,17 @@ test('Scope', 'the broadest credible scope wins', () => {
   return ok(actual === 'all-schools', actual);
 });
 
+test('Scope', 'an unaffected comparison identifies the requester as the only affected user', () =>
+  field('My Outlook is not working, but everyone else Outlook is working. Help now.',
+    'scope', 'individual'));
+
+test('Scope', 'an isolated Outlook failure with asserted urgency is P3, not P1', () =>
+  priority('My Outlook is not working, but everyone else Outlook is working. Help now.', 'P3'));
+
+test('Scope', 'everyone else remains broad scope when they are also unable to work', () =>
+  field('My Outlook is not working, and everyone else cannot use Outlook either.',
+    'scope', 'corporation-wide'));
+
 /* -------------------------------------------------------- 3. workaround -- */
 
 const WORKAROUND_CASES = [
@@ -471,7 +482,99 @@ test('Result model', 'confidence never claims certainty', () => {
   return ok(result.confidence <= 95, result.confidence + '%');
 });
 
-/* ------------------------------------------ 21. wider IT scenario sweep -- */
+/* ----------------------------------------------- 21. input relevance -- */
+
+test('Input relevance', 'an unfamiliar Mac how-to is recognised support work', () => {
+  const result = analyse("Help, I don't know how to use mac?");
+  return ok(
+    result.inScope === true && result.workType === 'documentation' && result.priority === 'P4',
+    'inScope=' + result.inScope + ' workType=' + result.workType + ' priority=' + result.priority
+  );
+});
+
+test('Input relevance', 'non-IT text is unassessed even when it claims urgency', () => {
+  const result = analyse('help! my cat is sad now, high priority');
+  return ok(
+    result.inScope === false && result.insufficientInformation === true &&
+      result.priority === 'P4' && result.confidenceBand === 'low' &&
+      result.detail.urgencyResult.claimed === true,
+    'inScope=' + result.inScope + ' insufficient=' + result.insufficientInformation +
+      ' priority=' + result.priority + ' confidence=' + result.confidence +
+      ' claimed=' + result.detail.urgencyResult.claimed
+  );
+});
+
+test('Input relevance', 'scope and priority claims cannot turn unrelated text into P1', () => {
+  const result = analyse(
+    'Help! My cat is sad now. All users are affected. P1 highest priority.'
+  );
+  return ok(
+    result.inScope === false && result.priority === 'P4',
+    'inScope=' + result.inScope + ' ' + result.impact + '/' + result.urgency +
+      ' -> ' + result.priority
+  );
+});
+
+test('Input relevance', 'an analyst override on unassessed text explains the actual result', () => {
+  const result = analyse('Something happened.', { impact: 'high', urgency: 'high' });
+  return ok(
+    result.inScope === false && result.priority === 'P1' &&
+      /High Impact \+ High Urgency -> P1/.test(result.justification) &&
+      result.reasoning.some((line) => /HIGH and urgency HIGH map to P1/.test(line)),
+    result.justification + ' | ' + result.reasoning.join(' | ')
+  );
+});
+
+test('Input relevance', 'unrecognised text explains that no IT support context was found', () => {
+  const result = analyse('help! my cat is sad now, high priority');
+  return ok(
+    result.reasoning.some((line) => /IT or application-support request/.test(line)) &&
+      /IT system, application, device, or service/.test(result.followUpQuestions[0]),
+    result.reasoning.join(' | ')
+  );
+});
+
+/* --------------------------------------- 22. calibrated support wording -- */
+
+test('Calibrated support', 'an application that crashes for one user is a P3 incident', () => {
+  const result = analyse('Outlook crashes for one user whenever they attach a PDF.');
+  return ok(
+    result.priority === 'P3' && result.workType === 'incident' && result.symptom === 'failed',
+    result.priority + ' / ' + result.workType + ' / ' + result.symptom
+  );
+});
+
+test('Calibrated support', 'software installation is a service request', () => {
+  const result = analyse('Please install Microsoft 365 on my MacBook.');
+  return ok(
+    result.priority === 'P4' && result.workType === 'service-request' &&
+      result.technicalDomain === 'endpoint-server',
+    result.priority + ' / ' + result.workType + ' / ' + result.technicalDomain
+  );
+});
+
+test('Calibrated support', 'an alternative browser is a sustainable workaround', () => {
+  const result = analyse(
+    "One user's browser does not work, but an alternative browser works."
+  );
+  return ok(
+    result.workaround === 'yes' && result.priority === 'P4',
+    result.workaround + ' / ' + result.priority
+  );
+});
+
+const EXTERNAL_CALIBRATION_CASES = [
+  ['A complete network failure affects the whole organisation and staff cannot work today.', 'P1'],
+  ['Email is unavailable for all staff.', 'P2'],
+  ['The finance team cannot print to its usual printer, but another printer works.', 'P3'],
+  ['How do I access my account?', 'P4']
+];
+
+for (const [text, expected] of EXTERNAL_CALIBRATION_CASES) {
+  test('Calibrated support', text, () => priority(text, expected));
+}
+
+/* ------------------------------------------ 23. wider IT scenario sweep -- */
 
 const SCENARIOS = [
   [['P3', 'P2'], 'Laserfiche is not writing to staging for one school.'],

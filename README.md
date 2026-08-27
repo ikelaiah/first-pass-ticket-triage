@@ -32,6 +32,8 @@ See [PRIVACY.md](PRIVACY.md) for how to verify this yourself in about a minute.
 ## ✨ Features
 
 - **Natural-language ticket input** — paste the request exactly as it arrived
+- **Input relevance check** — unrelated text is marked unassessed; urgency and scope
+  words alone cannot manufacture an IT incident
 - **Deterministic rules** — same text in, same answer out, every time
 - **P1–P4 suggestion** driven by a single authoritative 3×3 matrix
 - **Scope detection** — individual, team, cohort, one school, multiple schools, all schools, corporation-wide

@@ -26,8 +26,20 @@ export function bandFor(score) {
 export function assessConfidence(doc, ctx) {
   const {
     scopeResult, deadlineResult, workaroundResult, symptom,
-    systemResult, impactResult, urgencyResult, overridesApplied, isQuestion
+    systemResult, impactResult, urgencyResult, overridesApplied, isQuestion, inScope
   } = ctx;
+
+  if (inScope === false) {
+    const band = bandFor(20);
+    return {
+      confidence: 20,
+      band: band.id,
+      label: band.label,
+      positives: [],
+      negatives: ['No IT system, support request or technical symptom was recognised'],
+      conflicts: []
+    };
+  }
 
   let score = 55;
   const positives = [];

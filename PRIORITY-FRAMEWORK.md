@@ -47,6 +47,23 @@ The natural-language engine **never** assigns a priority directly. If a rule wan
 ticket to be more urgent, it says so by raising urgency, and the matrix does the rest.
 This keeps the tool auditable: every priority can be traced to two values and one table.
 
+### Input relevance boundary
+
+Before the matrix result is accepted as a meaningful triage suggestion, the request
+must contain at least one recognised support signal: a system, technical symptom,
+technical domain, work type, risk, or objective service-management fact such as an SLA
+breach.
+
+Scope, time words, and requester-declared priority are deliberately **not** support
+signals. They answer useful questions only after the text has established what support
+work exists. This means wording such as *"all users, P1, fix now"* cannot turn an
+unrelated sentence into an IT incident.
+
+Unrecognised text retains P4 for compatibility with the four-level result model, but it
+is marked **unassessed**, receives Low confidence, and asks which IT system,
+application, device, or service needs support. P4 in this state means "no valid triage
+case was established," not "put this request in the backlog."
+
 ---
 
 ## 3. The matrix
@@ -820,3 +837,36 @@ word, and the tool records that they took it.
 - It is not a judgement of the requester. "Asserted urgency" is a description of
   wording, not a criticism of the person who wrote it.
 - It is not infallible. When it is unsure, it says so — and that is the feature.
+
+## 22. External calibration
+
+The framework was compared with public, first-party IT service-management guidance on
+27 August 2026. The sources use different priority counts and response targets, so the
+tool adopts their decision concepts rather than copying their numeric matrices.
+
+- [Atlassian: impact and urgency calculate priority](https://support.atlassian.com/jira-service-management-cloud/docs/how-impact-and-urgency-are-used-to-calculate-priority/)
+  supports the core separation: impact measures business-process effect; urgency
+  measures time until significant impact.
+- [Atlassian: ITSM work categories](https://support.atlassian.com/jira-service-management-cloud/docs/what-are-ticket-categories/)
+  distinguishes information/access/new-item service requests, unplanned service
+  incidents, and recurring underlying problems. This informed the how-to, installation,
+  incident, and recurrence tests.
+- [Atlassian: major incidents](https://support.atlassian.com/jira-service-management-cloud/docs/what-are-major-incidents/)
+  ties major-incident handling to significant business disruption, a critical service,
+  or a defined affected-user threshold—not to dramatic wording.
+- [Charles Darwin University MSLA](https://www.cdu.edu.au/files/2025-06/msla.pdf)
+  provides concrete calibration cases: complete network failure, a critical email
+  failure, a team printer fault with another printer available, an individual browser
+  fault with an alternative browser, and software/setup service requests.
+- [Deakin University IT Help prioritisation](https://help.deakin.edu.au/ithelp?id=it_kb_article&sysparm_article=KB0011360)
+  reinforces breadth, business criticality, sustainable workarounds, data loss, and
+  regulatory consequence as separate impact/urgency inputs.
+- [University of Newcastle security incident guidelines](https://policies.newcastle.edu.au/document/view-current.php?id=258&version=2)
+  reinforces that security escalation depends on confirmed or potential harm to
+  confidentiality, integrity, or availability; a security noun alone is not proof of a
+  major incident.
+
+These comparisons support the existing architecture and matrix discipline. They also
+exposed parsing gaps now covered by tests: plural *"crashes,"* conditional
+*"whenever"* versus *"whenever you can,"* Mac how-to wording, installation requests,
+alternative-device workarounds, and unrelated text containing fake priority claims.

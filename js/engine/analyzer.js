@@ -30,7 +30,7 @@ import {
   IMMEDIATE_NEED_PATTERNS, CONTEXT_ELSEWHERE_PHRASES,
   WORKING_COMPARATOR_PHRASES, CONTRAST_PHRASES,
   ACTIVE_INCIDENT_PHRASES, ESCALATION_PHRASES,
-  RECURRENCE_PHRASES, UNDETECTED_PHRASES
+  RECURRENCE_PHRASES, UNDETECTED_PHRASES, SLA_BREACH_PHRASES
 } from '../data/phrases.js';
 
 const TIME_12H = /\b(\d{1,2})(?::(\d{2}))?\s*(am|pm)\b/g;
@@ -180,6 +180,27 @@ function hasImmediateNeed(doc) {
   return IMMEDIATE_NEED_PATTERNS.some((re) => re.test(doc.text));
 }
 
+/**
+ * Scope, deadlines and claimed urgency do not establish that text is an IT
+ * ticket. They are deliberately excluded so unrelated or manipulative wording
+ * such as "all users, P1, fix now" cannot manufacture a support incident.
+ */
+function assessInputRelevance(context) {
+  const {
+    systemResult, symptom, domainResult, workTypeResult, risks, serviceManagementSignal
+  } = context;
+  const signals = [];
+
+  if (systemResult.primary) signals.push('system');
+  if (symptom.severity > SEVERITY.NONE) signals.push('symptom');
+  if (domainResult.domain !== 'unknown') signals.push('domain');
+  if (workTypeResult.workType !== 'unknown') signals.push('work-type');
+  if (Object.values(risks).some(Boolean)) signals.push('risk');
+  if (serviceManagementSignal) signals.push('service-management');
+
+  return { inScope: signals.length > 0, signals };
+}
+
 /** Critical risk modifiers, applied to Impact/Urgency *before* the matrix. */
 function applyRiskModifiers(context) {
   const {
@@ -209,6 +230,11 @@ function applyRiskModifiers(context) {
   };
 
   // --- de-escalation ----------------------------------------------------
+  if (!context.inScope) {
+    lower('low', 'low',
+      'No IT system, application-support request or technical symptom was recognised.');
+    return { impact, urgency, rules };
+  }
   if (expectedBehaviour && !immediateNeed) {
     lower('low', 'low', 'This matches expected scheduled behaviour, not a failure.');
   }
@@ -286,12 +312,22 @@ function buildMissingInformation(context) {
     scopeResult, deadlineResult, workaroundResult, systemResult, symptom,
     risks, modifiers, urgencyResult, impactResult, expectedBehaviour,
     doc, domainResult, isQuestion, knownAnswer, sourceOfTruth, differential,
-    recurring, undetected
+    recurring, undetected, inScope
   } = context;
 
   const missing = [];
   const questions = [];
   const addQuestion = (q) => { if (!questions.includes(q)) questions.push(q); };
+
+  if (!inScope) {
+    return {
+      missing: ['Whether this describes an IT or application-support request'],
+      questions: ['What IT system, application, device, or service needs support?'],
+      summary: 'No IT system, technical symptom, service request, or support topic ' +
+        'was recognised. Treat this result as unassessed rather than as a valid ' +
+        'low-priority ticket.'
+    };
+  }
 
   // A how-to does not need the incident questions. Asking "what happens if this
   // is not resolved today?" about "what time does the sync run?" is noise.
@@ -419,10 +455,29 @@ function buildReasoning(context) {
     scopeResult, systemResult, domainResult, symptom, workaroundResult,
     deadlineResult, impactResult, urgencyResult, rules, priority,
     impact, urgency, expectedBehaviour, urgencyBase, impactBase, knownAnswer, isQuestion,
-    sourceOfTruth, differential, escalated, recurring, undetected
+    sourceOfTruth, differential, escalated, recurring, undetected, inScope
   } = context;
 
   const reasoning = [];
+
+  if (!inScope) {
+    const unassessedReasoning = [
+      'This does not appear to describe an IT or application-support request.',
+      'Scope, deadlines and requester-declared priority are ignored until a ' +
+        'support system, symptom, work type, technical domain or risk is recognised.'
+    ];
+    if (rules.some((rule) => rule.direction === 'manual')) {
+      unassessedReasoning.push(
+        'The analyst-refined impact or urgency was retained, but the input is still unassessed.'
+      );
+    }
+    unassessedReasoning.push(
+      'Impact ' + LEVEL_LABELS[impact].toUpperCase() + ' and urgency ' +
+        LEVEL_LABELS[urgency].toUpperCase() + ' map to ' + priority +
+        ' in the priority matrix; treat this suggestion as unassessed.'
+    );
+    return unassessedReasoning;
+  }
 
   if (systemResult.primary) {
     reasoning.push(describeSystems(systemResult.systems) + ' was identified as the affected system.');
@@ -538,6 +593,12 @@ function buildJustification(context) {
     scopeResult, workaroundResult, deadlineResult, symptom, riskFlags,
     impact, urgency, priority
   } = context;
+
+  if (!context.inScope) {
+    return 'No IT or application-support context recognised -> ' +
+      LEVEL_LABELS[impact] + ' Impact + ' + LEVEL_LABELS[urgency] + ' Urgency -> ' +
+      priority + ' (unassessed)';
+  }
 
   const facts = [];
   if (scopeResult.explicit) facts.push(scopeResult.label + ' affected');
@@ -680,6 +741,12 @@ export function analyse(rawText, overrides = {}) {
   const differential = detectDifferential(doc, symptom);
   const activeIncident = has(doc, ACTIVE_INCIDENT_PHRASES);
   const escalated = has(doc, ESCALATION_PHRASES);
+  const slaBreached = has(doc, SLA_BREACH_PHRASES);
+  const relevance = assessInputRelevance({
+    systemResult, symptom, domainResult, workTypeResult, risks,
+    serviceManagementSignal: activeIncident || slaBreached
+  });
+  const inScope = relevance.inScope;
 
   // --- impact and urgency ----------------------------------------------
   const impactResult = assessImpact(doc, {
@@ -704,7 +771,8 @@ export function analyse(rawText, overrides = {}) {
     workTypeResult,
     expectedBehaviour,
     immediateNeed,
-    activeIncident
+    activeIncident,
+    inScope
   });
 
   // The analyst's explicit call wins over every automatic rule.
@@ -715,13 +783,13 @@ export function analyse(rawText, overrides = {}) {
   // --- explanation ------------------------------------------------------
   const confidenceResult = assessConfidence(doc, {
     scopeResult, deadlineResult, workaroundResult, symptom, systemResult,
-    impactResult, urgencyResult, overridesApplied, isQuestion
+    impactResult, urgencyResult, overridesApplied, isQuestion, inScope
   });
 
   // Almost nothing was recognised. That is not evidence of low priority - it
   // is evidence that the ticket cannot be assessed yet, and the card must say
   // so rather than quietly returning P4.
-  const insufficientInformation =
+  const sparseUnrecognisedRequest =
     symptom.severity === 0 &&
     !scopeResult.explicit &&
     !systemResult.primary &&
@@ -730,12 +798,13 @@ export function analyse(rawText, overrides = {}) {
     workTypeResult.workType === 'unknown' &&
     doc.wordCount < 10 &&
     !isQuestion;
+  const insufficientInformation = !inScope || sparseUnrecognisedRequest;
 
   const missingInfo = buildMissingInformation({
     scopeResult, deadlineResult, workaroundResult, systemResult, symptom,
     risks, modifiers, urgencyResult, impactResult, expectedBehaviour,
     doc, domainResult, isQuestion, knownAnswer, sourceOfTruth, differential,
-    recurring, undetected
+    recurring, undetected, inScope
   });
 
   const rules = modified.rules.slice();
@@ -750,7 +819,7 @@ export function analyse(rawText, overrides = {}) {
     scopeResult, systemResult, domainResult, symptom, workaroundResult,
     deadlineResult, impactResult, urgencyResult, rules, priority,
     impact, urgency, expectedBehaviour, impactBase, urgencyBase, knownAnswer, isQuestion,
-    sourceOfTruth, differential, escalated, recurring, undetected
+    sourceOfTruth, differential, escalated, recurring, undetected, inScope
   });
 
   const evidenceDetail = [
@@ -776,7 +845,7 @@ export function analyse(rawText, overrides = {}) {
       scopeResult, workaroundResult, deadlineResult, symptom,
       riskFlags: Object.entries(risks).filter(([, v]) => v)
         .map(([k]) => ({ key: k, label: RISK_LABELS[k] || k })),
-      impact, urgency, priority
+      impact, urgency, priority, inScope
     }),
     priorityName: priorityDefinition(priority).name,
     priorityHeadline: priorityDefinition(priority).headline,
@@ -817,6 +886,7 @@ export function analyse(rawText, overrides = {}) {
     conflicts: confidenceResult.conflicts,
 
     isQuestion,
+    inScope,
     insufficientInformation,
     knownAnswer,
     strippedChars: doc.strippedChars,
@@ -870,6 +940,7 @@ export function analyse(rawText, overrides = {}) {
       urgencyResult,
       expectedBehaviour,
       immediateNeed,
+      relevance,
       overridesApplied: applied,
       wordCount: doc.wordCount,
       normalisedText: doc.text
