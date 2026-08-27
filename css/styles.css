@@ -73,6 +73,48 @@
   }
 }
 
+/* Manual override via data-theme — duplicates tokens for explicit switch */
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg: #f4f6f9;
+  --surface: #fefefe;
+  --surface-2: #f1f6fd;
+  --surface-3: #e8eef7;
+  --border: #cbd5e6;
+  --border-strong: #b0bdd2;
+  --text: #172029;
+  --muted: #55636f;
+  --accent: #174a74;
+  --accent-strong: #2a6aa0;
+  --accent-text: #ffffff;
+  --focus: #0b62d0;
+  --p1: #b3261e; --p2: #8a4b00; --p3: #1a5fb4; --p4: #4b5563;
+  --p1-tint: #fdeceb; --p2-tint: #fdf1e3; --p3-tint: #eaf1fb; --p4-tint: #eef0f3;
+  --up: #8a4b00; --down: #256d4a;
+  --shadow: 0 4px 16px rgba(16, 26, 38, 0.08), 0 1px 0 rgba(16, 26, 38, 0.04);
+  --shadow-strong: 0 8px 24px rgba(16, 26, 38, 0.12), 0 1px 0 rgba(16, 26, 38, 0.06);
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #131b26;
+  --surface: #1e2d42;
+  --surface-2: #2a3d56;
+  --surface-3: #324a68;
+  --border: #344862;
+  --border-strong: #4a6380;
+  --text: #e8edf3;
+  --muted: #c2d0e0;
+  --accent: #7fb2e5;
+  --accent-strong: #6ab0f3;
+  --accent-text: #0d1319;
+  --focus: #7fb2e5;
+  --p1: #ff9a90; --p2: #f0b072; --p3: #93c2f5; --p4: #b3bec9;
+  --p1-tint: #3a2523; --p2-tint: #3a2e1e; --p3-tint: #1e324a; --p4-tint: #262d36;
+  --up: #f0b072; --down: #7fd3aa;
+  --shadow: 0 12px 32px rgba(0, 0, 0, 0.40), 0 1px 0 rgba(255, 255, 255, 0.05);
+  --shadow-strong: 0 16px 40px rgba(0, 0, 0, 0.48), 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
 /* ----------------------------------------------------------------- base -- */
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -179,6 +221,27 @@ a { color: var(--focus); }
   min-width: min(100%, 18rem);
   box-shadow: var(--shadow);
 }
+
+.theme-switcher {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  align-self: flex-start;
+  margin-left: auto;
+}
+.theme-select {
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 0.35rem 0.6rem;
+  min-height: 36px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  color: var(--text);
+  cursor: pointer;
+}
+.theme-select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 14%, transparent); outline: none; }
 
 .privacy-badge { margin: 0; font-weight: 700; font-size: 0.9rem; display: flex; align-items: center; gap: 0.35rem; }
 .privacy-line { margin: 0.2rem 0 0.4rem; font-size: 0.82rem; color: var(--muted); line-height: 1.45; }

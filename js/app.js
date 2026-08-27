@@ -20,6 +20,7 @@ const dom = {
   exampleSelect: document.getElementById('example-select'),
   exampleNote: document.getElementById('example-note'),
   exampleNoteWrap: document.querySelector('.example-note-wrap'),
+  themeSelect: document.getElementById('theme-select'),
   result: document.getElementById('result-region'),
   status: document.getElementById('result-status'),
   refinePanel: document.getElementById('refine-panel'),
@@ -106,10 +107,27 @@ function togglePrivacy() {
   dom.privacyDetail.hidden = expanded;
 }
 
+function applyTheme(value) {
+  if (value === 'auto') document.documentElement.removeAttribute('data-theme');
+  else document.documentElement.setAttribute('data-theme', value);
+  try { localStorage.setItem('theme', value); } catch {}
+}
+
+function initTheme() {
+  if (!dom.themeSelect) return;
+  let saved = 'auto';
+  try { saved = localStorage.getItem('theme') || 'auto'; } catch {}
+  if (!['auto', 'light', 'dark'].includes(saved)) saved = 'auto';
+  dom.themeSelect.value = saved;
+  applyTheme(saved);
+  dom.themeSelect.addEventListener('change', () => applyTheme(dom.themeSelect.value));
+}
+
 function init() {
   for (const node of dom.schoolCount) {
     node.textContent = String(organisationConfig.schoolCount);
   }
+  initTheme();
   populateExamples();
   renderDefinitions(dom.definitions);
   refine.reset();
