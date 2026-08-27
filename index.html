@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="First Pass: local-first, explainable P1-P4 suggestions for IT and application support. All analysis runs in your browser.">
+<meta name="color-scheme" content="light dark">
+<meta name="referrer" content="no-referrer">
+<title>First Pass: Ticket Triage</title>
+<link rel="stylesheet" href="css/styles.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect width='16' height='16' rx='3' fill='%231a4d7a'/><rect x='3' y='3' width='4.5' height='4.5' fill='%23fff'/><rect x='8.5' y='3' width='4.5' height='4.5' fill='%23a8c4dd'/><rect x='3' y='8.5' width='4.5' height='4.5' fill='%23a8c4dd'/><rect x='8.5' y='8.5' width='4.5' height='4.5' fill='%23fff'/></svg>">
+</head>
+<body>
+<a class="skip-link" href="#ticket-input">Skip to ticket input</a>
+
+<header class="site-header">
+  <div class="wrap header-inner">
+    <div class="header-title">
+      <h1>First Pass: Ticket Triage</h1>
+      <p class="subtitle">Local-first, explainable P1&ndash;P4 suggestions for IT and application support</p>
+    </div>
+    <div class="header-privacy">
+      <p class="privacy-badge"><span aria-hidden="true">&#128274;</span> Local-only</p>
+      <p class="privacy-line">Ticket content never leaves this browser.</p>
+      <button type="button" id="privacy-toggle" class="link-button"
+              aria-expanded="false" aria-controls="privacy-detail">
+        How this works
+      </button>
+    </div>
+  </div>
+  <div class="wrap">
+    <div id="privacy-detail" class="privacy-detail" hidden>
+      <p>
+        All priority analysis is performed locally using deterministic JavaScript rules.
+        Ticket content is not sent to an AI provider, server, analytics platform or third party.
+      </p>
+      <ul>
+        <li>No <code>fetch()</code>, <code>XMLHttpRequest</code>, <code>WebSocket</code> or <code>sendBeacon</code> calls exist in this application.</li>
+        <li>No account, sign-in or API key is required.</li>
+        <li>Ticket text is held in memory only and disappears when you refresh or close the page.</li>
+        <li>No cookies, analytics, telemetry or tracking are used, and no external fonts, scripts or stylesheets are loaded.</li>
+      </ul>
+      <p class="muted">
+        This page is served over the network like any other web page. The accurate claim
+        is not that no network exists &mdash; it is that <strong>your ticket content never
+        leaves the browser</strong>. You can verify this in your browser's developer tools:
+        open the Network tab, analyse a ticket, and observe that no request is made.
+      </p>
+    </div>
+  </div>
+</header>
+
+<main class="wrap" id="main">
+
+  <!-- ------------------------------------------------------------ input -->
+  <section class="card" aria-labelledby="input-heading">
+    <h2 id="input-heading">Paste ticket, incident, request or task</h2>
+    <label class="field-label" for="ticket-input">
+      Ticket text
+      <span class="field-hint">Paste the email, ticket or work request exactly as it arrived.</span>
+    </label>
+    <textarea id="ticket-input" rows="7" spellcheck="true"
+      placeholder="For example: Canvas synchronisation has stopped across all schools and today's classes are affected."></textarea>
+
+    <div class="actions">
+      <button type="button" id="analyse-btn" class="btn btn-primary">Analyse Priority</button>
+      <button type="button" id="clear-btn" class="btn">Clear</button>
+      <div class="example-picker">
+        <label class="field-label inline" for="example-select">Example ticket</label>
+        <select id="example-select"></select>
+        <button type="button" id="example-btn" class="btn">Try Example</button>
+      </div>
+    </div>
+    <p class="hint" id="example-note"></p>
+    <p class="hint muted">Press <kbd>Ctrl</kbd> + <kbd>Enter</kbd> in the box to analyse.</p>
+  </section>
+
+  <!-- ----------------------------------------------------------- result -->
+  <h2 class="section-heading" id="result-heading">Result</h2>
+  <p id="result-status" class="sr-only" role="status" aria-live="polite"></p>
+  <div id="result-region" aria-labelledby="result-heading"></div>
+
+  <!-- ----------------------------------------------------------- refine -->
+  <section class="card" aria-labelledby="refine-heading">
+    <details id="refine-details">
+      <summary><h2 class="summary-title" id="refine-heading">Refine assessment</h2>
+        <span class="summary-hint">Confirm what the ticket did not say. The priority recalculates immediately.</span>
+      </summary>
+      <div id="refine-panel" class="refine-panel">
+        <div class="refine-grid">
+          <div class="refine-field">
+            <label for="refine-scope">Scope</label>
+            <select id="refine-scope">
+              <option value="unknown">Unknown</option>
+              <option value="individual">Individual</option>
+              <option value="few-users">Few users</option>
+              <option value="team">Team / department</option>
+              <option value="cohort">Cohort</option>
+              <option value="one-school">One school</option>
+              <option value="multiple-schools">Multiple schools</option>
+              <option value="all-schools">All schools</option>
+              <option value="corporation-wide">Corporation-wide</option>
+            </select>
+          </div>
+
+          <div class="refine-field">
+            <label for="refine-workaround">Workaround</label>
+            <select id="refine-workaround">
+              <option value="unknown">Unknown</option>
+              <option value="yes">Yes</option>
+              <option value="partial">Partial</option>
+              <option value="no">No</option>
+            </select>
+          </div>
+
+          <div class="refine-field">
+            <label for="refine-deadline">Deadline</label>
+            <select id="refine-deadline">
+              <option value="unknown">Unknown</option>
+              <option value="now">Now</option>
+              <option value="today">Today</option>
+              <option value="tomorrow">Tomorrow</option>
+              <option value="days-2-5">2&ndash;5 days</option>
+              <option value="weeks-1-2">1&ndash;2 weeks or later</option>
+              <option value="none">No deadline</option>
+            </select>
+          </div>
+
+          <div class="refine-field">
+            <label for="refine-impact">Impact override</label>
+            <select id="refine-impact">
+              <option value="auto">Auto (from evidence)</option>
+              <option value="low">Low</option>
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
+            </select>
+          </div>
+
+          <div class="refine-field">
+            <label for="refine-urgency">Urgency override</label>
+            <select id="refine-urgency">
+              <option value="auto">Auto (from evidence)</option>
+              <option value="low">Low</option>
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
+            </select>
+          </div>
+        </div>
+
+        <fieldset class="risk-fieldset">
+          <legend>Critical risk</legend>
+          <div class="risk-grid">
+            <label class="check"><input type="checkbox" data-risk="payroll"> Payroll</label>
+            <label class="check"><input type="checkbox" data-risk="financial"> Payments</label>
+            <label class="check"><input type="checkbox" data-risk="security"> Security</label>
+            <label class="check"><input type="checkbox" data-risk="privacy"> Privacy</label>
+            <label class="check"><input type="checkbox" data-risk="safety"> Student / staff safety</label>
+            <label class="check"><input type="checkbox" data-risk="safeguarding"> WWCC / Safeguarding</label>
+            <label class="check"><input type="checkbox" data-risk="compliance"> Compliance</label>
+            <label class="check"><input type="checkbox" data-risk="dataIntegrity"> Data integrity</label>
+            <label class="check"><input type="checkbox" data-risk="criticalIntegration"> Critical integration</label>
+          </div>
+        </fieldset>
+
+        <button type="button" id="refine-reset" class="btn btn-quiet">Reset to detected values</button>
+      </div>
+    </details>
+  </section>
+
+  <!-- ----------------------------------------------------------- matrix -->
+  <section class="card" aria-labelledby="matrix-heading">
+    <h2 id="matrix-heading">Priority matrix</h2>
+    <p class="hint">
+      Impact and urgency are established from the ticket first. This table is the only
+      place a P number is decided. Selecting a cell explains it &mdash; it does not
+      change the assessment.
+    </p>
+    <div class="matrix-wrap" id="matrix-table"></div>
+    <div class="matrix-explain" id="matrix-explain" aria-live="polite"></div>
+
+    <details class="definitions-details">
+      <summary><h3 class="summary-title">Priority definitions</h3></summary>
+      <div id="priority-definitions" class="definitions"></div>
+    </details>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p>
+      <strong>Decision support, not a decision.</strong>
+      Suggestions are based on the words in the request. Human judgement, local policy
+      and agreed service levels always take precedence.
+    </p>
+    <p class="muted">
+      First Pass &mdash; a static, offline-capable page, configured for
+      <span data-school-count>19</span> schools.
+      The prioritisation framework is documented in <code>PRIORITY-FRAMEWORK.md</code>,
+      and the privacy position in <code>PRIVACY.md</code>.
+      <a href="tests/tests.html">Run the test suite</a>.
+    </p>
+  </div>
+</footer>
+
+<script type="module" src="js/app.js"></script>
+</body>
+</html>

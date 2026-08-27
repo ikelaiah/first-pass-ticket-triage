@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Tests — First Pass: Ticket Triage</title>
+<link rel="stylesheet" href="../css/styles.css">
+<style>
+  .summary {
+    display: flex; flex-wrap: wrap; gap: 1rem; align-items: center;
+    border: 1px solid var(--border); border-radius: var(--radius);
+    background: var(--surface-2); padding: 1rem; margin-bottom: 1rem;
+  }
+  .summary-number { font-size: 2rem; font-weight: 700; line-height: 1; }
+  .ok { color: var(--down); }
+  .bad { color: var(--p1); }
+  .group-title {
+    margin: 1.25rem 0 0.4rem; font-size: 0.8rem; text-transform: uppercase;
+    letter-spacing: 0.07em; color: var(--muted);
+    border-bottom: 1px solid var(--border); padding-bottom: 0.3rem;
+  }
+  .case {
+    display: grid; grid-template-columns: 4rem minmax(0, 1fr) minmax(0, 18rem);
+    gap: 0.5rem; padding: 0.3rem 0; border-bottom: 1px solid var(--border);
+    font-size: 0.9rem; align-items: baseline;
+  }
+  .case-status { font-weight: 700; font-family: "Cascadia Mono", Consolas, monospace; }
+  .case-detail { color: var(--muted); font-family: "Cascadia Mono", Consolas, monospace; font-size: 0.82rem; }
+  @media (max-width: 720px) {
+    .case { grid-template-columns: 3.5rem minmax(0, 1fr); }
+    .case-detail { grid-column: 2; }
+  }
+  .filter-row { display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
+</style>
+</head>
+<body>
+<header class="site-header">
+  <div class="wrap header-inner">
+    <div class="header-title">
+      <h1>Test suite</h1>
+      <p class="subtitle">First Pass: Ticket Triage — deterministic rules engine</p>
+      <p class="tagline"><a href="../index.html">Back to the application</a></p>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="card">
+    <div class="summary" id="summary" role="status" aria-live="polite">
+      <p class="muted">Running…</p>
+    </div>
+    <div class="filter-row">
+      <label class="check"><input type="checkbox" id="failures-only"> Show failures only</label>
+      <p class="hint muted" style="margin:0">
+        Every assertion runs locally in this page. No network requests are made.
+      </p>
+    </div>
+    <div id="results"></div>
+  </section>
+</main>
+
+<script type="module">
+import { runTests } from './tests.js';
+
+const { results, passed, failed, total } = runTests();
+
+const summary = document.getElementById('summary');
+summary.textContent = '';
+const block = (value, label, cls) => {
+  const wrapper = document.createElement('div');
+  const number = document.createElement('div');
+  number.className = 'summary-number ' + (cls || '');
+  number.textContent = String(value);
+  const caption = document.createElement('div');
+  caption.className = 'hint';
+  caption.textContent = label;
+  wrapper.append(number, caption);
+  return wrapper;
+};
+summary.append(
+  block(passed, 'passed', 'ok'),
+  block(failed, 'failed', failed ? 'bad' : ''),
+  block(total, 'total')
+);
+const verdict = document.createElement('p');
+verdict.style.margin = '0';
+verdict.style.fontWeight = '650';
+verdict.textContent = failed === 0
+  ? 'All assertions pass.'
+  : failed + ' assertion(s) need attention.';
+summary.append(verdict);
+
+const container = document.getElementById('results');
+
+function render(failuresOnly) {
+  container.textContent = '';
+  let group = '';
+  for (const result of results) {
+    if (failuresOnly && result.pass) continue;
+    if (result.group !== group) {
+      group = result.group;
+      const heading = document.createElement('h2');
+      heading.className = 'group-title';
+      heading.textContent = group;
+      container.appendChild(heading);
+    }
+    const row = document.createElement('div');
+    row.className = 'case';
+
+    const status = document.createElement('span');
+    status.className = 'case-status ' + (result.pass ? 'ok' : 'bad');
+    status.textContent = result.pass ? 'PASS' : 'FAIL';
+
+    const name = document.createElement('span');
+    name.textContent = result.name;
+
+    const detail = document.createElement('span');
+    detail.className = 'case-detail';
+    detail.textContent = result.message;
+
+    row.append(status, name, detail);
+    container.appendChild(row);
+  }
+  if (!container.children.length) {
+    const empty = document.createElement('p');
+    empty.className = 'muted';
+    empty.textContent = 'Nothing to show — every assertion passed.';
+    container.appendChild(empty);
+  }
+}
+
+document.getElementById('failures-only').addEventListener('change', (event) => {
+  render(event.target.checked);
+});
+
+render(false);
+document.title = (failed === 0 ? 'PASS' : 'FAIL') + ' — ' + total + ' tests — First Pass: Ticket Triage';
+</script>
+</body>
+</html>

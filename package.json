@@ -1,0 +1,9 @@
+{
+  "name": "first-pass-triage",
+  "private": true,
+  "type": "module",
+  "description": "Local-first IT task triage and priority decision support. Static site - no dependencies, no build step.",
+  "scripts": {
+    "test": "node tests/run.mjs"
+  }
+}
