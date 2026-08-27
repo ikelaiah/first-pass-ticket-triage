@@ -19,6 +19,7 @@ const dom = {
   exampleBtn: document.getElementById('example-btn'),
   exampleSelect: document.getElementById('example-select'),
   exampleNote: document.getElementById('example-note'),
+  exampleNoteWrap: document.querySelector('.example-note-wrap'),
   result: document.getElementById('result-region'),
   status: document.getElementById('result-status'),
   refinePanel: document.getElementById('refine-panel'),
@@ -67,6 +68,8 @@ const refine = initRefineControls(dom.refinePanel, reanalyse);
 
 function clearAll() {
   dom.input.value = '';
+  dom.exampleNote.textContent = '';
+  if (dom.exampleNoteWrap) dom.exampleNoteWrap.hidden = true;
   state.text = '';
   state.result = null;
   refine.reset();
@@ -78,6 +81,7 @@ function loadExample() {
   const example = exampleById(dom.exampleSelect.value) || EXAMPLES[0];
   dom.input.value = example.text;
   dom.exampleNote.textContent = example.note;
+  if (dom.exampleNoteWrap) dom.exampleNoteWrap.hidden = false;
   dom.input.focus();
 }
 
