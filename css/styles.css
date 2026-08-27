@@ -8,7 +8,7 @@
 :root {
   color-scheme: light dark;
 
-  --bg: #f4f6f9;
+  --bg: #e9eef3;
   --surface: #fefefe;
   --surface-2: #f1f6fd;
   --surface-3: #e8eef7;
@@ -76,7 +76,7 @@
 /* Manual override via data-theme — duplicates tokens for explicit switch */
 :root[data-theme="light"] {
   color-scheme: light;
-  --bg: #f4f6f9;
+  --bg: #e9eef3;
   --surface: #fefefe;
   --surface-2: #f1f6fd;
   --surface-3: #e8eef7;
