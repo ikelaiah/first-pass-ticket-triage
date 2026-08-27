@@ -306,7 +306,24 @@ export function renderResult(container, result, options = {}) {
         ])
       : null,
     result.justification
-      ? el('p', { class: 'justification-line' }, result.justification)
+      ? el('div', { class: 'justification-line' }, [
+          el('span', { class: 'justification-text' }, result.justification),
+          el('button', {
+            class: 'btn btn-quiet btn-copy justification-copy',
+            type: 'button',
+            'aria-label': 'Copy justification',
+            onClick: (e) => {
+              const btn = e.currentTarget;
+              if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(result.justification).then(() => {
+                  const prev = btn.textContent; btn.textContent = 'Copied'; setTimeout(() => { btn.textContent = prev; }, 1400);
+                });
+              } else {
+                const ta = document.createElement('textarea'); ta.value = result.justification; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); btn.textContent = 'Copied'; setTimeout(() => { btn.textContent = 'Copy'; }, 1400);
+              }
+            }
+          }, 'Copy')
+        ])
       : null,
     result.insufficientInformation
       ? el('section', { class: 'unassessed' }, [

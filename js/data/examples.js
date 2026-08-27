@@ -395,66 +395,66 @@ export const EXAMPLES = [
     id: 'ex49',
     title: 'SendHQ Mail Carers — vendor bug on vendor side (now fixed)',
     group: 'Integration',
-    text: 'Update SendHQ to show parents with Mail Carers only from Edumate. I did not know what it meant as I never deal with SendHQ. Turned out, SendHQ has no settings for us to play with, and the integration setup are ALL COMPLETLY on SendHQ side! They did not read the data correctly from Edumate because SendHQ had a bug! The vendor has fixed this issue.',
+    text: 'Update SendHQ to show parents with Mail Carers only from Edumate',
     expected: ['P3', 'P4'],
-    note: 'Integration/vendor bug — SendHQ reads Edumate incorrectly, no customer-side settings, fix on vendor side. Illustrates “integration setup is on the vendor side” and vendor-not-reading-correctly — now resolved, so low urgency despite data confusion. Source-of-truth question still applies (fix downstream won’t persist if upstream is wrong).'
+    note: 'Service request to filter SendHQ to Mail Carers from Edumate. Vendor-managed integration with no customer-side settings — now resolved, so low urgency. Source-of-truth question still applies.'
   },
   {
     id: 'ex50',
     title: 'Seesaw SS/JS English — non-roll-call classes never synced via Wonde',
     group: 'Real ticket wording',
-    text: 'Request from a school: I was told I could use Seesaw to share Photos with students and Parents safely; sync SS English and JS English to Seesaw. Neither of these classes are roll call classes, and hence never synced from Edumate to Wonde, and hence unable to show in Seesaw. So we had to tell the teacher to add the classes and students manually in Seesaw. SS English was not found in the School Edumate! Only JS English was found. Even if I were to help to add manually in Seesaw, I would have no info to work with! The actual name of the class, name of teachers, name of students?',
-    expected: ['P2', 'P3', 'P4'],
-    note: 'Seesaw via Wonde only carries roll-call classes — non-roll-call never flows Edumate→Wonde→Seesaw (manual entry is the workaround, reducing urgency but not impact). SS English absent in Edumate at all, so no source data exists — upstream fix required, downstream manual entry is transient and may be reversed. High impact comes from dataIntegrity/criticalIntegration even with one-school cohort; Low urgency from workaround/deferred need → P2 is defensible, single-class view is P3/P4.'
+    text: 'I was told I could use Seesaw to share Photos with students and Parents safely; sync SS English and JS English to Seesaw',
+    expected: ['P3', 'P4'],
+    note: 'Request to sync two non-roll-call English classes to Seesaw. Neither rolls via Edumate→Wonde→Seesaw — Wonde only carries roll-call classes, so manual Seesaw entry is the workaround. In this case SS English was also absent in Edumate (no source data), so even manual entry lacked class/teachers/students to use. Tests hidden-dependency and source-of-truth (Edumate) for non-roll-call.'
   },
   {
     id: 'ex51',
-    title: 'Helpdesk is down — ticketing system restored after admin restart',
+    title: 'Helpdesk is down — ticketing system',
     group: 'Helpdesk / ITSM',
-    text: 'Helpdesk is down! Our helpdesk ticketing system is where other IT members, Payroll, and schools raise incidents or requests. It was down for sometime today. The helpdesk admin was notified and he immediately restarted the server and sat on his desk until the helpdesk was restored. No workaround was available while it was down.',
-    expected: ['P1', 'P2', 'P3'],
-    note: 'ITSM outage with corporation-wide scope (IT + Payroll + all schools cannot raise tickets). While down with no workaround: High impact + High urgency → P1. After admin restart/restored: urgency drops to Medium/Low → P2 (P3 if brief outage with no deadline missed). “Everyone in IT was happy” is sentiment, not consequence. Payroll word here is descriptive (who uses helpdesk), not a payroll-processing failure — payroll escalation only applies with same-day unpaid risk + cutoff, per critical-risk modifiers.'
+    text: 'Helpdesk is down!',
+    expected: ['P2', 'P3'],
+    note: 'Complaint as received — just “Helpdesk is down!” No scope/deadline in ticket. Helpdesk is the ITSM system where IT, Payroll and schools raise requests, so impact is corporation-wide when down, but ITSM is not payroll/teaching blocking. Admin restarted server and monitored until restored — recovery, not user workaround; brief outage stays P3, longer block would be P2 (P1 only if still blocking payroll cutoff / live incident).'
   },
   {
     id: 'ex52',
     title: 'Newsletter automation down — PowerAutomate + SIS → SharePoint (2 months, wider community missed)',
     group: 'Integration',
-    text: 'Newsletter automation for a school is down! This was based on PowerAutomate reading SIS database, and create news pages in SharePoint! So this Newsletter has been down for sometime, so only those who login to SIS see the news, but the wider school community have missed it for at least 2 months now. I am working on a solution, a slow one.',
+    text: 'Newsletter automation for a school is down! (has been down for weeks!)',
     expected: ['P2', 'P3'],
-    note: 'IT Applications integration: no system named initially (detection challenge), actually PowerAutomate (now alias powerautomate) + SIS (=Edumate) → SharePoint (M365). One-school scope but high duration/visibility gap (2 months, wider community missed vs SIS-only users) — High impact despite single school. No user workaround (community cannot self-serve), slow manual fix in progress → Medium urgency. Routes to Scheduled Job / Automation + Collaboration, not generic Application Availability. Tests hidden-dependency (no system mentioned) and long-running degradation vs outage distinction.'
+    note: 'One-school newsletter outage; automation reads SIS (Edumate) and publishes to SharePoint. Down weeks with wider community missing news — high impact despite single school. Slow fix in progress.'
   },
   {
     id: 'ex53',
-    title: 'How to add a task in Azure DevOps User Story — brief instruction given',
+    title: 'How to add a task in Azure DevOps User Story',
     group: 'Documentation',
-    text: 'How do I add a task in a Azure DevOps User Story? I gave a brief instruction on linking a task to the story in Azure Boards.',
+    text: 'How do I add a task in a Azure DevOps User Story?',
     expected: ['P4'],
-    note: 'How-to/documentation: user asks how to add a task in an Azure DevOps User Story (Boards). Instruction already given. No failure, no deadline, no data loss — P4. Routes to DevOps / CI-CD + Documentation, not Incident. Tests O365/Azure DevOps/Confluence-adjacent how-to detection.'
+    note: 'How-to/documentation for Azure DevOps Boards — no failure, no deadline. Your follow-up brief instruction is outside quoted request; ticket alone stays P4 Documentation, not Incident.'
   },
   {
     id: 'ex54',
-    title: 'Retrieve person info urgently for risk team — python script lookup',
+    title: 'Retrieve person info urgently for risk team',
     group: 'Service Request',
-    text: 'Retrieve information about this person urgently for risk team. I had to run a python script to track down staff in question and provide details to the risk team.',
+    text: 'Retrieve information about this person urgently for risk team',
     expected: ['P2', 'P3'],
-    note: 'Service request / data extract for risk team with stated urgency. Work type service-request (retrieve information) via python script / scripting-terminal domain. Urgency Medium-High due to “urgently for risk team” but scope individual (one person) and no payroll/safety block — P2 if risk-team deadline is today, P3 if next days. No privacy flag unless personal data exposed beyond request. Tests risk-team service request + python/powershell/bash routing.'
+    note: 'Risk-team service request for one person — “urgently” gives Medium-High urgency. Your python-script lookup to track staff is follow-up action outside quoted request. P2 if deadline today, P3 if next days; privacy flag only if exposed beyond request.'
   },
   {
     id: 'ex55',
     title: 'Statement of Service table outdated — update from files',
     group: 'Data quality',
-    text: 'Statement of Service table is outdated, please update with the following files: file1, file2, etc. Database trigger updates will handle the downstream sync.',
+    text: 'Statement of Service table is outdated, please update with the following files: file1, file2, etc.',
     expected: ['P3', 'P4'],
-    note: 'Data remediation / service request: Statement of Service reference table outdated, update from supplied files. Work type data-remediation (table is outdated, please update, database trigger updates). No deadline, no data loss, small scope — P3/P4. Triggers already-correct “database trigger” phrase in data-pipeline/database domains. Tests statement-of-service + file-driven table refresh pattern for education data warehousing (Wherescape/Aquia/PortalHQ).'
+    note: 'Reference table refresh — ticket lists files only. Downstream database trigger sync is implementation detail outside quoted request. P3/P4 (small scope, no deadline/data loss).'
   },
   {
     id: 'ex56',
-    title: 'Clipboard timesheet uploaded in SharePoint — extracurricular pay import',
+    title: 'Clipboard timesheet uploaded in SharePoint',
     group: 'Payroll',
-    text: 'Hi, we have uploaded a clipboard timesheet in SharePoint. Clipboard is our extracurricular management and timesheets system. Staff upload periodical timesheets as a CSV file for import into the payroll system. There are a number of steps that I have to take to make sure the people in the csv file will get paid on time.',
-    expected: ['P2', 'P3'],
-    note: 'Cryptic payroll-adjacent request: “clipboard timesheet in SharePoint” sounds cryptic but is a multi-step CSV import from Clipboard (extracurricular) via SharePoint into Aurion/Ascender. Scope is a team/cohort of extracurricular staff, no explicit deadline — but “will get paid on time” implies payroll cutoff urgency. Without a stated cutoff it stays P3; with a same-day/fortnightly payroll cutoff and no automated workaround (manual steps required) it rises to P2/High urgency + payroll risk. Tests Clipboard system detection (extracurricular), SharePoint/CSV ingestion, and “get paid on time” unpaid-risk trigger without asserting “urgent”.'
-  }
+    text: 'Hi, we have uploaded a clipboard timesheet in SharePoint',
+    expected: ['P3', 'P4'],
+    note: 'Quoted request only — just the SharePoint upload notice. Context outside quotes: Clipboard is extracurricular management/timesheets; staff CSV is imported via your multi-step checks into payroll (Aurion/Ascender) to ensure on-time pay. Without a stated cutoff it is P4 (small scope, no deadline); with a payroll cutoff it would rise to P3/P2. Tests cryptic “clipboard timesheet” without explanation.'
+  },
 ];
 
 export function exampleById(id) {

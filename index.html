@@ -19,12 +19,21 @@
       <h1>First Pass: Ticket Triage</h1>
       <p class="subtitle">Local-first, explainable P1&ndash;P4 suggestions for IT and application support</p>
     </div>
+    <div class="theme-switcher">
+      <label for="theme-select" class="sr-only">Color theme</label>
+      <select id="theme-select" class="theme-select" aria-label="Color theme">
+        <option value="auto">System</option>
+        <option value="light">Light</option>
+        <option value="dark">Dark</option>
+      </select>
+    </div>
     <div class="header-privacy">
-      <p class="privacy-badge"><span aria-hidden="true">&#128274;</span> Local-only</p>
+      <p class="privacy-badge"><span aria-hidden="true">&#128274;</span> Local-only — on this device</p>
       <p class="privacy-line">Ticket content never leaves this browser.</p>
+      <p class="privacy-sub">No AI provider &middot; No server &middot; No tracking &middot; Works offline &middot; Verify: Network tab → 0 requests</p>
       <button type="button" id="privacy-toggle" class="link-button"
               aria-expanded="false" aria-controls="privacy-detail">
-        How this works
+        How this works &amp; how to verify
       </button>
     </div>
   </div>
@@ -62,17 +71,23 @@
     <textarea id="ticket-input" rows="7" spellcheck="true"
       placeholder="For example: Canvas synchronisation has stopped across all schools and today's classes are affected."></textarea>
 
-    <div class="actions">
+    <div class="actions actions--primary">
       <button type="button" id="analyse-btn" class="btn btn-primary">Analyse Priority</button>
       <button type="button" id="clear-btn" class="btn">Clear</button>
+    </div>
+    <div class="example-row">
+      <span class="example-row-label">Try an example</span>
       <div class="example-picker">
-        <label class="field-label inline" for="example-select">Example ticket</label>
+        <label class="field-label inline sr-only" for="example-select">Example ticket</label>
         <select id="example-select"></select>
         <button type="button" id="example-btn" class="btn">Try Example</button>
       </div>
     </div>
-    <p class="hint" id="example-note"></p>
-    <p class="hint muted">Press <kbd>Ctrl</kbd> + <kbd>Enter</kbd> in the box to analyse.</p>
+    <div class="example-note-wrap" aria-live="polite">
+      <p class="hint example-note-kicker"><span aria-hidden="true">ℹ️</span> About this example</p>
+      <p class="hint example-note" id="example-note"></p>
+    </div>
+    <p class="hint muted kbd-hint">Press <kbd>Ctrl</kbd> + <kbd>Enter</kbd> in the box to analyse.</p>
   </section>
 
   <!-- ----------------------------------------------------------- result -->

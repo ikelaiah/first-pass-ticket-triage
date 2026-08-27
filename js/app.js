@@ -19,6 +19,8 @@ const dom = {
   exampleBtn: document.getElementById('example-btn'),
   exampleSelect: document.getElementById('example-select'),
   exampleNote: document.getElementById('example-note'),
+  exampleNoteWrap: document.querySelector('.example-note-wrap'),
+  themeSelect: document.getElementById('theme-select'),
   result: document.getElementById('result-region'),
   status: document.getElementById('result-status'),
   refinePanel: document.getElementById('refine-panel'),
@@ -50,7 +52,9 @@ function analyseFresh() {
   refine.sync(state.result);
   render(false);
   if (!state.result.empty) {
-    dom.result.scrollIntoView({ block: 'nearest', behavior: 'auto' });
+    requestAnimationFrame(() => {
+      dom.result.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    });
   }
 }
 
@@ -65,6 +69,8 @@ const refine = initRefineControls(dom.refinePanel, reanalyse);
 
 function clearAll() {
   dom.input.value = '';
+  dom.exampleNote.textContent = '';
+  if (dom.exampleNoteWrap) dom.exampleNoteWrap.hidden = true;
   state.text = '';
   state.result = null;
   refine.reset();
@@ -76,7 +82,8 @@ function loadExample() {
   const example = exampleById(dom.exampleSelect.value) || EXAMPLES[0];
   dom.input.value = example.text;
   dom.exampleNote.textContent = example.note;
-  analyseFresh();
+  if (dom.exampleNoteWrap) dom.exampleNoteWrap.hidden = false;
+  dom.input.focus();
 }
 
 function populateExamples() {
@@ -100,10 +107,27 @@ function togglePrivacy() {
   dom.privacyDetail.hidden = expanded;
 }
 
+function applyTheme(value) {
+  if (value === 'auto') document.documentElement.removeAttribute('data-theme');
+  else document.documentElement.setAttribute('data-theme', value);
+  try { localStorage.setItem('theme', value); } catch {}
+}
+
+function initTheme() {
+  if (!dom.themeSelect) return;
+  let saved = 'auto';
+  try { saved = localStorage.getItem('theme') || 'auto'; } catch {}
+  if (!['auto', 'light', 'dark'].includes(saved)) saved = 'auto';
+  dom.themeSelect.value = saved;
+  applyTheme(saved);
+  dom.themeSelect.addEventListener('change', () => applyTheme(dom.themeSelect.value));
+}
+
 function init() {
   for (const node of dom.schoolCount) {
     node.textContent = String(organisationConfig.schoolCount);
   }
+  initTheme();
   populateExamples();
   renderDefinitions(dom.definitions);
   refine.reset();
@@ -112,10 +136,6 @@ function init() {
   dom.analyseBtn.addEventListener('click', analyseFresh);
   dom.clearBtn.addEventListener('click', clearAll);
   dom.exampleBtn.addEventListener('click', loadExample);
-  dom.exampleSelect.addEventListener('change', () => {
-    const example = exampleById(dom.exampleSelect.value);
-    if (example) dom.exampleNote.textContent = example.note;
-  });
   dom.refineReset.addEventListener('click', () => {
     refine.sync(analyse(state.text));
     reanalyse();
