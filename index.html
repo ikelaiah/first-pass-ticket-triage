@@ -62,11 +62,14 @@
     <textarea id="ticket-input" rows="7" spellcheck="true"
       placeholder="For example: Canvas synchronisation has stopped across all schools and today's classes are affected."></textarea>
 
-    <div class="actions">
+    <div class="actions actions--primary">
       <button type="button" id="analyse-btn" class="btn btn-primary">Analyse Priority</button>
       <button type="button" id="clear-btn" class="btn">Clear</button>
+    </div>
+    <div class="example-row">
+      <span class="example-row-label">Try an example</span>
       <div class="example-picker">
-        <label class="field-label inline" for="example-select">Example ticket</label>
+        <label class="field-label inline sr-only" for="example-select">Example ticket</label>
         <select id="example-select"></select>
         <button type="button" id="example-btn" class="btn">Try Example</button>
       </div>
