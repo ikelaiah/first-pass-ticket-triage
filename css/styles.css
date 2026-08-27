@@ -9,14 +9,14 @@
   color-scheme: light dark;
 
   --bg: #f4f6f9;
-  --surface: #ffffff;
-  --surface-2: #f7f9fc;
-  --surface-3: #eef2f7;
-  --border: #d3dae4;
-  --border-strong: #b3bfcd;
+  --surface: #fefefe;
+  --surface-2: #f1f6fd;
+  --surface-3: #e8eef7;
+  --border: #cbd5e6;
+  --border-strong: #b0bdd2;
   --text: #172029;
   --muted: #55636f;
-  --accent: #1a4d7a;
+  --accent: #174a74;
   --accent-strong: #2a6aa0;
   --accent-text: #ffffff;
   --focus: #0b62d0;
