@@ -244,7 +244,8 @@ a { color: var(--focus); }
 .theme-select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 14%, transparent); outline: none; }
 
 .privacy-badge { margin: 0; font-weight: 700; font-size: 0.9rem; display: flex; align-items: center; gap: 0.35rem; }
-.privacy-line { margin: 0.2rem 0 0.4rem; font-size: 0.82rem; color: var(--muted); line-height: 1.45; }
+.privacy-line { margin: 0.2rem 0 0.15rem; font-size: 0.85rem; font-weight: 600; color: var(--text); line-height: 1.45; }
+.privacy-sub { margin: 0 0 0.4rem; font-size: 0.72rem; line-height: 1.45; color: var(--muted); letter-spacing: 0.01em; }
 
 .link-button {
   background: none;
