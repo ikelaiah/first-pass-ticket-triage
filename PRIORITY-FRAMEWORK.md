@@ -785,6 +785,8 @@ consequence.
 | Archive the 2019 records when you have time | P4 | No consequence, no deadline |
 | Update SendHQ to show Mail Carers only (vendor bug, now fixed) | P3/P4 | Vendor-side integration, no customer settings, data not read correctly from Edumate — now resolved |
 | Sync SS/JS English to Seesaw — non-roll-call never flows Edumate→Wonde→Seesaw; SS English absent in Edumate | P3/P4 | Source-of-truth gap; manual Seesaw entry is workaround, but no source data for SS English to add |
+| Helpdesk is down — ticketing system for IT/Payroll/schools, restored after admin restarted server | P2/P3 | ITSM outage, corporation-wide scope but not payroll/teaching blocker; admin fix is recovery not user workaround — P1 only if still blocking payroll cutoff or live incident |
+| Newsletter automation for a school is down — PowerAutomate (SIS/Edumate) → SharePoint news, 2 months wider community missed, slow fix in progress | P2/P3 | One school, but long outage with community-wide visibility gap; no system named initially — hidden dependency; P2 for duration/impact, P3 if workaround via SIS-only view is tolerated |
 
 ### Wonde, Azure DevOps, Teams and databases
 
@@ -798,6 +800,7 @@ P1–P4 spread inside every platform:
 | One school's Wonde approval still pending, their new students missing from Seesaw | P3 |
 | SS/JS English not roll-call — never synced Edumate→Wonde→Seesaw, manual Seesaw entry only | P3/P4 |
 | SendHQ Mail Carers not read correctly from Edumate — vendor bug, no customer-side settings (now fixed) | P3/P4 |
+| Newsletter automation down — PowerAutomate reading SIS → SharePoint news, 2 months, wider community missed, slow fix | P2/P3 |
 | Document how the Wonde approval process works | P4 |
 | Release pipeline deployed a broken build to production, enrolment API returning 500s for all schools | P1 |
 | All Azure DevOps pipelines failing on an expired service connection, payroll fix due Friday | P2 |

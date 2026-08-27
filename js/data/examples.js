@@ -406,6 +406,22 @@ export const EXAMPLES = [
     text: 'Request from a school: I was told I could use Seesaw to share Photos with students and Parents safely; sync SS English and JS English to Seesaw. Neither of these classes are roll call classes, and hence never synced from Edumate to Wonde, and hence unable to show in Seesaw. So we had to tell the teacher to add the classes and students manually in Seesaw. SS English was not found in the School Edumate! Only JS English was found. Even if I were to help to add manually in Seesaw, I would have no info to work with! The actual name of the class, name of teachers, name of students?',
     expected: ['P2', 'P3', 'P4'],
     note: 'Seesaw via Wonde only carries roll-call classes — non-roll-call never flows Edumate→Wonde→Seesaw (manual entry is the workaround, reducing urgency but not impact). SS English absent in Edumate at all, so no source data exists — upstream fix required, downstream manual entry is transient and may be reversed. High impact comes from dataIntegrity/criticalIntegration even with one-school cohort; Low urgency from workaround/deferred need → P2 is defensible, single-class view is P3/P4.'
+  },
+  {
+    id: 'ex51',
+    title: 'Helpdesk is down — ticketing system restored after admin restart',
+    group: 'Helpdesk / ITSM',
+    text: 'Helpdesk is down! Our helpdesk ticketing system is where other IT members, Payroll, and schools raise incidents or requests. It was down for sometime today. The helpdesk admin was notified and he immediately restarted the server and sat on his desk until the helpdesk was restored. No workaround was available while it was down.',
+    expected: ['P1', 'P2', 'P3'],
+    note: 'ITSM outage with corporation-wide scope (IT + Payroll + all schools cannot raise tickets). While down with no workaround: High impact + High urgency → P1. After admin restart/restored: urgency drops to Medium/Low → P2 (P3 if brief outage with no deadline missed). “Everyone in IT was happy” is sentiment, not consequence. Payroll word here is descriptive (who uses helpdesk), not a payroll-processing failure — payroll escalation only applies with same-day unpaid risk + cutoff, per critical-risk modifiers.'
+  },
+  {
+    id: 'ex52',
+    title: 'Newsletter automation down — PowerAutomate + SIS → SharePoint (2 months, wider community missed)',
+    group: 'Integration',
+    text: 'Newsletter automation for a school is down! This was based on PowerAutomate reading SIS database, and create news pages in SharePoint! So this Newsletter has been down for sometime, so only those who login to SIS see the news, but the wider school community have missed it for at least 2 months now. I am working on a solution, a slow one.',
+    expected: ['P2', 'P3'],
+    note: 'IT Applications integration: no system named initially (detection challenge), actually PowerAutomate (now alias powerautomate) + SIS (=Edumate) → SharePoint (M365). One-school scope but high duration/visibility gap (2 months, wider community missed vs SIS-only users) — High impact despite single school. No user workaround (community cannot self-serve), slow manual fix in progress → Medium urgency. Routes to Scheduled Job / Automation + Collaboration, not generic Application Availability. Tests hidden-dependency (no system mentioned) and long-running degradation vs outage distinction.'
   }
 ];
 

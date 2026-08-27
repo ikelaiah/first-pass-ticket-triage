@@ -80,7 +80,7 @@ export const organisationConfig = {
       critical: false
     },
     sql: { name: 'SQL Server', aliases: ['sql server', 'ssms', 'sql'], critical: false },
-    powerautomate: { name: 'Power Automate', aliases: ['power automate', 'flow'], critical: false },
+    powerautomate: { name: 'Power Automate', aliases: ['power automate', 'powerautomate', 'power-automate', 'flow'], critical: false },
     sendhq: { name: 'SendHQ', aliases: ['sendhq', 'send hq'], critical: false }
   },
 
