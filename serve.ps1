@@ -61,7 +61,17 @@ if (-not $NoBrowser) { Start-Process $prefix }
 
 try {
   while ($listener.IsListening) {
-    $context = $listener.GetContext()
+    # GetContext() blocks inside .NET, and PowerShell can only act on Ctrl+C
+    # between statements - so a synchronous wait makes the server unstoppable.
+    # Waiting asynchronously in short slices hands control back to PowerShell
+    # regularly, which is what lets Ctrl+C be seen.
+    $pending = $listener.GetContextAsync()
+    while (-not $pending.AsyncWaitHandle.WaitOne(200)) {
+      if (-not $listener.IsListening) { break }
+    }
+    if (-not $pending.IsCompleted) { continue }
+
+    $context = $pending.GetAwaiter().GetResult()
     $request = $context.Request
     $response = $context.Response
 
