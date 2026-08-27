@@ -535,9 +535,10 @@ priority does.
 
 ### Missing downstream means check upstream first
 
-Systems have a source of truth, configured in `dataFlows`: Canvas, Seesaw and
-Wonde are sourced from **Edumate**; Edumate enrolments come from **EnrolHQ**;
-ANZ and Calumo come from **Aurion**.
+Systems have a source of truth, configured in `dataFlows`: Canvas, Seesaw (via
+Wonde), SendHQ and Wonde are sourced from **Edumate**; Edumate enrolments come
+from **EnrolHQ**; ANZ and Calumo come from **Aurion**. SendHQ has no
+customer-side settings — the integration is entirely on the vendor side.
 
 When a record is *missing* from a downstream system — missing, wrong record
 type, access denied, not synchronising — the first question becomes whether it
@@ -559,6 +560,12 @@ Three gates keep this from becoming noise: it applies only to "not here"
 symptoms, never when both systems are already named in the ticket, and only to
 flows that carry that kind of record — EnrolHQ carries students, so a missing
 *staff* record in Edumate is not asked about EnrolHQ.
+
+**Two real cases show why this matters:**
+
+* **SendHQ/Mail Carers:** *“Update SendHQ to show parents with Mail Carers only from Edumate.”* The requester had never used SendHQ and did not know it has no customer-side settings. A bug on the SendHQ (vendor) side meant it was not reading the data correctly from Edumate. The vendor has since fixed the bug. The tool routes this to **Integration / API → Vendor / External Dependency** (`vendor bug`, `on SendHQ side`, `did not read correctly from Edumate`), suggests P3/P4 (resolved, no same-day block), and still asks the source-of-truth question: *“Is the record correct in Edumate, which SendHQ is synchronised from? If not, the vendor fix will keep reading the wrong source.”* Adding a SendHQ fix downstream would not have persisted. The `SendHQ → Edumate` flow entry is intentionally `critical: false` — a vendor-managed filter bug is not a corporation-wide payroll outage, but it is still a data remediation item.
+
+* **Seesaw SS/JS English:** *“Sync SS English and JS English to Seesaw.”* Neither class is a roll-call class, so neither ever flows Edumate → Wonde → Seesaw (manual entry is the workaround). SS English was not found in Edumate at all — no class name, teachers or students to work with — while JS English was. One working and one failing rules out a system-wide outage; the diagnosis is per-record upstream data. The tool detects `not synchronising` (`never synced from Edumate to Wonde`), `one found / one not` differential → **Problem Investigation** not Incident, and asks *“What is different about the record that failed?”* It also warns that a manual Seesaw entry for a class absent in Edumate has no source to sustain it and may need recreation once the Edumate record is corrected.
 
 ### One works and one does not, so it is not the system
 
@@ -776,6 +783,8 @@ consequence.
 | Canvas courses for term 3 not created for any school | P2 | All schools, no stated deadline |
 | Parent emails not delivered, 4000 queued | P3 | Delivery failure, scope unknown |
 | Archive the 2019 records when you have time | P4 | No consequence, no deadline |
+| Update SendHQ to show Mail Carers only (vendor bug, now fixed) | P3/P4 | Vendor-side integration, no customer settings, data not read correctly from Edumate — now resolved |
+| Sync SS/JS English to Seesaw — non-roll-call never flows Edumate→Wonde→Seesaw; SS English absent in Edumate | P3/P4 | Source-of-truth gap; manual Seesaw entry is workaround, but no source data for SS English to add |
 
 ### Wonde, Azure DevOps, Teams and databases
 
@@ -787,6 +796,8 @@ P1–P4 spread inside every platform:
 | Wonde has stopped sharing data with all 19 schools, today's Canvas rostering has stopped | P1 |
 | Wonde revoked for three schools, registrars entering changes manually for a few days | P2 |
 | One school's Wonde approval still pending, their new students missing from Seesaw | P3 |
+| SS/JS English not roll-call — never synced Edumate→Wonde→Seesaw, manual Seesaw entry only | P3/P4 |
+| SendHQ Mail Carers not read correctly from Edumate — vendor bug, no customer-side settings (now fixed) | P3/P4 |
 | Document how the Wonde approval process works | P4 |
 | Release pipeline deployed a broken build to production, enrolment API returning 500s for all schools | P1 |
 | All Azure DevOps pipelines failing on an expired service connection, payroll fix due Friday | P2 |

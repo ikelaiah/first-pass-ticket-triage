@@ -390,6 +390,22 @@ export const EXAMPLES = [
     text: 'The nightly backup of the Edumate database has failed for the last five nights.',
     expected: ['P2', 'P1'],
     note: 'Nothing is down - but the ability to recover from the next failure is gone.'
+  },
+  {
+    id: 'ex49',
+    title: 'SendHQ Mail Carers — vendor bug on vendor side (now fixed)',
+    group: 'Integration',
+    text: 'Update SendHQ to show parents with Mail Carers only from Edumate. I did not know what it meant as I never deal with SendHQ. Turned out, SendHQ has no settings for us to play with, and the integration setup are ALL COMPLETLY on SendHQ side! They did not read the data correctly from Edumate because SendHQ had a bug! The vendor has fixed this issue.',
+    expected: ['P3', 'P4'],
+    note: 'Integration/vendor bug — SendHQ reads Edumate incorrectly, no customer-side settings, fix on vendor side. Illustrates “integration setup is on the vendor side” and vendor-not-reading-correctly — now resolved, so low urgency despite data confusion. Source-of-truth question still applies (fix downstream won’t persist if upstream is wrong).'
+  },
+  {
+    id: 'ex50',
+    title: 'Seesaw SS/JS English — non-roll-call classes never synced via Wonde',
+    group: 'Real ticket wording',
+    text: 'Request from a school: I was told I could use Seesaw to share Photos with students and Parents safely; sync SS English and JS English to Seesaw. Neither of these classes are roll call classes, and hence never synced from Edumate to Wonde, and hence unable to show in Seesaw. So we had to tell the teacher to add the classes and students manually in Seesaw. SS English was not found in the School Edumate! Only JS English was found. Even if I were to help to add manually in Seesaw, I would have no info to work with! The actual name of the class, name of teachers, name of students?',
+    expected: ['P2', 'P3', 'P4'],
+    note: 'Seesaw via Wonde only carries roll-call classes — non-roll-call never flows Edumate→Wonde→Seesaw (manual entry is the workaround, reducing urgency but not impact). SS English absent in Edumate at all, so no source data exists — upstream fix required, downstream manual entry is transient and may be reversed. High impact comes from dataIntegrity/criticalIntegration even with one-school cohort; Low urgency from workaround/deferred need → P2 is defensible, single-class view is P3/P4.'
   }
 ];
 

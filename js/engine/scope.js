@@ -21,8 +21,8 @@ export function scopeLabel(id) {
   return def.label;
 }
 
-/** People counts: "35 casual staff" -> team. */
-const PEOPLE_COUNT = /\b(\d{1,4})\s+(?:casual\s+|part[- ]time\s+|full[- ]time\s+|new\s+|additional\s+|affected\s+)?(staff|users|employees|teachers|students|people|parents|accounts|timesheets|records|mailboxes|girls|boys|children|kids|pupils|applicants|enrolments|families)\b/g;
+/** People counts: "35 casual staff" -> team. Also "1847 records affected" -> cohort for batch data validation. */
+const PEOPLE_COUNT = /\b(\d{1,4})\s+(?:casual\s+|part[- ]time\s+|full[- ]time\s+|new\s+|additional\s+|affected\s+)?(staff|users|employees|teachers|students|people|parents|accounts|timesheets|records|mailboxes|girls|boys|children|kids|pupils|applicants|enrolments|families|treaties)\b/g;
 
 /** School counts: "three schools" is handled by phrases, "4 schools" here. */
 const SCHOOL_COUNT = /\b(\d{1,3})\s+schools\b/g;

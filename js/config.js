@@ -80,7 +80,8 @@ export const organisationConfig = {
       critical: false
     },
     sql: { name: 'SQL Server', aliases: ['sql server', 'ssms', 'sql'], critical: false },
-    powerautomate: { name: 'Power Automate', aliases: ['power automate', 'flow'], critical: false }
+    powerautomate: { name: 'Power Automate', aliases: ['power automate', 'flow'], critical: false },
+    sendhq: { name: 'SendHQ', aliases: ['sendhq', 'send hq'], critical: false }
   },
 
   /**
@@ -119,9 +120,14 @@ export const organisationConfig = {
     { downstream: 'canvas', source: 'edumate',
       note: 'Canvas courses, teachers and enrolments are synchronised from Edumate.' },
     { downstream: 'seesaw', source: 'edumate',
-      note: 'Seesaw classes and staff are synchronised from Edumate.' },
+      // Wonde only carries roll-call classes; non-roll-call classes (e.g. SS English)
+      // never flow to Wonde and so never appear in Seesaw. Manual entry is the workaround.
+      note: 'Seesaw classes are synchronised from Edumate via Wonde; only roll-call classes flow through Wonde.' },
     { downstream: 'wonde', source: 'edumate',
-      note: 'Wonde shares data that originates in Edumate.' },
+      note: 'Wonde shares data that originates in Edumate (roll-call classes and enrolments).' },
+    { downstream: 'sendhq', source: 'edumate',
+      entities: ['parent', 'parents', 'carer', 'carers', 'mail carers', 'mail carer'],
+      note: 'SendHQ parent and Mail Carer data is sourced from Edumate; integration setup is on the SendHQ (vendor) side and customer-side settings are not available.' },
     { downstream: 'edumate', source: 'enrolhq',
       // EnrolHQ carries student enrolments, not staff or timetable data.
       entities: ['student', 'students', 'enrolment', 'enrolments', 'application',
