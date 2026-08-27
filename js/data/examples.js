@@ -395,7 +395,7 @@ export const EXAMPLES = [
     id: 'ex49',
     title: 'SendHQ Mail Carers — vendor bug on vendor side (now fixed)',
     group: 'Integration',
-    text: 'Update SendHQ to show parents with Mail Carers only from Edumate. I did not know what it meant as I never deal with SendHQ. Turned out, SendHQ has no settings for us to play with, and the integration setup are ALL COMPLETLY on SendHQ side! They did not read the data correctly from Edumate because SendHQ had a bug! The vendor has fixed this issue.',
+    text: 'Update SendHQ to show parents with Mail Carers only from Edumate. SendHQ has no settings for us to play with, and the integration setup are ALL COMPLETLY on SendHQ side! They did not read the data correctly from Edumate because SendHQ had a bug! The vendor has fixed this issue.',
     expected: ['P3', 'P4'],
     note: 'Integration/vendor bug — SendHQ reads Edumate incorrectly, no customer-side settings, fix on vendor side. Illustrates “integration setup is on the vendor side” and vendor-not-reading-correctly — now resolved, so low urgency despite data confusion. Source-of-truth question still applies (fix downstream won’t persist if upstream is wrong).'
   },

@@ -114,10 +114,6 @@ function init() {
   dom.analyseBtn.addEventListener('click', analyseFresh);
   dom.clearBtn.addEventListener('click', clearAll);
   dom.exampleBtn.addEventListener('click', loadExample);
-  dom.exampleSelect.addEventListener('change', () => {
-    const example = exampleById(dom.exampleSelect.value);
-    if (example) dom.exampleNote.textContent = example.note;
-  });
   dom.refineReset.addEventListener('click', () => {
     refine.sync(analyse(state.text));
     reanalyse();
