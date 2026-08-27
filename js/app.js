@@ -78,7 +78,7 @@ function loadExample() {
   const example = exampleById(dom.exampleSelect.value) || EXAMPLES[0];
   dom.input.value = example.text;
   dom.exampleNote.textContent = example.note;
-  analyseFresh();
+  dom.input.focus();
 }
 
 function populateExamples() {

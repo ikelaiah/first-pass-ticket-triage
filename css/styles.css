@@ -270,6 +270,25 @@ select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in s
 }
 .example-picker select { width: auto; max-width: min(100%, 20rem); font-size: 0.92rem; }
 
+.example-note-wrap {
+  margin-top: 0.9rem;
+  padding: 0.65rem 0.85rem;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius-sm);
+}
+.example-note-kicker {
+  margin: 0 0 0.25rem;
+  font-size: 0.70rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+.example-note { margin: 0; }
+.kbd-hint { margin-top: 0.65rem; }
+
 .btn {
   font: inherit;
   font-weight: 600;

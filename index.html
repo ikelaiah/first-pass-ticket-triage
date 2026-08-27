@@ -71,8 +71,11 @@
         <button type="button" id="example-btn" class="btn">Try Example</button>
       </div>
     </div>
-    <p class="hint" id="example-note"></p>
-    <p class="hint muted">Press <kbd>Ctrl</kbd> + <kbd>Enter</kbd> in the box to analyse.</p>
+    <div class="example-note-wrap" aria-live="polite">
+      <p class="hint example-note-kicker"><span aria-hidden="true">ℹ️</span> About this example</p>
+      <p class="hint example-note" id="example-note"></p>
+    </div>
+    <p class="hint muted kbd-hint">Press <kbd>Ctrl</kbd> + <kbd>Enter</kbd> in the box to analyse.</p>
   </section>
 
   <!-- ----------------------------------------------------------- result -->
