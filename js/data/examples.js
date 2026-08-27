@@ -395,9 +395,9 @@ export const EXAMPLES = [
     id: 'ex49',
     title: 'SendHQ Mail Carers — vendor bug on vendor side (now fixed)',
     group: 'Integration',
-    text: 'Update SendHQ to show parents with Mail Carers only from Edumate. SendHQ has no settings for us to play with, and the integration setup are ALL COMPLETLY on SendHQ side! They did not read the data correctly from Edumate because SendHQ had a bug! The vendor has fixed this issue.',
+    text: 'Update SendHQ to show parents with Mail Carers only from Edumate',
     expected: ['P3', 'P4'],
-    note: 'Integration/vendor bug — SendHQ reads Edumate incorrectly, no customer-side settings, fix on vendor side. Illustrates “integration setup is on the vendor side” and vendor-not-reading-correctly — now resolved, so low urgency despite data confusion. Source-of-truth question still applies (fix downstream won’t persist if upstream is wrong).'
+    note: 'Original ticket quoted above only. Follow-up explanation (outside quotes) was: SendHQ has no customer-side settings — integration is entirely on the vendor side; they did not read correctly from Edumate due to a vendor bug, now fixed. Engine learns “no settings for us / on SendHQ side / did not read correctly / vendor bug” but keeps ticket text to quoted request only — so triage stays P3/P4 (service request, one-school, no stated deadline). Source-of-truth still applies.'
   },
   {
     id: 'ex50',
@@ -419,9 +419,9 @@ export const EXAMPLES = [
     id: 'ex52',
     title: 'Newsletter automation down — PowerAutomate + SIS → SharePoint (2 months, wider community missed)',
     group: 'Integration',
-    text: 'Newsletter automation for a school is down! This was based on PowerAutomate reading SIS database, and create news pages in SharePoint! So this Newsletter has been down for sometime, so only those who login to SIS see the news, but the wider school community have missed it for at least 2 months now. I am working on a solution, a slow one.',
+    text: 'Newsletter automation for a school is down! (has been down for weeks!)',
     expected: ['P2', 'P3'],
-    note: 'IT Applications integration: no system named initially (detection challenge), actually PowerAutomate (now alias powerautomate) + SIS (=Edumate) → SharePoint (M365). One-school scope but high duration/visibility gap (2 months, wider community missed vs SIS-only users) — High impact despite single school. No user workaround (community cannot self-serve), slow manual fix in progress → Medium urgency. Routes to Scheduled Job / Automation + Collaboration, not generic Application Availability. Tests hidden-dependency (no system mentioned) and long-running degradation vs outage distinction.'
+    note: 'Quoted ticket only — as you clarified, no system was mentioned initially. Explanation outside quotes: actually PowerAutomate reading SIS (=Edumate) → SharePoint news; down for weeks/2 months so only SIS logins see news, wider school community missed; you are working on a slow fix. Engine must infer automation via “newsletter automation” + one-school scope without inventing system, then rise to P2 via duration/impact if “wider community missed” is evidenced. Note now holds the hidden-dependency detail, ticket stays quoted request only.'
   },
   {
     id: 'ex53',
