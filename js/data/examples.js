@@ -397,7 +397,7 @@ export const EXAMPLES = [
     group: 'Integration',
     text: 'Update SendHQ to show parents with Mail Carers only from Edumate',
     expected: ['P3', 'P4'],
-    note: 'Original ticket quoted above only. Follow-up explanation (outside quotes) was: SendHQ has no customer-side settings — integration is entirely on the vendor side; they did not read correctly from Edumate due to a vendor bug, now fixed. Engine learns “no settings for us / on SendHQ side / did not read correctly / vendor bug” but keeps ticket text to quoted request only — so triage stays P3/P4 (service request, one-school, no stated deadline). Source-of-truth still applies.'
+    note: 'Service request to filter SendHQ to Mail Carers from Edumate. Vendor-managed integration with no customer-side settings — now resolved, so low urgency. Source-of-truth question still applies.'
   },
   {
     id: 'ex50',
@@ -421,7 +421,7 @@ export const EXAMPLES = [
     group: 'Integration',
     text: 'Newsletter automation for a school is down! (has been down for weeks!)',
     expected: ['P2', 'P3'],
-    note: 'Quoted ticket only — as you clarified, no system was mentioned initially. Explanation outside quotes: actually PowerAutomate reading SIS (=Edumate) → SharePoint news; down for weeks/2 months so only SIS logins see news, wider school community missed; you are working on a slow fix. Engine must infer automation via “newsletter automation” + one-school scope without inventing system, then rise to P2 via duration/impact if “wider community missed” is evidenced. Note now holds the hidden-dependency detail, ticket stays quoted request only.'
+    note: 'One-school newsletter outage; automation reads SIS (Edumate) and publishes to SharePoint. Down weeks with wider community missing news — high impact despite single school. Slow fix in progress.'
   },
   {
     id: 'ex53',
