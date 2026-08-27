@@ -787,6 +787,10 @@ consequence.
 | Sync SS/JS English to Seesaw — non-roll-call never flows Edumate→Wonde→Seesaw; SS English absent in Edumate | P3/P4 | Source-of-truth gap; manual Seesaw entry is workaround, but no source data for SS English to add |
 | Helpdesk is down — ticketing system for IT/Payroll/schools, restored after admin restarted server | P2/P3 | ITSM outage, corporation-wide scope but not payroll/teaching blocker; admin fix is recovery not user workaround — P1 only if still blocking payroll cutoff or live incident |
 | Newsletter automation for a school is down — PowerAutomate (SIS/Edumate) → SharePoint news, 2 months wider community missed, slow fix in progress | P2/P3 | One school, but long outage with community-wide visibility gap; no system named initially — hidden dependency; P2 for duration/impact, P3 if workaround via SIS-only view is tolerated |
+| How do I add a task in Azure DevOps User Story? (brief instruction given) | P4 | Documentation/how-to, devops-cicd domain; no failure — P4 even though Azure DevOps is in the text |
+| Retrieve person info urgently for risk team — python script lookup | P2/P3 | Service request, individual scope, urgency via “urgently for risk team”, scripting-terminal domain; P2 if today deadline, P3 if next days |
+| Statement of Service table outdated — update from files, database trigger sync | P3/P4 | Data remediation, reference table refresh via files + trigger updates; small scope, no data loss — P3/P4 |
+| Clipboard timesheet uploaded in SharePoint — extracurricular CSV import for payroll | P2/P3 | Payroll-adjacent (extracurricular), SharePoint CSV → Clipboard → Aurion/Ascender; cryptic request needs multi-step import; P3 without stated cutoff, P2 if “get paid on time” implies today/fortnightly cutoff and manual steps have no workaround |
 
 ### Wonde, Azure DevOps, Teams and databases
 
@@ -801,6 +805,7 @@ P1–P4 spread inside every platform:
 | SS/JS English not roll-call — never synced Edumate→Wonde→Seesaw, manual Seesaw entry only | P3/P4 |
 | SendHQ Mail Carers not read correctly from Edumate — vendor bug, no customer-side settings (now fixed) | P3/P4 |
 | Newsletter automation down — PowerAutomate reading SIS → SharePoint news, 2 months, wider community missed, slow fix | P2/P3 |
+| Clipboard timesheet in SharePoint — extracurricular CSV import to payroll (Clipboard) | P2/P3 |
 | Document how the Wonde approval process works | P4 |
 | Release pipeline deployed a broken build to production, enrolment API returning 500s for all schools | P1 |
 | All Azure DevOps pipelines failing on an expired service connection, payroll fix due Friday | P2 |

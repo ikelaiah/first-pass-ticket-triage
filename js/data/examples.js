@@ -422,6 +422,38 @@ export const EXAMPLES = [
     text: 'Newsletter automation for a school is down! This was based on PowerAutomate reading SIS database, and create news pages in SharePoint! So this Newsletter has been down for sometime, so only those who login to SIS see the news, but the wider school community have missed it for at least 2 months now. I am working on a solution, a slow one.',
     expected: ['P2', 'P3'],
     note: 'IT Applications integration: no system named initially (detection challenge), actually PowerAutomate (now alias powerautomate) + SIS (=Edumate) → SharePoint (M365). One-school scope but high duration/visibility gap (2 months, wider community missed vs SIS-only users) — High impact despite single school. No user workaround (community cannot self-serve), slow manual fix in progress → Medium urgency. Routes to Scheduled Job / Automation + Collaboration, not generic Application Availability. Tests hidden-dependency (no system mentioned) and long-running degradation vs outage distinction.'
+  },
+  {
+    id: 'ex53',
+    title: 'How to add a task in Azure DevOps User Story — brief instruction given',
+    group: 'Documentation',
+    text: 'How do I add a task in a Azure DevOps User Story? I gave a brief instruction on linking a task to the story in Azure Boards.',
+    expected: ['P4'],
+    note: 'How-to/documentation: user asks how to add a task in an Azure DevOps User Story (Boards). Instruction already given. No failure, no deadline, no data loss — P4. Routes to DevOps / CI-CD + Documentation, not Incident. Tests O365/Azure DevOps/Confluence-adjacent how-to detection.'
+  },
+  {
+    id: 'ex54',
+    title: 'Retrieve person info urgently for risk team — python script lookup',
+    group: 'Service Request',
+    text: 'Retrieve information about this person urgently for risk team. I had to run a python script to track down staff in question and provide details to the risk team.',
+    expected: ['P2', 'P3'],
+    note: 'Service request / data extract for risk team with stated urgency. Work type service-request (retrieve information) via python script / scripting-terminal domain. Urgency Medium-High due to “urgently for risk team” but scope individual (one person) and no payroll/safety block — P2 if risk-team deadline is today, P3 if next days. No privacy flag unless personal data exposed beyond request. Tests risk-team service request + python/powershell/bash routing.'
+  },
+  {
+    id: 'ex55',
+    title: 'Statement of Service table outdated — update from files',
+    group: 'Data quality',
+    text: 'Statement of Service table is outdated, please update with the following files: file1, file2, etc. Database trigger updates will handle the downstream sync.',
+    expected: ['P3', 'P4'],
+    note: 'Data remediation / service request: Statement of Service reference table outdated, update from supplied files. Work type data-remediation (table is outdated, please update, database trigger updates). No deadline, no data loss, small scope — P3/P4. Triggers already-correct “database trigger” phrase in data-pipeline/database domains. Tests statement-of-service + file-driven table refresh pattern for education data warehousing (Wherescape/Aquia/PortalHQ).'
+  },
+  {
+    id: 'ex56',
+    title: 'Clipboard timesheet uploaded in SharePoint — extracurricular pay import',
+    group: 'Payroll',
+    text: 'Hi, we have uploaded a clipboard timesheet in SharePoint. Clipboard is our extracurricular management and timesheets system. Staff upload periodical timesheets as a CSV file for import into the payroll system. There are a number of steps that I have to take to make sure the people in the csv file will get paid on time.',
+    expected: ['P2', 'P3'],
+    note: 'Cryptic payroll-adjacent request: “clipboard timesheet in SharePoint” sounds cryptic but is a multi-step CSV import from Clipboard (extracurricular) via SharePoint into Aurion/Ascender. Scope is a team/cohort of extracurricular staff, no explicit deadline — but “will get paid on time” implies payroll cutoff urgency. Without a stated cutoff it stays P3; with a same-day/fortnightly payroll cutoff and no automated workaround (manual steps required) it rises to P2/High urgency + payroll risk. Tests Clipboard system detection (extracurricular), SharePoint/CSV ingestion, and “get paid on time” unpaid-risk trigger without asserting “urgent”.'
   }
 ];
 
