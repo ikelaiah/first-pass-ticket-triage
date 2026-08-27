@@ -33,9 +33,7 @@ That is the entire lifecycle. When you press **Clear**, refresh the tab, navigat
 close the browser, the text is gone. There is no undo, no history and no draft recovery,
 because nothing is saved anywhere.
 
-The application does not call `localStorage`, `sessionStorage` or IndexedDB. Should an
-opt-in save feature ever be added, it would be explicit, off by default, and documented
-here.
+The application only writes the theme preference (`localStorage` key `theme` = `auto`/`light`/`dark`) and only if you use the System/Light/Dark switcher. Ticket text is never written to `localStorage`, `sessionStorage` or IndexedDB. Should an opt-in ticket-save feature ever be added, it would be explicit, off by default, and documented here.
 
 ---
 
@@ -109,7 +107,7 @@ Check for storage:
 grep -rniE "localStorage|sessionStorage|indexedDB|document\.cookie" index.html css js
 ```
 
-No matches.
+The only `localStorage` hit is the theme switcher (`theme` = `auto`/`light`/`dark` in `js/app.js`) — no ticket content, no `sessionStorage`, no `indexedDB`, no `document.cookie`.
 
 An automated version of these checks runs as part of the test suite
 (`node tests/run.mjs`) and fails if any network call, remote asset or beacon is ever

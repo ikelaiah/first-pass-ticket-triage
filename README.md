@@ -25,6 +25,8 @@ loads no external font, script or stylesheet, and writes nothing to `localStorag
 
 Ticket text lives in memory only and disappears when you refresh or close the tab.
 
+Ticket text lives in memory only and disappears when you refresh or close the tab. The only key ever written to `localStorage` is the theme preference (`theme` = `auto`/`light`/`dark`).
+
 See [PRIVACY.md](PRIVACY.md) for how to verify this yourself in about a minute.
 
 ---
@@ -60,7 +62,7 @@ The engine is tuned for school-sector IT support. It recognises:
 | Area | Covered wording |
 | ---- | --------------- |
 | **Devices** | Intune/MDM, Chromebooks, iPads, BYOD, device enrolment, lockdown browsers, imaging |
-| **Systems** | Canvas, Seesaw, Edumate, EnrolHQ, Wonde, Laserfiche, Power BI, Entra ID, Aurion, ANZ/ABA, Calumo, Microsoft 365, Microsoft Teams, Azure DevOps, SQL Server, IBM DB2, PostgreSQL, SQLite, Power Automate, helpdesk/ITSM |
+| **Systems** | Canvas, Seesaw, Edumate, EnrolHQ, Wonde, Laserfiche, Power BI, Entra ID, Aurion, Ascender Pay, ANZ/ABA, Calumo, Clipboard, Microsoft 365, Outlook, Office suite, Microsoft Copilot, Microsoft Teams, Google Classroom, Canva, SoundTrap, Flexischools, CompliSpace, Moodle, ReadSpeaker, Clever, PortalHQ, Wherescape, Inlogik, APValet, FatZebra, Tyro, BPay, Azure DevOps, SQL Server, SQL Server Management Studio, DBeaver, IBM DB2, PostgreSQL, SQLite, Power Automate, PowerShell, Python, Bash/Linux terminal, Confluence, helpdesk/ITSM |
 | **DevOps** | Azure Repos / Pipelines / Boards, build and release failures, broken builds in production, expired service connections, offline agents, blocked pull requests, branch policies, merge conflicts, work items |
 | **Collaboration** | Teams meetings and calls, join failures, audio/video, screen sharing, channels, class teams, guest access, recordings |
 | **Databases** | SQL Server, DB2 (SQLCODE, tablespaces, deadlocks), PostgreSQL (replication lag, vacuum, connection pools, "relation does not exist"), SQLite (locked database, malformed file) |
@@ -68,7 +70,12 @@ The engine is tuned for school-sector IT support. It recognises:
 | **Certificates** | expired vs expiring certificates, SSL/TLS errors, client secrets, API keys, licences |
 | **Integration** | sync stopped, partial batches, retry backlogs, API 401/403/500, rate limits, vendor outages, staging pipelines |
 | **Data quality** | duplicates, bad merges, wrong carers/guardians, wrong year level, wrong photo, incorrect amounts, values flip-flopping between syncs, corruption spreading downstream |
-| **Money** | payroll, timesheets, ABA files, superannuation, school fees, advance payments, fee balances, receipts, refunds, over/underpayment |
+| **Education apps** | Google Classroom, Canva, SoundTrap, Flexischools, CompliSpace, Moodle, ReadSpeaker, Clever |
+| **AI** | Microsoft Copilot |
+| **Payments gateway** | Inlogik, APValet, FatZebra, Tyro, BPay, Ascender Pay |
+| **Data warehouse** | Wherescape, PortalHQ, Aquia Data Studio |
+| **Scripting / Terminal** | Bash, Git Bash, Linux, PowerShell, Python, DBeaver, SQL Server Management Studio, Confluence, database triggers |
+| **Money** | payroll, timesheets, Clipboard (extracurricular), ABA files, superannuation, school fees, advance payments, fee balances, receipts, refunds, over/underpayment |
 | **Safety** | allergies, anaphylaxis, medical alerts, health care plans, medication, first aid, evacuation alarms, intercom/PA, lockdown, duress, emergency calls, excursions, bus runs |
 | **Legal** | court orders, parenting orders, custody and non-custodial arrangements, AVOs, "must not see", restricted parties who still have access |
 | **Security incidents** | phishing clicks, credential compromise, suspicious sign-ins, impossible travel, mailbox rules, lost or stolen devices, unapproved OAuth consent to student data |
