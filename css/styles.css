@@ -370,10 +370,10 @@ select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in s
   letter-spacing: 0.08em;
   color: var(--muted);
 }
-.banner-priority { margin: 0.15rem 0 0.2rem; font-size: clamp(1.5rem, 1.1rem + 2vw, 2.1rem); font-weight: 700; }
+.banner-priority { margin: 0.15rem 0 0.2rem; font-size: clamp(1.7rem, 1.2rem + 2vw, 2.45rem); font-weight: 800; letter-spacing: -0.02em; line-height: 1.1; }
 .banner-code { color: var(--p-color); }
-.banner-name { font-size: 0.55em; letter-spacing: 0.06em; }
-.banner-headline { margin: 0; color: var(--muted); font-size: 0.95rem; }
+.banner-name { font-size: 0.5em; letter-spacing: 0.04em; text-transform: uppercase; font-weight: 650; }
+.banner-headline { margin: 0; color: var(--muted); font-size: 0.95rem; line-height: 1.45; max-width: var(--max-read); }
 .banner-side { text-align: right; }
 .refined-tag { margin: 0.4rem 0 0; font-size: 0.8rem; }
 
@@ -409,67 +409,84 @@ select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in s
 .hero-levels {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem 2rem;
+  gap: 0.6rem 1rem;
   list-style: none;
   padding: 0;
   margin: 0.9rem 0 0.75rem;
 }
-.hero-levels li { display: flex; flex-direction: column; margin: 0; }
+.hero-levels li {
+  display: flex; flex-direction: column; margin: 0;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.4rem 0.7rem;
+  min-width: 7rem;
+}
 .level-key {
-  font-size: 0.7rem;
+  font-size: 0.65rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--muted);
 }
-.level-value { font-size: 1.15rem; font-weight: 650; line-height: 1.2; }
+.level-value { font-size: 1.05rem; font-weight: 700; line-height: 1.2; }
 .level-high .level-value { color: var(--p1); }
 .level-medium .level-value { color: var(--p2); }
 .level-low .level-value { color: var(--muted); }
 .band-low .level-value { color: var(--p2); }
 
 /* The matrix, small, beside the verdict. */
-.mini-matrix { display: flex; flex-direction: column; gap: 0.35rem; }
+.mini-matrix { display: flex; flex-direction: column; gap: 0.35rem; align-items: center; }
 .mini-grid {
   display: grid;
-  grid-template-columns: repeat(3, 2.35rem);
-  grid-auto-rows: 2.35rem;
+  grid-template-columns: repeat(3, 2.85rem);
+  grid-auto-rows: 2.85rem;
   gap: 1px;
   padding: 1px;
   background: var(--border-strong);
-  border-radius: 6px;
+  border-radius: 8px;
   overflow: hidden;
+  box-shadow: var(--shadow);
 }
 .mini-cell {
   display: flex;
   align-items: center;
   justify-content: center;
   background: var(--surface);
-  font-size: 0.75rem;
+  font-size: 0.78rem;
   font-weight: 700;
   color: transparent;
 }
 .mini-cell.is-current {
   background: var(--p-color);
   color: var(--surface);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--p-color) 30%, transparent);
 }
 .mini-caption {
-  font-size: 0.65rem;
-  letter-spacing: 0.04em;
+  font-size: 0.62rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   color: var(--muted);
   text-align: center;
 }
 
 /* The pasteable one-liner, directly under the verdict. */
 .justification-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
   margin: 0.85rem 0 0;
-  padding: 0.7rem 0.85rem;
-  border: 1px dashed var(--border-strong);
+  padding: 0.65rem 0.75rem 0.65rem 0.85rem;
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--p-color, var(--accent));
   border-radius: var(--radius-sm);
   background: var(--surface-2);
-  font-size: 0.88rem;
+  font-size: 0.85rem;
   color: var(--muted);
-  user-select: all;
+  line-height: 1.45;
 }
+.justification-text { flex: 1 1 auto; user-select: all; }
+.justification-copy { flex: 0 0 auto; }
 
 .unassessed {
   margin-top: 1rem;
