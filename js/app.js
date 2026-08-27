@@ -50,7 +50,9 @@ function analyseFresh() {
   refine.sync(state.result);
   render(false);
   if (!state.result.empty) {
-    dom.result.scrollIntoView({ block: 'nearest', behavior: 'auto' });
+    requestAnimationFrame(() => {
+      dom.result.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    });
   }
 }
 
