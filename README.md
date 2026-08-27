@@ -207,6 +207,22 @@ downloaded. Check `Get-ExecutionPolicy -List` first — if `MachinePolicy` or
 In VS Code, the **Live Server** extension works too: right-click `index.html` →
 *Open with Live Server*.
 
+### 🛑 Stopping the server
+
+Press <kbd>Ctrl</kbd> + <kbd>C</kbd> in the terminal, or close the terminal window.
+
+If a server is ever left running, **find it by command line, not by port**:
+
+```powershell
+Get-CimInstance Win32_Process -Filter "Name='powershell.exe'" |
+  Where-Object { $_.CommandLine -like '*serve.ps1*' } |
+  ForEach-Object { Stop-Process -Id $_.ProcessId -Force }
+```
+
+⚠️ Do not look up "what owns port 8000" and stop that. It reports as **`System`,
+PID 4** — the Windows kernel HTTP driver that `HttpListener` runs behind. Killing it
+bluescreens the machine.
+
 > 🛠️ `serve.bat` and `serve.ps1` are development conveniences only. Neither is part of
 > the application and neither is deployed — the published site is plain static files.
 
