@@ -48,7 +48,7 @@ documentation and a five-axis review.
 ### Phase 4: Release and review
 
 - [x] Update README, framework, version metadata, changelog, and architecture decision.
-- [ ] Run syntax, tests, privacy scan, source hygiene, and five-axis review.
+- [x] Run syntax, tests, privacy scan, source hygiene, and five-axis review.
 
 ## Risks and mitigations
 

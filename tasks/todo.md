@@ -7,4 +7,4 @@
 - [x] Add explicit assessed/unassessed result fields.
 - [x] Add the offline labelled-corpus evaluator and fixture schema.
 - [x] Update v0.4.0 documentation and release notes.
-- [ ] Run full tests, privacy scan, syntax, diff hygiene, and code review.
+- [x] Run full tests, privacy scan, syntax, diff hygiene, and code review.
