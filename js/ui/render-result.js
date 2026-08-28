@@ -258,7 +258,9 @@ function eightQuestionsPanel(result) {
   };
   // Determine state per facet
   const i1State = f.i1Scope.explicit ? 'answered' : 'unknown';
-  const i2State = f.i2Blocked.blockedProcess ? 'answered' : (f.i2Blocked.quote ? 'inferred' : 'unknown');
+  const i2State = f.i2Blocked.blockedProcess
+    ? (f.i2Blocked.blockedProcess.inferred ? 'inferred' : 'answered')
+    : (f.i2Blocked.quote ? 'inferred' : 'unknown');
   const i3 = f.i3Irreversibility; const hasIrrev = i3.risks.length > 0 || i3.modifiers.exposureActive || i3.modifiers.propagating;
   const i3State = hasIrrev ? 'answered' : 'unknown';
   const i3Ans = i3.answer;

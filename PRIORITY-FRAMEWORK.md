@@ -95,7 +95,7 @@ Priority is not judged from a symptom alone. It is judged from eight evidence qu
 | # | Question | What it captures | How the engine reads it | Effect on scoring |
 |---|---|---|---|---|
 | **I1** | Who and how many are affected — one person, a team, a cohort, one school, several, or all 19? | Scope breadth. The largest single impact contributor, and the one most often left out. | `js/engine/scope.js` + `js/data/phrases.js:SCOPE_PHRASES` (`SCOPE_DEFINITIONS` rank 0–8, `impactWeight` 0–4.25). Numbers parsed (`35 casual staff` → team `scope.js:30`, `4 schools` → multiple `scope.js:37`) and broadest credible scope wins. Unknown lowers confidence `js/engine/confidence.js:61`. | Impact weight `js/engine/impact.js:61` +1.75 for `allUsers`. `Unknown → Low confidence` and first follow-up. |
-| **I2** | What can they not do right now that they could do yesterday? | The blocked business process, not the symptom. "Canvas is slow" and "teachers cannot mark the roll" are different tickets. | `js/data/phrases.js:BLOCKED_PHRASES` + `BLOCKED_PROCESS_PHRASES` (`can not mark the roll` `phrases.js`) paired with `js/engine/symptom.js` + `js/engine/domain.js`. Extracted as `blockedProcess` `js/engine/analyzer.js:detectBlockedProcess`. | Shown in panel and reasoning `js/engine/analyzer.js:buildReasoning`; no separate numeric weight — symptom/domain already score, but clarifies consequence and drives the next question. |
+| **I2** | What can they not do right now that they could do yesterday? | The blocked business process, not the symptom. "Canvas is slow" and "teachers cannot mark the roll" are different tickets. | `js/data/phrases.js:BLOCKED_PHRASES` + `BLOCKED_PROCESS_PHRASES` (`can not mark the roll` `phrases.js`) paired with `js/engine/symptom.js` + `js/engine/domain.js`. Configured system-status consequences in `js/config.js:statusConsequences` can add an explicitly inferred process — for example, an Edumate `public contact` is excluded from class rolls and downstream education-system sync. Extracted as `blockedProcess` `js/engine/analyzer.js:detectBlockedProcess`. | Shown in panel and reasoning `js/engine/analyzer.js:buildReasoning`; no separate numeric weight — symptom/domain already score, but clarifies consequence and drives the next question. A potential billing effect remains a follow-up, not a confirmed financial incident. |
 | **I3** | Is anything wrong, exposed, lost, or unsafe — as opposed to merely unavailable? | The irreversibility test: bad data, money, privacy, safeguarding, safety. Wrong information is more dangerous than absent information, and this is the question that legitimately makes one affected student a P1. | `js/engine/risks.js` `RISK_DEFINITIONS` (`payroll`, `financial`, `privacy`, `safety`, `safeguarding`, `compliance`, `dataIntegrity`) + risk modifiers (`exposureActive`, `propagating`, `unpaidRisk`) `js/data/phrases.js:RISK_MODIFIERS`. Gated so "contains PII" alone ≠ incident `js/engine/risks.js:111`. | `js/engine/impact.js:121` payroll +0.75, `privacy` +0.75, `exposureActive` +1.5, `safety` +1, etc. `analyzer.js:applyRiskModifiers` may raise Impact and Urgency to High (e.g. active exposure `analyzer.js:256`, safety today `analyzer.js:273`). |
 | **I4** | Is it contained, or is it spreading, recurring, or of unknown extent? | One bad record is remediation; a trigger writing bad records across every school is an emergency. Note this raises impact, not urgency — a recurring fault whose known instances are all corrected is high impact and low urgency. | `js/engine/containment.js` + `js/data/phrases.js:CONTAINED_PHRASES` (`contained to one family`, `not spreading`), `RISK_MODIFIERS.propagating` (`propagat`, `spreading` `phrases.js:989`), `RECURRENCE_PHRASES` (`keeps scrambling` `phrases.js:1059`), `UNDETECTED_PHRASES` (`we do not pick up` `phrases.js:1074`). | `js/engine/impact.js:93` recurrence +1, undetected +1.25, propagating +1.5 (impact, not urgency). Contained is informational — panel shows `appears contained`; no numeric discount. A contained recurring fault is P2 latent, not P1 `PRIORITY-FRAMEWORK.md:189`. |
 | **U5** | When do you need this by? | The anchor. Everything else calibrates it. | `js/engine/deadline.js` `DEADLINE_BUCKETS` now(6,3.5) › today(5,3) › tomorrow(4,1.75) › 2–5d(3,1.25) › 1–2w(2,0.25) › none › unknown. `COMMITMENT_MARKERS` + `isObservationOnly` `deadline.js:52` separates "Today we discover…" (timestamp) from "must be rerun today" (commitment). | Urgency weight `js/engine/urgency.js:68` (`today` +3, `days-2-5` +1.25). `unknown` lowers confidence `confidence.js:65` and becomes first urgency question. |
@@ -892,9 +892,10 @@ range, the test accepts the range rather than pretending there is one right answ
 
 ## 21. Manual refinement
 
-The analyst can confirm any of scope, workaround, deadline, impact, urgency and the
-critical-risk flags. The priority recalculates immediately, the card is marked
-*Manually refined*, and confidence rises because a human has supplied the facts.
+The analyst can confirm any of scope, workaround, deadline, containment, deadline
+driver, harm timing, impact, urgency and the critical-risk flags. Decision-relevant
+answers recalculate the priority immediately, the card is marked *Manually refined*,
+and confidence rises because a human has supplied the facts.
 
 Only controls that have actually been changed are treated as overrides, so a detected
 value is never silently promoted to a confirmed one.
@@ -944,3 +945,37 @@ These comparisons support the existing architecture and matrix discipline. They 
 exposed parsing gaps now covered by tests: plural *"crashes,"* conditional
 *"whenever"* versus *"whenever you can,"* Mac how-to wording, installation requests,
 alternative-device workarounds, and unrelated text containing fake priority claims.
+
+---
+
+## 24. Current decision context (v0.4.0)
+
+Priority is calculated from the current asserted situation, not every incident-shaped
+sentence in a pasted thread. Before evidence detection, strong explicit cues classify
+the text as active/unspecified, resolved, or planned/test:
+
+- A current resolution supersedes an older failure description.
+- Quoted earlier messages are retained as context but excluded from scoring.
+- Simulations, disaster-recovery exercises, design requirements and explicit test cases
+  do not count as live incidents.
+- A later explicit recurrence (for example, *"fixed this morning but down again"*)
+  reopens the incident and is scored normally.
+
+Ambiguous wording is not discarded. Without a strong inactive cue, the engine keeps the
+text in the active/unspecified path and asks the analyst to confirm missing facts.
+
+## 25. Assessment status and measured accuracy (v0.4.0)
+
+An analysis now separates the internal matrix result from the actionable suggestion:
+
+- `assessmentStatus: "assessed"` carries `suggestedPriority: "P1"` through `"P4"`.
+- `assessmentStatus: "unassessed"` carries `suggestedPriority: null`.
+- `priority` remains the internal matrix result for compatibility and explanation; it
+  must not be treated as an actionable suggestion when the status is unassessed.
+
+The offline evaluator accepts independently labelled JSON fixtures and reports exact
+priority accuracy, impact and urgency accuracy, assessed coverage, P1 precision and
+recall, dangerous under-prioritisation, abstentions, and a confusion matrix. The
+checked-in corpus is a schema example and regression gate, not evidence of production
+accuracy. Meaningful calibration requires anonymised historical tickets labelled by
+independent triagers and a holdout set that is not used to tune weights.

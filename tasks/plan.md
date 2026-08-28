@@ -1,59 +1,66 @@
-# Implementation Plan: Application-support triage accuracy
+# Implementation Plan: v0.4.0 priority accuracy
 
 ## Overview
 
-Calibrate the existing deterministic engine without changing its priority matrix.
-First protect the input boundary, then expand common support-language coverage, and
-finally document the external comparison and remaining limitations.
+Deliver accuracy improvements in risk-first slices: first make analyst-confirmed facets
+authoritative, then prevent inactive text from driving an active incident, then add a
+repeatable offline evaluation boundary and explicit unassessed state. Finish with release
+documentation and a five-axis review.
 
 ## Architecture decisions
 
-- Keep the existing evidence -> impact/urgency -> matrix pipeline.
-- Define relevance from support evidence, excluding scope, deadlines, and claimed
-  urgency because those words can appear in unrelated or manipulative text.
-- Treat unrecognised text as unassessed and force its matrix inputs to Low/Low, while
-  retaining P4 for compatibility with the current result model.
-- Extend phrase data for wording variants; change engine code only for relevance,
-  confidence, and explanation behavior.
+- Keep the P1-P4 matrix unchanged and improve only its evidence inputs.
+- Represent document context as a preprocessing result used by all existing detectors,
+  rather than adding inactive-language checks to every phrase dictionary.
+- Preserve inactive text in the result for explanation, but exclude it from automatic
+  scoring.
+- Keep `priority` compatible for assessed tickets; expose `suggestedPriority: null` and
+  `assessmentStatus: unassessed` when there is not enough support context.
+- Make the evaluation harness generic and dependency-free; do not ship real ticket data.
 
 ## Task list
 
-### Phase 1: Input boundary
+### Phase 1: Decision facets
 
-- [x] Add adversarial and out-of-scope regression tests.
-- [x] Add explicit relevance assessment and low-confidence unassessed handling.
+- [x] Add failing tests for containment, deadline-driver, and harm-timing refinements.
+- [x] Feed effective facet values into impact, urgency, modifiers, and simulation.
 
-### Checkpoint: Input boundary
+### Checkpoint: facets
 
-- [x] Exact nuisance cases stay P4 and are visibly unassessed.
-- [x] Existing generic-but-valid incident behavior is preserved.
+- [x] Focus tests pass and existing refinement behaviour remains green.
 
-### Phase 2: Support-language coverage
+### Phase 2: Current incident context
 
-- [x] Recognise how-to uncertainty, Mac endpoints, application crashes, installation
-  requests, claimed priorities, and sustainable alternative-device workarounds.
-- [x] Add source-calibrated application-support scenarios.
+- [x] Add contrast tests for resolved updates, quoted history, hypotheses, design text,
+  exercises, and UAT/test scenarios.
+- [x] Add a pure context preprocessor and score only active asserted clauses.
+- [x] Explain ignored inactive context in the result.
 
-### Checkpoint: Coverage
+### Checkpoint: context
 
-- [x] Focus cases and full suite pass.
-- [x] No P1-P4 values are introduced outside the matrix.
+- [x] New contrasts and the complete regression suite pass.
 
-### Phase 3: Documentation and review
+### Phase 3: Measured accuracy
 
-- [x] Record external calibration in `PRIORITY-FRAMEWORK.md`.
-- [x] Review correctness, readability, architecture, security, and performance.
-- [x] Run syntax, whitespace, full-suite, and privacy checks.
+- [x] Add explicit assessed/unassessed output semantics.
+- [x] Add corpus schema, evaluator, metrics, and evaluator self-tests.
+
+### Phase 4: Release and review
+
+- [x] Update README, framework, version metadata, changelog, and architecture decision.
+- [x] Run syntax, tests, privacy scan, source hygiene, and five-axis review.
 
 ## Risks and mitigations
 
 | Risk | Impact | Mitigation |
 | --- | --- | --- |
-| Relevance gate rejects terse real incidents | High | A recognised symptom alone remains support evidence |
-| New phrases create false positives | Medium | Add nearby negative/counterexample tests |
-| External frameworks use different P scales | Medium | Calibrate concepts, not copy their numeric matrix |
-| Presentation behavior becomes hard to explain | Medium | Keep evidence and modifier reasoning explicit |
+| Context filtering hides a real incident | High | Require strong inactive cues and add active counterexamples |
+| A current `resolved` word suppresses an unresolved incident | High | Scope status to clauses and prefer the latest explicit update |
+| Manual facets create unconditional escalation | Medium | Gate them to matching risks and preserve matrix policy |
+| Compatibility break for existing UI | Medium | Add fields; keep assessed-ticket `priority` unchanged |
+| Metrics imply unsupported accuracy | Medium | Ship only schema/example fixtures and document corpus limits |
 
 ## Open questions
 
-- None blocking; the existing four-level organisational matrix remains authoritative.
+- None blocking for implementation. Real calibration numbers require a future labelled
+  corpus supplied by the organisation.

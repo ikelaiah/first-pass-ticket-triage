@@ -180,6 +180,24 @@ export const organisationConfig = {
   ],
 
   /**
+   * Organisation-specific meanings of a system status. These are inferred
+   * consequences, not wording supplied by the requester, so the UI labels
+   * them accordingly and asks the analyst to confirm any time-critical effect.
+   */
+  statusConsequences: [
+    {
+      system: 'edumate',
+      symptom: 'wrong-record-type',
+      phrases: ['public contact'],
+      blockedProcess: 'student is excluded from class rolls and downstream education-system sync',
+      note: 'In Edumate, a public contact is not treated as an enrolled student. ' +
+        'The student is absent from class rolls and downstream education-system sync, ' +
+        'and may not be billable for invoicing.',
+      followUpQuestion: 'Is a class-roll, downstream education-system, or billing/invoice deadline affected?'
+    }
+  ],
+
+  /**
    * Business dates that commonly drive urgency. Purely descriptive: shown to
    * the user as context in follow-up questions.
    */

@@ -450,6 +450,31 @@ test('Refinement', 'ticking the payroll risk with a same-day deadline escalates'
   return ok(after.priority === 'P1' || after.priority === 'P2', after.priority);
 });
 
+test('Refinement', 'confirming that incorrect data is spreading affects scoring', () => {
+  const result = analyse('Incorrect student records are being written across three schools.', {
+    contained: 'spreading'
+  });
+  return ok(
+    result.riskModifiers.propagating === true && result.priority === 'P1',
+    'propagating=' + result.riskModifiers.propagating + ' ' + result.priority
+  );
+});
+
+test('Refinement', 'confirming a requested date is only a preference lowers urgency', () => {
+  const result = analyse('Canvas access is required by Friday.', { driver: 'preference' });
+  return ok(result.urgency === 'low' && result.priority === 'P4',
+    result.impact + '/' + result.urgency + ' -> ' + result.priority);
+});
+
+test('Refinement', 'confirming pending certificate harm is active raises urgency', () => {
+  const result = analyse(
+    'The Laserfiche SSL certificate expires in three days for all schools.',
+    { harm: 'active' }
+  );
+  return ok(result.urgency === 'high' && result.priority === 'P1',
+    result.impact + '/' + result.urgency + ' -> ' + result.priority);
+});
+
 /* -------------------------------------------------------- 20. behaviour -- */
 
 test('Result model', 'an empty ticket returns an empty result', () => {
@@ -498,11 +523,21 @@ test('Input relevance', 'non-IT text is unassessed even when it claims urgency',
   const result = analyse('help! my cat is sad now, high priority');
   return ok(
     result.inScope === false && result.insufficientInformation === true &&
-      result.priority === 'P4' && result.confidenceBand === 'low' &&
+      result.priority === 'P4' && result.assessmentStatus === 'unassessed' &&
+      result.suggestedPriority === null && result.confidenceBand === 'low' &&
       result.detail.urgencyResult.claimed === true,
     'inScope=' + result.inScope + ' insufficient=' + result.insufficientInformation +
-      ' priority=' + result.priority + ' confidence=' + result.confidence +
+      ' priority=' + result.priority + ' suggested=' + result.suggestedPriority +
+      ' status=' + result.assessmentStatus + ' confidence=' + result.confidence +
       ' claimed=' + result.detail.urgencyResult.claimed
+  );
+});
+
+test('Input relevance', 'an assessed ticket exposes the actionable suggestion separately', () => {
+  const result = analyse('Canvas sync has stopped across all schools.');
+  return ok(
+    result.assessmentStatus === 'assessed' && result.suggestedPriority === result.priority,
+    result.assessmentStatus + ' / ' + result.suggestedPriority + ' / ' + result.priority
   );
 });
 
@@ -536,7 +571,64 @@ test('Input relevance', 'unrecognised text explains that no IT support context w
   );
 });
 
-/* --------------------------------------- 22. calibrated support wording -- */
+/* ---------------------------------------- 22. current decision context -- */
+
+test('Decision context', 'a resolved update is not re-escalated by quoted history', () => {
+  const result = analyse(
+    'Resolved, no action required. Previous message: Canvas is down for all schools and today’s classes are blocked.'
+  );
+  return ok(
+    result.priority === 'P4' && result.assessmentStatus === 'assessed' &&
+      result.suggestedPriority === 'P4' && result.decisionContext.status === 'resolved' &&
+      result.decisionContext.ignored.length > 0,
+    result.priority + ' / ' + JSON.stringify(result.decisionContext)
+  );
+});
+
+test('Decision context', 'a fixed historical outage is no longer an active incident', () => {
+  const result = analyse(
+    'Yesterday Canvas was down for all schools. It is fixed now. Please write a post-incident report when convenient.'
+  );
+  return ok(result.priority === 'P4' && result.decisionContext.status === 'resolved',
+    result.priority + ' / ' + JSON.stringify(result.decisionContext));
+});
+
+test('Decision context', 'a contained historical privacy exposure is not treated as active', () => {
+  const result = analyse(
+    'A parent could see another family’s information yesterday. Access has been removed and the issue is contained. Investigate next week.'
+  );
+  return ok(result.priority !== 'P1' && result.riskModifiers.exposureActive === false,
+    result.priority + ' / exposureActive=' + result.riskModifiers.exposureActive);
+});
+
+for (const text of [
+  'If Canvas fails tomorrow, all schools will be blocked. This is a disaster recovery exercise.',
+  'In UAT, simulate the payroll integration failing before today’s cutoff.',
+  'Test case: nobody can log into the production server and all jobs have stopped.',
+  'The design must prevent parents from seeing another family’s student information.'
+]) {
+  test('Decision context', 'planned or test wording stays P4: ' + text, () => {
+    const result = analyse(text);
+    return ok(result.priority === 'P4' && result.decisionContext.status === 'planned-test',
+      result.priority + ' / ' + JSON.stringify(result.decisionContext));
+  });
+}
+
+test('Decision context', 'an active all-school incident keeps its priority', () =>
+  priority('Canvas has failed for all schools and today’s classes are blocked.', 'P1'));
+
+test('Decision context', 'a UAT comparison does not hide a production failure', () =>
+  priority('The enrolment form works in UAT but fails in production after last night’s release.', 'P3'));
+
+test('Decision context', 'a failure after a resolution is active again', () => {
+  const result = analyse('Canvas was fixed this morning but is down again for all schools.');
+  return ok(
+    result.decisionContext.status === 'active-or-unspecified' && result.priority === 'P1',
+    result.priority + ' / ' + JSON.stringify(result.decisionContext)
+  );
+});
+
+/* --------------------------------------- 23. calibrated support wording -- */
 
 test('Calibrated support', 'an application that crashes for one user is a P3 incident', () => {
   const result = analyse('Outlook crashes for one user whenever they attach a PDF.');
@@ -952,11 +1044,32 @@ const REAL_TICKET = [
   'Help please'
 ].join('\n');
 
-test('Real tickets', 'enrolment record-type ticket is P3', () =>
-  priority(REAL_TICKET, ['P3', 'P4']));
+test('Real tickets', 'one student record-type error without a deadline is P4', () =>
+  priority(REAL_TICKET, 'P4'));
 
 test('Real tickets', 'one student is individual scope, not a cohort', () =>
   field(REAL_TICKET, 'scope', 'individual'));
+
+test('Real tickets', 'Edumate public-contact status infers the blocked education processes', () => {
+  const result = analyse(REAL_TICKET);
+  const blocked = result.eightFacets.i2Blocked.blockedProcess;
+  return ok(
+    blocked?.inferred === true &&
+      blocked.label === 'student is excluded from class rolls and downstream education-system sync' &&
+      blocked.quote === 'public contact',
+    JSON.stringify(blocked)
+  );
+});
+
+test('Real tickets', 'Edumate public-contact status asks whether billing or an invoice deadline is affected', () => {
+  const result = analyse(REAL_TICKET);
+  return ok(
+    result.followUpQuestions.includes(
+      'Is a class-roll, downstream education-system, or billing/invoice deadline affected?'
+    ),
+    result.followUpQuestions.join(' | ')
+  );
+});
 
 test('Real tickets', '"the class rolls" is a document, not a population', () => {
   const roll = detectScope(createDocument('The student is not showing on the class rolls.'));

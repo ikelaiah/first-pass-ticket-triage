@@ -36,6 +36,7 @@ import {
 import { detectContainment } from './containment.js';
 import { detectDriver } from './driver.js';
 import { detectHarmTiming } from './harm-timing.js';
+import { prepareDecisionContext } from './context.js';
 
 const TIME_12H = /\b(\d{1,2})(?::(\d{2}))?\s*(am|pm)\b/g;
 const TIME_24H = /\b([01]?\d|2[0-3]):([0-5]\d)\b/g;
@@ -234,6 +235,14 @@ function applyRiskModifiers(context) {
   };
 
   // --- de-escalation ----------------------------------------------------
+  if (context.decisionContext.status === 'resolved') {
+    lower('low', 'low', 'The latest explicit update says the incident is resolved or contained.');
+    return { impact, urgency, rules };
+  }
+  if (context.decisionContext.status === 'planned-test') {
+    lower('low', 'low', 'The failure wording describes a design, simulation, exercise, or test.');
+    return { impact, urgency, rules };
+  }
   if (!context.inScope) {
     lower('low', 'low',
       'No IT system, application-support request or technical symptom was recognised.');
@@ -311,10 +320,30 @@ function applyRiskModifiers(context) {
   return { impact, urgency, rules };
 }
 
-function detectBlockedProcess(doc, domainResult, symptom) {
+function inferStatusConsequence(doc, systemResult, symptom) {
+  for (const consequence of organisationConfig.statusConsequences || []) {
+    if (consequence.symptom !== symptom.symptom) continue;
+    if (!systemResult.systems.some((system) => system.id === consequence.system)) continue;
+    const phrase = consequence.phrases.find((candidate) => doc.text.includes(candidate));
+    if (phrase) return { ...consequence, quote: phrase };
+  }
+  return null;
+}
+
+function detectBlockedProcess(doc, domainResult, symptom, systemResult) {
   const hit = scanPositive(doc, BLOCKED_PROCESS_PHRASES);
   if (hit.length) return { label: hit[0].entry.label, quote: hit[0].quote, hit: hit[0] };
   if (has(doc, BLOCKED_PROCESS_PHRASES)) return null;
+  const statusConsequence = inferStatusConsequence(doc, systemResult, symptom);
+  if (statusConsequence) {
+    return {
+      label: statusConsequence.blockedProcess,
+      quote: statusConsequence.quote,
+      inferred: true,
+      note: statusConsequence.note,
+      followUpQuestion: statusConsequence.followUpQuestion
+    };
+  }
   // Fallback: infer blocked process from domain + symptom when explicit BLOCKED phrase present
   // but no named process — the panel will show symptom label instead.
   return null;
@@ -412,6 +441,12 @@ function buildMissingInformation(context) {
       ', the system ' + sourceOfTruth.downstream + ' is synchronised from');
     addQuestion('Is the record set up correctly in ' + sourceOfTruth.source +
       ', which ' + sourceOfTruth.downstream + ' is synchronised from?', 'diagnostic');
+  }
+  if (blockedProcess?.followUpQuestion) {
+    addQuestion(
+      blockedProcess.followUpQuestion,
+      pq([{ deadline: 'today' }])
+    );
   }
   if (!scopeResult.explicit) {
     missing.push('How many users, teams or schools are affected');
@@ -535,7 +570,7 @@ function buildReasoning(context) {
     deadlineResult, impactResult, urgencyResult, rules, priority,
     impact, urgency, expectedBehaviour, urgencyBase, impactBase, knownAnswer, isQuestion,
     sourceOfTruth, differential, escalated, recurring, undetected, inScope,
-    containment, driver, harmTiming, blockedProcess
+    containment, driver, harmTiming, blockedProcess, decisionContext
   } = context;
 
   const reasoning = [];
@@ -557,6 +592,17 @@ function buildReasoning(context) {
         ' in the priority matrix; treat this suggestion as unassessed.'
     );
     return unassessedReasoning;
+  }
+  if (decisionContext.status === 'resolved') {
+    reasoning.push(
+      'The latest explicit update says the incident is resolved or contained. Earlier ' +
+      'failure wording is retained as history but does not describe current urgency.'
+    );
+  } else if (decisionContext.status === 'planned-test') {
+    reasoning.push(
+      'The failure wording describes a design, simulation, exercise, or test rather ' +
+      'than a live production incident.'
+    );
   }
 
   if (systemResult.primary) {
@@ -645,6 +691,7 @@ function buildReasoning(context) {
   }
   if (blockedProcess) {
     reasoning.push('Blocked process: ' + blockedProcess.quote + ' — ' + blockedProcess.label + '.');
+    if (blockedProcess.note) reasoning.push(blockedProcess.note);
   }
   if (containment) {
     if (containment.contained) reasoning.push('Containment: ' + containment.summary + ' (' + (containment.containedEvidence?.quote || '') + ').');
@@ -754,10 +801,13 @@ function normaliseOverrides(overrides = {}) {
  * @returns {object} result model
  */
 export function analyse(rawText, overrides = {}) {
-  const doc = createDocument(rawText);
-  if (!doc.text) {
+  const originalDoc = createDocument(rawText);
+  if (!originalDoc.text) {
     return { empty: true, priority: null, reasoning: [], evidence: [] };
   }
+  const preparedContext = prepareDecisionContext(rawText);
+  const { decisionText, ...decisionContext } = preparedContext;
+  const doc = createDocument(decisionText);
 
   const applied = normaliseOverrides(overrides);
   const overridesApplied = Object.keys(applied).length > 0;
@@ -805,7 +855,7 @@ export function analyse(rawText, overrides = {}) {
   const risks = { ...emptyRisks(), ...riskResult.risks, ...(applied.risks || {}) };
   // Re-gate modifiers against the (possibly overridden) risk flags.
   const raw = riskResult.rawModifiers;
-  const modifiers = {
+  let modifiers = {
     ...riskResult.modifiers,
     unpaidRisk: raw.unpaidRisk && (risks.payroll || risks.financial),
     exposureActive: raw.exposureActive && (risks.privacy || risks.security),
@@ -813,7 +863,6 @@ export function analyse(rawText, overrides = {}) {
     decisionRisk: raw.decisionRisk && (symptom.isDataIssue || risks.dataIntegrity),
     immediateSafeguarding: raw.immediateSafeguarding && risks.safeguarding
   };
-  const effectiveRisk = { ...riskResult, risks, modifiers };
 
   // --- expected behaviour ----------------------------------------------
   const expectedBehaviour = detectExpectedBehaviour(doc, symptom);
@@ -826,7 +875,7 @@ export function analyse(rawText, overrides = {}) {
   let containment = detectContainment(doc, risks);
   let driver = detectDriver(doc);
   let harmTiming = detectHarmTiming(doc, symptom);
-  const blockedProcess = detectBlockedProcess(doc, domainResult, symptom);
+  const blockedProcess = detectBlockedProcess(doc, domainResult, symptom, systemResult);
   // Facet overrides — analyst confirmed values
   if (applied.contained) {
     if (applied.contained === 'contained') containment = { ...containment, contained: true, propagating: false, recurring: false, undetected: false, summary: 'appears contained (manually confirmed)' };
@@ -845,6 +894,25 @@ export function analyse(rawText, overrides = {}) {
       harmTiming = { timing: applied.harm, label: labelMap[applied.harm], quote: applied.harm === 'unknown' ? null : 'manual input', source: 'manual' };
     }
   }
+
+  // Confirmed facets are scoring inputs, not display-only annotations. They
+  // remain gated by the matching risk so a refinement cannot manufacture a
+  // data, privacy, security, or safeguarding concern that was never present.
+  if (applied.contained) {
+    modifiers = {
+      ...modifiers,
+      propagating: applied.contained === 'spreading' && risks.dataIntegrity
+    };
+  }
+  if (applied.harm) {
+    const active = applied.harm === 'active';
+    modifiers = {
+      ...modifiers,
+      exposureActive: active && (risks.privacy || risks.security),
+      immediateSafeguarding: active && risks.safeguarding
+    };
+  }
+  const effectiveRisk = { ...riskResult, risks, modifiers };
 
   const workTypeResult = detectWorkType(doc, {
     symptom,
@@ -867,7 +935,8 @@ export function analyse(rawText, overrides = {}) {
   const slaBreached = has(doc, SLA_BREACH_PHRASES);
   const relevance = assessInputRelevance({
     systemResult, symptom, domainResult, workTypeResult, risks,
-    serviceManagementSignal: activeIncident || slaBreached
+    serviceManagementSignal: activeIncident || slaBreached ||
+      decisionContext.status !== 'active-or-unspecified'
   });
   const inScope = relevance.inScope;
 
@@ -877,7 +946,7 @@ export function analyse(rawText, overrides = {}) {
   });
   const urgencyResult = assessUrgency(doc, {
     deadlineResult, workaroundResult, symptom, scopeResult, riskResult: effectiveRisk,
-    differential
+    differential, driver, harmTiming
   });
 
   const impactBase = impactResult.impact;
@@ -895,6 +964,7 @@ export function analyse(rawText, overrides = {}) {
     expectedBehaviour,
     immediateNeed,
     activeIncident,
+    decisionContext,
     inScope
   });
 
@@ -927,12 +997,12 @@ export function analyse(rawText, overrides = {}) {
     });
     const urg = assessUrgency(doc, {
       deadlineResult: deadlineR, workaroundResult: workaroundR, symptom,
-      scopeResult: scopeR, riskResult: riskSim, differential
+      scopeResult: scopeR, riskResult: riskSim, differential, driver, harmTiming
     });
     const mod = applyRiskModifiers({
       impact: imp.impact, urgency: urg.urgency, risks, modifiers: mods, symptom,
       deadlineResult: deadlineR, scopeResult: scopeR, workTypeResult, expectedBehaviour,
-      immediateNeed, activeIncident, inScope
+      immediateNeed, activeIncident, decisionContext, inScope
     });
     return priorityFor(mod.impact, mod.urgency);
   };
@@ -961,6 +1031,7 @@ export function analyse(rawText, overrides = {}) {
   // is evidence that the ticket cannot be assessed yet, and the card must say
   // so rather than quietly returning P4.
   const sparseUnrecognisedRequest =
+    decisionContext.status === 'active-or-unspecified' &&
     symptom.severity === 0 &&
     !scopeResult.explicit &&
     !systemResult.primary &&
@@ -970,6 +1041,8 @@ export function analyse(rawText, overrides = {}) {
     doc.wordCount < 10 &&
     !isQuestion;
   const insufficientInformation = !inScope || sparseUnrecognisedRequest;
+  const assessmentStatus = insufficientInformation ? 'unassessed' : 'assessed';
+  const suggestedPriority = insufficientInformation ? null : priority;
 
   const missingInfo = buildMissingInformation({
     scopeResult, deadlineResult, workaroundResult, systemResult, symptom,
@@ -992,10 +1065,11 @@ export function analyse(rawText, overrides = {}) {
     deadlineResult, impactResult, urgencyResult, rules, priority,
     impact, urgency, expectedBehaviour, impactBase, urgencyBase, knownAnswer, isQuestion,
     sourceOfTruth, differential, escalated, recurring, undetected, inScope,
-    containment, driver, harmTiming, blockedProcess
+    containment, driver, harmTiming, blockedProcess, decisionContext
   });
 
   const evidenceDetail = [
+    ...decisionContext.evidence,
     ...systemResult.evidence,
     ...scopeResult.evidence,
     ...symptom.evidence,
@@ -1008,7 +1082,7 @@ export function analyse(rawText, overrides = {}) {
   // 8-question facets for the dedicated panel
   const eightFacets = {
     i1Scope: { question: 'Who and how many are affected?', answer: scopeResult.label, value: scopeResult.scope, explicit: scopeResult.explicit, quote: scopeResult.evidence[0]?.quote || null },
-    i2Blocked: { question: 'What can they not do that they could do yesterday?', answer: blockedProcess ? blockedProcess.quote : (symptom.label !== 'Question / How-To' ? symptom.label : 'Not stated'), quote: blockedProcess?.quote || symptom.evidence[0]?.quote || null, blockedProcess },
+    i2Blocked: { question: 'What can they not do that they could do yesterday?', answer: blockedProcess ? blockedProcess.label : (symptom.label !== 'Question / How-To' ? symptom.label : 'Not stated'), quote: blockedProcess?.quote || symptom.evidence[0]?.quote || null, blockedProcess },
     i3Irreversibility: { question: 'Wrong / exposed / lost / unsafe vs merely unavailable?', answer: modifiers.exposureActive ? 'Exposed' : risks.dataIntegrity && modifiers.propagating ? 'Wrong + spreading' : risks.dataIntegrity ? 'Wrong data' : risks.privacy ? 'Privacy risk' : risks.safety ? 'Safety' : symptom.severity >= 3 ? 'Unavailable/outage' : 'No irreversibility flagged', risks: Object.keys(risks).filter(k => risks[k]), modifiers },
     i4Containment: { question: 'Contained or spreading / recurring / unknown extent?', answer: containment.summary, containment },
     u5Deadline: { question: 'When do you need this by?', answer: deadlineResult.label, value: deadlineResult.deadline, committed: deadlineResult.committed, quote: deadlineResult.evidence[0]?.quote || null },
@@ -1026,6 +1100,8 @@ export function analyse(rawText, overrides = {}) {
 
     // headline
     priority,
+    suggestedPriority,
+    assessmentStatus,
     justification: buildJustification({
       scopeResult, workaroundResult, deadlineResult, symptom,
       riskFlags: Object.entries(risks).filter(([, v]) => v)
@@ -1072,9 +1148,10 @@ export function analyse(rawText, overrides = {}) {
 
     isQuestion,
     inScope,
+    decisionContext,
     insufficientInformation,
     knownAnswer,
-    strippedChars: doc.strippedChars,
+    strippedChars: originalDoc.strippedChars,
     sourceOfTruth,
     differential,
     recurring,
@@ -1135,7 +1212,8 @@ export function analyse(rawText, overrides = {}) {
       relevance,
       overridesApplied: applied,
       wordCount: doc.wordCount,
-      normalisedText: doc.text
+      normalisedText: doc.text,
+      decisionText
     }
   };
 }

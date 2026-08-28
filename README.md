@@ -36,9 +36,14 @@ See [PRIVACY.md](PRIVACY.md) for how to verify this yourself in about a minute.
 - **Natural-language ticket input** — paste the request exactly as it arrived
 - **Input relevance check** — unrelated text is marked unassessed; urgency and scope
   words alone cannot manufacture an IT incident
+- **Current-incident context** — resolved updates, quoted history, exercises, simulations,
+  designs and test cases do not masquerade as active production incidents
 - **Deterministic rules** — same text in, same answer out, every time
 - **P1–P4 suggestion** driven by a single authoritative 3×3 matrix
 - **Scope detection** — individual, team, cohort, one school, multiple schools, all schools, corporation-wide
+- **Organisation status semantics** — configured states such as an Edumate `public contact`
+  can explain blocked class-roll and downstream education processes, while remaining
+  visibly inferred rather than stated by the requester
 - **Urgency detection** — deadlines, blocking language, "can wait" language
 - **Impact detection** — scope plus business consequence, not scope alone
 - **Deadline detection** — now, today, tomorrow, 2–5 days, 1–2 weeks, none
@@ -48,6 +53,8 @@ See [PRIVACY.md](PRIVACY.md) for how to verify this yourself in about a minute.
 - **Explainable decisions** — evidence → impact → urgency → matrix → priority, shown in full
 - **8 Questions — Impact vs Urgency** — I1 Who/how many? · I2 Blocked process? · I3 Wrong/exposed/lost/unsafe? · I4 Contained or spreading? · U5 When needed? · U6 Deadline driver (requirement vs preference)? · U7 Workaround daily cost? · U8 Harm now or waiting? — each shown as Answered/Inferred/Unknown with row-aligned cards, and *key driver* badges on the unknowns that could flip the cell
 - **Confidence scoring** — the tool says when it does not know enough
+- **Explicit abstention** — unassessed input has no actionable suggested priority; the
+  internal matrix result remains visible only to explain why the engine abstained
 - **Ranked follow-up questions** — diagnostic first, then *would change priority* (verified by re-running the scoring with each hypothetical answer), then *raises confidence*; capped at six
 - **Suggested reply (draft)** — a polite, short, audience-neutral draft ("what we understood / suggested priority / what we still need"), plus Copy markdown and Download .md for handoff
 - **Share link** — `?t=` URL carries the ticket (2000-char cap); nothing is stored, the link *is* the ticket
@@ -108,7 +115,7 @@ Natural-language evidence
    ↓  Evidence (Scope · Workaround · Deadline · Symptom · Domain · Risk
    ↓          · Containment · Driver · Harm timing) — 9 signals
    ↓  viewed as 8 Questions — Impact I1–I4 vs Urgency U5–U8
-   ↓  I1 Scope  I2 Blocked process (Symptom+Domain)  I3 Wrong/exposed  I4 Contained?
+   ↓  I1 Scope  I2 Blocked process (Symptom+Domain+known status)  I3 Wrong/exposed  I4 Contained?
    ↓  U5 When?  U6 Requirement vs preference?  U7 Daily cost?  U8 Now vs pending?
    ↓
 Impact + Urgency  (weighted, then critical-risk modifiers)
@@ -247,18 +254,20 @@ bluescreens the machine.
 Open <http://localhost:8000/tests/tests.html> — the suite runs in the page and prints a
 PASS/FAIL line for every assertion.
 
-With Node available, the same suite runs in a terminal:
+With Node available, the same suite runs in a terminal; `npm test` runs the complete
+v0.4.0 gate:
 
 ```bash
-node tests/run.mjs      # or: npm test
+node tests/run.mjs      # behavioural suite + privacy scan
+npm test               # suite + evaluator self-test + schema corpus
 ```
 
 The Node runner also performs a static source scan that fails the build if any
 `fetch`, `XMLHttpRequest`, `WebSocket`, `sendBeacon` or remote asset reference is ever
 introduced.
 
-> `package.json` exists only so Node can load the ES modules for that optional runner.
-> The application itself has no dependencies and needs no Node, npm or build step.
+> `package.json` exists only for the optional Node test and evaluation tools. The
+> application itself has no dependencies and needs no Node, npm or build step.
 
 ---
 
@@ -288,6 +297,7 @@ first-pass-triage/
 │   ├── config.js               organisation-specific settings (schools, systems, jobs)
 │   ├── engine/
 │   │   ├── analyzer.js         the pipeline: evidence → impact/urgency → matrix
+│   │   ├── context.js          active vs resolved, quoted, hypothetical and test context
 │   │   ├── negation.js         normalisation, clause splitting, negation-aware matching
 │   │   ├── scope.js            individual … corporation-wide
 │   │   ├── deadline.js         now … no deadline, and asserted vs committed
@@ -317,11 +327,15 @@ first-pass-triage/
 ├── tests/
 │   ├── tests.html              browser test page
 │   ├── tests.js                the assertions (shared)
-│   └── run.mjs                 optional Node runner + privacy source scan
+│   ├── run.mjs                 Node runner + privacy source scan
+│   ├── evaluate.mjs            offline labelled-corpus accuracy metrics
+│   ├── evaluate.test.mjs       evaluator metric self-test
+│   └── fixtures/               corpus schema examples (not production accuracy data)
 ├── serve.bat                   double-click launcher for the dev server
 ├── serve.ps1                   local dev server for Windows (not deployed)
 ├── README.md
 ├── PRIORITY-FRAMEWORK.md
+├── CHANGELOG.md
 ├── PRIVACY.md
 └── LICENSE
 ```
@@ -358,6 +372,20 @@ Adding a system, an alias or a scheduled job needs no engine changes.
 
 Weights are deliberately in two small files (`impact.js`, `urgency.js`) so tuning is a
 readable diff rather than a hunt.
+
+### Measuring accuracy offline
+
+`npm test` runs the behavioural suite, privacy scan, evaluator self-test, and the small
+schema-example corpus. To evaluate independently labelled, anonymised tickets:
+
+```bash
+node tests/evaluate.mjs path/to/accuracy-corpus.json
+```
+
+The evaluator reports exact priority, impact and urgency accuracy, assessed coverage,
+P1 precision/recall, dangerous under-prioritisation, abstentions, and a confusion matrix.
+The checked-in fixture documents the format; it is deliberately not presented as a
+production accuracy claim. Ticket text stays on the machine running the command.
 
 ---
 
