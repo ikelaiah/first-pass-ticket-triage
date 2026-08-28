@@ -1238,7 +1238,7 @@ export const BLOCKED_PROCESS_PHRASES = [
     label: 'a named business process is blocked' }
 ];
 
-/** U6 driver — what creates the deadline and who/what set it. */
+/** U6 driver — what creates the deadline: a requirement (statutory/operational) or a preference. */
 export const DRIVER_PHRASES = [
   { m: ['census', 'naplan', 'nesa', 'acara', 'statutory reporting', 'government reporting',
         'legal requirement', 'court order', 'compliance deadline', 'audit deadline',

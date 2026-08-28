@@ -260,7 +260,7 @@ function eightQuestionsPanel(result) {
   ]);
   const urgencyList = el('ul', { class: 'facet-list' }, [
     row('U5', 'When do you need this by?', f.u5Deadline.answer, u5State, f.u5Deadline.quote, u5State === 'unknown' ? 'The anchor — everything else calibrates it.' : null),
-    row('U6', 'What happens then — who set it?', f.u6Driver.answer + (f.u6Driver.driver.actor ? ' — ' + f.u6Driver.driver.actor : ''), u6State, f.u6Driver.driver.quote, u6State === 'unknown' ? 'Driver: statutory/operational event vs preference with a calendar.' : null),
+    row('U6', 'What creates the deadline — requirement or preference?', f.u6Driver.answer + (f.u6Driver.driver.actor ? ' — ' + f.u6Driver.driver.actor : ''), u6State, f.u6Driver.driver.quote, u6State === 'unknown' ? 'Statutory (census/NAPLAN), operational (payroll cutoff/class starts), or preference ("would like by Friday")? What actually happens if missed?' : null),
     row('U7', 'Can work continue — daily cost?', f.u7Workaround.answer, u7State, f.u7Workaround.costPerDay || null, u7State === 'inferred' ? 'Exists but sustainability/cost unknown — "three registrars all day" = slower failure.' : (u7State === 'unknown' ? 'No workaround stated.' : null)),
     row('U8', 'Harm now or waiting? (expired vs expiring)', f.u8HarmTiming.answer, u8State, f.u8HarmTiming.harmTiming.quote, u8State === 'unknown' ? 'Expired/active exposure = attend now; expiring/pending = schedule properly.' : null)
   ]);

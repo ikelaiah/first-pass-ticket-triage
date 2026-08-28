@@ -461,10 +461,10 @@ function buildMissingInformation(context) {
     }
   }
   if (driver && driver.driver === 'unknown' && deadlineResult.deadline !== 'unknown' && deadlineResult.deadline !== 'none') {
-    addQuestion('What happens at that deadline — and who set it? (statutory/operational deadline vs preference)');
+    addQuestion('What creates the deadline — a requirement (statutory/operational) or a preference? What actually happens if it is missed?');
   }
   if (driver && driver.driver === 'preference') {
-    addQuestion('Is "by Friday" a business/regulatory deadline or a preference? It scores as a preference.');
+    addQuestion('Is "by Friday" a requirement (statutory/operational) or a preference? Preferences score lower.');
   }
   if (workaroundResult.workaround === 'yes' && !workaroundResult.costPerDay) {
     addQuestion('What does the workaround cost per day — how many staff/hours does manual processing take?');
@@ -922,7 +922,7 @@ export function analyse(rawText, overrides = {}) {
     i3Irreversibility: { question: 'Wrong / exposed / lost / unsafe vs merely unavailable?', answer: modifiers.exposureActive ? 'Exposed' : risks.dataIntegrity && modifiers.propagating ? 'Wrong + spreading' : risks.dataIntegrity ? 'Wrong data' : risks.privacy ? 'Privacy risk' : risks.safety ? 'Safety' : symptom.severity >= 3 ? 'Unavailable/outage' : 'No irreversibility flagged', risks: Object.keys(risks).filter(k => risks[k]), modifiers },
     i4Containment: { question: 'Contained or spreading / recurring / unknown extent?', answer: containment.summary, containment },
     u5Deadline: { question: 'When do you need this by?', answer: deadlineResult.label, value: deadlineResult.deadline, committed: deadlineResult.committed, quote: deadlineResult.evidence[0]?.quote || null },
-    u6Driver: { question: 'What happens then — and who set it? (deadline vs preference)', answer: driver.driver === 'unknown' ? 'Not stated' : driver.label, driver },
+    u6Driver: { question: 'What creates the deadline — a requirement or a preference?', answer: driver.driver === 'unknown' ? 'Not stated' : driver.label, driver },
     u7Workaround: { question: 'Can work continue — and at what daily cost?', answer: workaroundResult.label + (workaroundResult.costPerDay ? ' (' + workaroundResult.costPerDay + ')' : ''), workaround: workaroundResult.workaround, costPerDay: workaroundResult.costPerDay },
     u8HarmTiming: { question: 'Harm happening now or waiting to happen? (expired vs expiring)', answer: harmTiming.timing === 'unknown' ? 'Not stated' : harmTiming.label, harmTiming }
   };

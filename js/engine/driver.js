@@ -1,5 +1,5 @@
 /**
- * Driver detection — U6: what creates the deadline and who/what set it.
+ * Driver detection — U6: what creates the deadline — a requirement or a preference.
  * Distinguishes statutory / operational / preference and captures the actor.
  */
 import { scanPositive } from './negation.js';
