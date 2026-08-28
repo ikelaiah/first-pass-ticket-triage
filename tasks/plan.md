@@ -31,14 +31,14 @@ documentation and a five-axis review.
 
 ### Phase 2: Current incident context
 
-- [ ] Add contrast tests for resolved updates, quoted history, hypotheses, design text,
+- [x] Add contrast tests for resolved updates, quoted history, hypotheses, design text,
   exercises, and UAT/test scenarios.
-- [ ] Add a pure context preprocessor and score only active asserted clauses.
-- [ ] Explain ignored inactive context in the result.
+- [x] Add a pure context preprocessor and score only active asserted clauses.
+- [x] Explain ignored inactive context in the result.
 
 ### Checkpoint: context
 
-- [ ] New contrasts and the complete regression suite pass.
+- [x] New contrasts and the complete regression suite pass.
 
 ### Phase 3: Measured accuracy
 

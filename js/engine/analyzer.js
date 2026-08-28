@@ -36,6 +36,7 @@ import {
 import { detectContainment } from './containment.js';
 import { detectDriver } from './driver.js';
 import { detectHarmTiming } from './harm-timing.js';
+import { prepareDecisionContext } from './context.js';
 
 const TIME_12H = /\b(\d{1,2})(?::(\d{2}))?\s*(am|pm)\b/g;
 const TIME_24H = /\b([01]?\d|2[0-3]):([0-5]\d)\b/g;
@@ -234,6 +235,14 @@ function applyRiskModifiers(context) {
   };
 
   // --- de-escalation ----------------------------------------------------
+  if (context.decisionContext.status === 'resolved') {
+    lower('low', 'low', 'The latest explicit update says the incident is resolved or contained.');
+    return { impact, urgency, rules };
+  }
+  if (context.decisionContext.status === 'planned-test') {
+    lower('low', 'low', 'The failure wording describes a design, simulation, exercise, or test.');
+    return { impact, urgency, rules };
+  }
   if (!context.inScope) {
     lower('low', 'low',
       'No IT system, application-support request or technical symptom was recognised.');
@@ -535,7 +544,7 @@ function buildReasoning(context) {
     deadlineResult, impactResult, urgencyResult, rules, priority,
     impact, urgency, expectedBehaviour, urgencyBase, impactBase, knownAnswer, isQuestion,
     sourceOfTruth, differential, escalated, recurring, undetected, inScope,
-    containment, driver, harmTiming, blockedProcess
+    containment, driver, harmTiming, blockedProcess, decisionContext
   } = context;
 
   const reasoning = [];
@@ -557,6 +566,18 @@ function buildReasoning(context) {
         ' in the priority matrix; treat this suggestion as unassessed.'
     );
     return unassessedReasoning;
+  }
+
+  if (decisionContext.status === 'resolved') {
+    reasoning.push(
+      'The latest explicit update says the incident is resolved or contained. Earlier ' +
+      'failure wording is retained as history but does not describe current urgency.'
+    );
+  } else if (decisionContext.status === 'planned-test') {
+    reasoning.push(
+      'The failure wording describes a design, simulation, exercise, or test rather ' +
+      'than a live production incident.'
+    );
   }
 
   if (systemResult.primary) {
@@ -754,10 +775,13 @@ function normaliseOverrides(overrides = {}) {
  * @returns {object} result model
  */
 export function analyse(rawText, overrides = {}) {
-  const doc = createDocument(rawText);
-  if (!doc.text) {
+  const originalDoc = createDocument(rawText);
+  if (!originalDoc.text) {
     return { empty: true, priority: null, reasoning: [], evidence: [] };
   }
+  const preparedContext = prepareDecisionContext(rawText);
+  const { decisionText, ...decisionContext } = preparedContext;
+  const doc = createDocument(decisionText);
 
   const applied = normaliseOverrides(overrides);
   const overridesApplied = Object.keys(applied).length > 0;
@@ -885,7 +909,8 @@ export function analyse(rawText, overrides = {}) {
   const slaBreached = has(doc, SLA_BREACH_PHRASES);
   const relevance = assessInputRelevance({
     systemResult, symptom, domainResult, workTypeResult, risks,
-    serviceManagementSignal: activeIncident || slaBreached
+    serviceManagementSignal: activeIncident || slaBreached ||
+      decisionContext.status !== 'active-or-unspecified'
   });
   const inScope = relevance.inScope;
 
@@ -913,6 +938,7 @@ export function analyse(rawText, overrides = {}) {
     expectedBehaviour,
     immediateNeed,
     activeIncident,
+    decisionContext,
     inScope
   });
 
@@ -950,7 +976,7 @@ export function analyse(rawText, overrides = {}) {
     const mod = applyRiskModifiers({
       impact: imp.impact, urgency: urg.urgency, risks, modifiers: mods, symptom,
       deadlineResult: deadlineR, scopeResult: scopeR, workTypeResult, expectedBehaviour,
-      immediateNeed, activeIncident, inScope
+      immediateNeed, activeIncident, decisionContext, inScope
     });
     return priorityFor(mod.impact, mod.urgency);
   };
@@ -1010,10 +1036,11 @@ export function analyse(rawText, overrides = {}) {
     deadlineResult, impactResult, urgencyResult, rules, priority,
     impact, urgency, expectedBehaviour, impactBase, urgencyBase, knownAnswer, isQuestion,
     sourceOfTruth, differential, escalated, recurring, undetected, inScope,
-    containment, driver, harmTiming, blockedProcess
+    containment, driver, harmTiming, blockedProcess, decisionContext
   });
 
   const evidenceDetail = [
+    ...decisionContext.evidence,
     ...systemResult.evidence,
     ...scopeResult.evidence,
     ...symptom.evidence,
@@ -1090,9 +1117,10 @@ export function analyse(rawText, overrides = {}) {
 
     isQuestion,
     inScope,
+    decisionContext,
     insufficientInformation,
     knownAnswer,
-    strippedChars: doc.strippedChars,
+    strippedChars: originalDoc.strippedChars,
     sourceOfTruth,
     differential,
     recurring,
@@ -1153,7 +1181,8 @@ export function analyse(rawText, overrides = {}) {
       relevance,
       overridesApplied: applied,
       wordCount: doc.wordCount,
-      normalisedText: doc.text
+      normalisedText: doc.text,
+      decisionText
     }
   };
 }

@@ -561,7 +561,63 @@ test('Input relevance', 'unrecognised text explains that no IT support context w
   );
 });
 
-/* --------------------------------------- 22. calibrated support wording -- */
+/* ---------------------------------------- 22. current decision context -- */
+
+test('Decision context', 'a resolved update is not re-escalated by quoted history', () => {
+  const result = analyse(
+    'Resolved, no action required. Previous message: Canvas is down for all schools and today’s classes are blocked.'
+  );
+  return ok(
+    result.priority === 'P4' && result.decisionContext.status === 'resolved' &&
+      result.decisionContext.ignored.length > 0,
+    result.priority + ' / ' + JSON.stringify(result.decisionContext)
+  );
+});
+
+test('Decision context', 'a fixed historical outage is no longer an active incident', () => {
+  const result = analyse(
+    'Yesterday Canvas was down for all schools. It is fixed now. Please write a post-incident report when convenient.'
+  );
+  return ok(result.priority === 'P4' && result.decisionContext.status === 'resolved',
+    result.priority + ' / ' + JSON.stringify(result.decisionContext));
+});
+
+test('Decision context', 'a contained historical privacy exposure is not treated as active', () => {
+  const result = analyse(
+    'A parent could see another family’s information yesterday. Access has been removed and the issue is contained. Investigate next week.'
+  );
+  return ok(result.priority !== 'P1' && result.riskModifiers.exposureActive === false,
+    result.priority + ' / exposureActive=' + result.riskModifiers.exposureActive);
+});
+
+for (const text of [
+  'If Canvas fails tomorrow, all schools will be blocked. This is a disaster recovery exercise.',
+  'In UAT, simulate the payroll integration failing before today’s cutoff.',
+  'Test case: nobody can log into the production server and all jobs have stopped.',
+  'The design must prevent parents from seeing another family’s student information.'
+]) {
+  test('Decision context', 'planned or test wording stays P4: ' + text, () => {
+    const result = analyse(text);
+    return ok(result.priority === 'P4' && result.decisionContext.status === 'planned-test',
+      result.priority + ' / ' + JSON.stringify(result.decisionContext));
+  });
+}
+
+test('Decision context', 'an active all-school incident keeps its priority', () =>
+  priority('Canvas has failed for all schools and today’s classes are blocked.', 'P1'));
+
+test('Decision context', 'a UAT comparison does not hide a production failure', () =>
+  priority('The enrolment form works in UAT but fails in production after last night’s release.', 'P3'));
+
+test('Decision context', 'a failure after a resolution is active again', () => {
+  const result = analyse('Canvas was fixed this morning but is down again for all schools.');
+  return ok(
+    result.decisionContext.status === 'active-or-unspecified' && result.priority === 'P1',
+    result.priority + ' / ' + JSON.stringify(result.decisionContext)
+  );
+});
+
+/* --------------------------------------- 23. calibrated support wording -- */
 
 test('Calibrated support', 'an application that crashes for one user is a P3 incident', () => {
   const result = analyse('Outlook crashes for one user whenever they attach a PDF.');
