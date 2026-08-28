@@ -82,7 +82,20 @@ export function assessUrgency(doc, ctx) {
   }
 
   // --- what is happening now -------------------------------------------
-  if (symptom.severity) {
+  // A single record shown under the wrong status is an active data-quality
+  // issue, but not automatically a time-critical one.  Its urgency comes
+  // from an actual deadline, blocked work, exposure, propagation, decisions
+  // being made from it, or safeguarding—not merely from the record being
+  // wrong.  This deliberately does not soften a real privacy/safety event.
+  const isolatedRecordStatus =
+    scopeResult.scope === 'individual' &&
+    symptom.symptom === 'wrong-record-type' &&
+    deadlineResult.deadline === 'unknown' &&
+    !modifiers.exposureActive &&
+    !modifiers.propagating &&
+    !modifiers.decisionRisk &&
+    !modifiers.immediateSafeguarding;
+  if (symptom.severity && !isolatedRecordStatus) {
     add(
       SEVERITY_URGENCY.get(symptom.severity) || 0,
       'An active symptom was reported: ' + symptom.label,

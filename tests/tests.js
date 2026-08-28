@@ -1044,8 +1044,8 @@ const REAL_TICKET = [
   'Help please'
 ].join('\n');
 
-test('Real tickets', 'enrolment record-type ticket is P3', () =>
-  priority(REAL_TICKET, ['P3', 'P4']));
+test('Real tickets', 'one student record-type error without a deadline is P4', () =>
+  priority(REAL_TICKET, 'P4'));
 
 test('Real tickets', 'one student is individual scope, not a cohort', () =>
   field(REAL_TICKET, 'scope', 'individual'));
