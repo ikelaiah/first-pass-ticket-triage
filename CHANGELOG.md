@@ -16,6 +16,11 @@
 
 - Manual containment, deadline-driver, and harm-timing refinements now affect scoring
   instead of changing only the displayed evidence.
+- An isolated one-student record-status error remains low urgency without a stated
+  deadline or active business consequence.
+- An Edumate student shown as a public contact now explains the resulting class-roll
+  and downstream education-system exclusion, while asking whether a billing or
+  invoicing deadline is actually affected.
 - Resolved or contained history no longer escalates a current update as though harm were
   still active.
 - Hypothetical failures in exercises, UAT simulations, designs, and test cases no longer

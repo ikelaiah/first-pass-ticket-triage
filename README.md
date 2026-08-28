@@ -41,6 +41,9 @@ See [PRIVACY.md](PRIVACY.md) for how to verify this yourself in about a minute.
 - **Deterministic rules** — same text in, same answer out, every time
 - **P1–P4 suggestion** driven by a single authoritative 3×3 matrix
 - **Scope detection** — individual, team, cohort, one school, multiple schools, all schools, corporation-wide
+- **Organisation status semantics** — configured states such as an Edumate `public contact`
+  can explain blocked class-roll and downstream education processes, while remaining
+  visibly inferred rather than stated by the requester
 - **Urgency detection** — deadlines, blocking language, "can wait" language
 - **Impact detection** — scope plus business consequence, not scope alone
 - **Deadline detection** — now, today, tomorrow, 2–5 days, 1–2 weeks, none
@@ -112,7 +115,7 @@ Natural-language evidence
    ↓  Evidence (Scope · Workaround · Deadline · Symptom · Domain · Risk
    ↓          · Containment · Driver · Harm timing) — 9 signals
    ↓  viewed as 8 Questions — Impact I1–I4 vs Urgency U5–U8
-   ↓  I1 Scope  I2 Blocked process (Symptom+Domain)  I3 Wrong/exposed  I4 Contained?
+   ↓  I1 Scope  I2 Blocked process (Symptom+Domain+known status)  I3 Wrong/exposed  I4 Contained?
    ↓  U5 When?  U6 Requirement vs preference?  U7 Daily cost?  U8 Now vs pending?
    ↓
 Impact + Urgency  (weighted, then critical-risk modifiers)
