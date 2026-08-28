@@ -1,8 +1,8 @@
 {
   "metadata": {
-    "name": "v0.4.0 evaluator schema examples",
+    "name": "v0.4.1 evaluator schema examples",
     "kind": "schema-example",
-    "note": "Replace or supplement these examples with independently labelled, anonymised tickets. Do not treat this file as a production accuracy claim."
+    "note": "Synthetic schema examples only. Replace or supplement them with independently labelled, anonymised tickets. Do not treat this file or its metrics as a production accuracy claim."
   },
   "cases": [
     {
@@ -60,6 +60,38 @@
         "priority": "P4",
         "impact": "low",
         "urgency": "low"
+      }
+    },
+    {
+      "id": "explicit-attendance-blocked",
+      "text": "All schools cannot mark the roll in Canvas today.",
+      "expected": {
+        "assessmentStatus": "assessed",
+        "priority": "P1",
+        "impact": "high",
+        "urgency": "high",
+        "scope": "all-schools",
+        "consequence": "blocked",
+        "deadline": "today",
+        "driver": "unknown",
+        "workaround": "unknown",
+        "containment": "unknown"
+      }
+    },
+    {
+      "id": "generic-symptom-no-consequence",
+      "text": "Canvas is slow for one school.",
+      "expected": {
+        "assessmentStatus": "assessed",
+        "priority": "P3",
+        "impact": "medium",
+        "urgency": "low",
+        "scope": "one-school",
+        "consequence": "unknown",
+        "deadline": "unknown",
+        "driver": "unknown",
+        "workaround": "unknown",
+        "containment": "unknown"
       }
     }
   ]

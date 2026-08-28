@@ -1,5 +1,36 @@
 # Changelog
 
+## [0.4.1] - 2026-08-29
+
+### Added
+
+- Business-consequence facts for named attendance, enrolment, payroll/payment,
+  teaching, emergency communication, and reporting processes.
+- Consequence provenance (`explicit`, `inferred`, `manual`, or `unknown`) in the
+  result, evidence, explanation, and analyst refinement flow.
+- A Business consequence refinement with `impaired` and `blocked` choices.
+- Optional labelled-facet evaluation for scope, consequence, deadline, driver,
+  workaround, and containment; mismatch reports identify cases but never echo ticket
+  text.
+- Synthetic explicit-consequence and generic-symptom calibration examples.
+
+### Changed
+
+- Explicit or analyst-confirmed blocked work now contributes through the existing
+  impact and urgency models, rather than assigning a priority directly.
+- Configured system-status consequences remain explanatory inferences and do not
+  automatically increase scoring until an analyst confirms them.
+- Example tickets now state the business scope, consequence, and deadline used to
+  assess them; operator-only background knowledge is not used as ticket evidence.
+
+### Fixed
+
+- I2 no longer presents a technical symptom such as an SSO failure as though it were a
+  stated blocked business process; it remains Unknown until the process is described
+  or confirmed.
+- An unanchored claim such as "This is broken" no longer treats the pronoun or a
+  generic failure as evidence of an incident, workaround, deadline, or impact.
+
 ## [0.4.0] - 2026-08-28
 
 ### Added

@@ -95,7 +95,7 @@ Priority is not judged from a symptom alone. It is judged from eight evidence qu
 | # | Question | What it captures | How the engine reads it | Effect on scoring |
 |---|---|---|---|---|
 | **I1** | Who and how many are affected — one person, a team, a cohort, one school, several, or all 19? | Scope breadth. The largest single impact contributor, and the one most often left out. | `js/engine/scope.js` + `js/data/phrases.js:SCOPE_PHRASES` (`SCOPE_DEFINITIONS` rank 0–8, `impactWeight` 0–4.25). Numbers parsed (`35 casual staff` → team `scope.js:30`, `4 schools` → multiple `scope.js:37`) and broadest credible scope wins. Unknown lowers confidence `js/engine/confidence.js:61`. | Impact weight `js/engine/impact.js:61` +1.75 for `allUsers`. `Unknown → Low confidence` and first follow-up. |
-| **I2** | What can they not do right now that they could do yesterday? | The blocked business process, not the symptom. "Canvas is slow" and "teachers cannot mark the roll" are different tickets. | `js/data/phrases.js:BLOCKED_PHRASES` + `BLOCKED_PROCESS_PHRASES` (`can not mark the roll` `phrases.js`) paired with `js/engine/symptom.js` + `js/engine/domain.js`. Configured system-status consequences in `js/config.js:statusConsequences` can add an explicitly inferred process — for example, an Edumate `public contact` is excluded from class rolls and downstream education-system sync. Extracted as `blockedProcess` `js/engine/analyzer.js:detectBlockedProcess`. | Shown in panel and reasoning `js/engine/analyzer.js:buildReasoning`; no separate numeric weight — symptom/domain already score, but clarifies consequence and drives the next question. A potential billing effect remains a follow-up, not a confirmed financial incident. |
+| **I2** | What can they not do right now that they could do yesterday? | The blocked business process, not the symptom. "Canvas is slow" and "teachers cannot mark the roll" are different tickets. | `js/data/phrases.js:BLOCKED_PROCESS_PHRASES` identifies a small process vocabulary and `js/engine/analyzer.js:detectBlockedProcess` returns a sourced consequence fact. Configured system-status consequences in `js/config.js:statusConsequences` remain visibly inferred — for example, an Edumate `public contact` is excluded from class rolls and downstream education-system sync. | An **explicit** or **manual** blocked process adds +0.75 Impact and up to +1.75 Urgency through `impact.js` and `urgency.js`; an impaired process adds +0.25 Impact only. An **inferred** consequence remains explanatory and asks for confirmation, so a potential billing effect is not silently scored as a financial incident. |
 | **I3** | Is anything wrong, exposed, lost, or unsafe — as opposed to merely unavailable? | The irreversibility test: bad data, money, privacy, safeguarding, safety. Wrong information is more dangerous than absent information, and this is the question that legitimately makes one affected student a P1. | `js/engine/risks.js` `RISK_DEFINITIONS` (`payroll`, `financial`, `privacy`, `safety`, `safeguarding`, `compliance`, `dataIntegrity`) + risk modifiers (`exposureActive`, `propagating`, `unpaidRisk`) `js/data/phrases.js:RISK_MODIFIERS`. Gated so "contains PII" alone ≠ incident `js/engine/risks.js:111`. | `js/engine/impact.js:121` payroll +0.75, `privacy` +0.75, `exposureActive` +1.5, `safety` +1, etc. `analyzer.js:applyRiskModifiers` may raise Impact and Urgency to High (e.g. active exposure `analyzer.js:256`, safety today `analyzer.js:273`). |
 | **I4** | Is it contained, or is it spreading, recurring, or of unknown extent? | One bad record is remediation; a trigger writing bad records across every school is an emergency. Note this raises impact, not urgency — a recurring fault whose known instances are all corrected is high impact and low urgency. | `js/engine/containment.js` + `js/data/phrases.js:CONTAINED_PHRASES` (`contained to one family`, `not spreading`), `RISK_MODIFIERS.propagating` (`propagat`, `spreading` `phrases.js:989`), `RECURRENCE_PHRASES` (`keeps scrambling` `phrases.js:1059`), `UNDETECTED_PHRASES` (`we do not pick up` `phrases.js:1074`). | `js/engine/impact.js:93` recurrence +1, undetected +1.25, propagating +1.5 (impact, not urgency). Contained is informational — panel shows `appears contained`; no numeric discount. A contained recurring fault is P2 latent, not P1 `PRIORITY-FRAMEWORK.md:189`. |
 | **U5** | When do you need this by? | The anchor. Everything else calibrates it. | `js/engine/deadline.js` `DEADLINE_BUCKETS` now(6,3.5) › today(5,3) › tomorrow(4,1.75) › 2–5d(3,1.25) › 1–2w(2,0.25) › none › unknown. `COMMITMENT_MARKERS` + `isObservationOnly` `deadline.js:52` separates "Today we discover…" (timestamp) from "must be rerun today" (commitment). | Urgency weight `js/engine/urgency.js:68` (`today` +3, `days-2-5` +1.25). `unknown` lowers confidence `confidence.js:65` and becomes first urgency question. |
@@ -892,8 +892,8 @@ range, the test accepts the range rather than pretending there is one right answ
 
 ## 21. Manual refinement
 
-The analyst can confirm any of scope, workaround, deadline, containment, deadline
-driver, harm timing, impact, urgency and the critical-risk flags. Decision-relevant
+The analyst can confirm any of scope, business consequence, workaround, deadline,
+containment, deadline driver, harm timing, impact, urgency and the critical-risk flags. Decision-relevant
 answers recalculate the priority immediately, the card is marked *Manually refined*,
 and confidence rises because a human has supplied the facts.
 
@@ -979,3 +979,29 @@ recall, dangerous under-prioritisation, abstentions, and a confusion matrix. The
 checked-in corpus is a schema example and regression gate, not evidence of production
 accuracy. Meaningful calibration requires anonymised historical tickets labelled by
 independent triagers and a holdout set that is not used to tune weights.
+
+## 26. Business consequence and facet calibration (v0.4.1)
+
+I2 is now an explicit evidence fact rather than a display-only phrase. It records a
+level (`unknown`, `impaired`, or `blocked`), the named process where wording supports
+one, the evidence quote, and its provenance:
+
+- **Explicit**: the requester states a process such as attendance marking, enrolment,
+  payroll/payment, teaching, emergency communication, or reporting cannot continue.
+- **Inferred**: a configured system status has a known operational implication. It is
+  visible in the result but does not change impact or urgency automatically.
+- **Manual**: the analyst confirms the consequence using the refinement panel. It is
+  recorded in the printed result and feeds the same scoring path as explicit wording.
+- **Unknown**: a technical symptom does not itself prove a business consequence.
+
+An explicit or manual `blocked` fact contributes to both impact and urgency through
+the existing models; `impaired` makes only a small impact contribution. Neither fact
+emits a priority—the unchanged matrix remains the sole P1–P4 decision point. This
+means “Canvas is slow” remains a symptom, while “all schools cannot mark the roll in
+Canvas today” states a business consequence.
+
+The offline evaluator can optionally label and score each decision fact independently:
+scope, consequence, deadline, deadline driver, workaround, and containment. Its
+checked-in examples are synthetic plumbing tests, not a field-accuracy claim. Weight
+calibration requires an approved, anonymised, independently labelled corpus and a
+holdout set.

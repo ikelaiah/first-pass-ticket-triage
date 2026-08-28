@@ -6,7 +6,7 @@
  * tool that says "I need three more facts".
  */
 import { scanPositive } from './negation.js';
-import { CONSEQUENCE_PHRASES, CONTEXT_ELSEWHERE_PHRASES } from '../data/phrases.js';
+import { CONTEXT_ELSEWHERE_PHRASES } from '../data/phrases.js';
 
 export const BANDS = [
   { id: 'high', label: 'High', min: 75 },
@@ -26,7 +26,7 @@ export function bandFor(score) {
 export function assessConfidence(doc, ctx) {
   const {
     scopeResult, deadlineResult, workaroundResult, symptom,
-    systemResult, impactResult, urgencyResult, overridesApplied, isQuestion, inScope
+    systemResult, impactResult, urgencyResult, overridesApplied, isQuestion, inScope, consequence
   } = ctx;
 
   if (inScope === false) {
@@ -76,7 +76,7 @@ export function assessConfidence(doc, ctx) {
   if (systemResult.primary) credit(6, 'The affected system is named (' + systemResult.primary.name + ')');
   else credit(-4, 'No system or application was named');
 
-  if (scanPositive(doc, CONSEQUENCE_PHRASES).length) {
+  if (consequence?.level && consequence.level !== 'unknown') {
     credit(6, 'The business consequence is described');
   }
 

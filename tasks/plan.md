@@ -1,66 +1,276 @@
-# Implementation Plan: v0.4.0 priority accuracy
+# Implementation Plan: v0.4.1 evidence calibration
 
 ## Overview
 
-Deliver accuracy improvements in risk-first slices: first make analyst-confirmed facets
-authoritative, then prevent inactive text from driving an active incident, then add a
-repeatable offline evaluation boundary and explicit unassessed state. Finish with release
-documentation and a five-axis review.
+Deliver a measured, explainable improvement to the evidence model. The release makes
+business consequence a first-class fact, lets an analyst confirm it when missing, and
+extends the existing offline evaluator so tuning begins from facet-level errors rather
+than guesses about English grammar or final priority alone.
+
+See `tasks/v0.4.1-evidence-calibration-spec.md` for the release contract and unresolved
+calibration decisions.
 
 ## Architecture decisions
 
-- Keep the P1-P4 matrix unchanged and improve only its evidence inputs.
-- Represent document context as a preprocessing result used by all existing detectors,
-  rather than adding inactive-language checks to every phrase dictionary.
-- Preserve inactive text in the result for explanation, but exclude it from automatic
-  scoring.
-- Keep `priority` compatible for assessed tickets; expose `suggestedPriority: null` and
-  `assessmentStatus: unassessed` when there is not enough support context.
-- Make the evaluation harness generic and dependency-free; do not ship real ticket data.
+- Keep the Impact × Urgency matrix and its policy unchanged; improve only the evidence
+  that flows into it.
+- Treat business consequence as a fact with a level (`unknown` / `impaired` / `blocked`),
+  optional process name, evidence, and provenance—not as another priority keyword.
+- Reuse existing system-status inferences, but expose them as `inferred` and never let
+  an important system name alone create a consequence.
+- Add corpus expectations as optional fields so approved future datasets can be
+  incrementally labelled and evaluated without weakening the existing schema.
+- Default to conservative scoring: calibration data must justify any changed weight;
+  the matrix is not a shortcut around missing business context.
+
+## Dependency graph
+
+```text
+Facet schema + evaluator diagnostics
+       ↓
+Consequence fact contract + contrast tests
+       ↓
+Scoring, confidence, question simulation
+       ↓
+Analyst consequence refinement + result presentation
+       ↓
+Corpus expansion, release documentation, full verification
+```
 
 ## Task list
 
-### Phase 1: Decision facets
+### Phase 1: Measure the right facts
 
-- [x] Add failing tests for containment, deadline-driver, and harm-timing refinements.
-- [x] Feed effective facet values into impact, urgency, modifiers, and simulation.
+## Task 1: Extend the labelled-corpus contract and evaluator
 
-### Checkpoint: facets
+**Description:** Add optional expectations for the facts that drive a priority—scope,
+consequence, deadline, driver, workaround, and risk/containment where supported. The
+evaluator will validate those fields, calculate only applicable per-facet metrics, and
+report a case ID plus expected/actual values rather than ticket text.
 
-- [x] Focus tests pass and existing refinement behaviour remains green.
+**Acceptance criteria:**
 
-### Phase 2: Current incident context
+- [x] Existing minimal corpus entries remain valid without facet labels.
+- [x] Facet metrics show labelled coverage, accuracy, and mismatch counts; invalid
+  facet values fail validation with a clear field path.
+- [x] Evaluator output remains local and never prints a case's ticket text.
 
-- [x] Add contrast tests for resolved updates, quoted history, hypotheses, design text,
-  exercises, and UAT/test scenarios.
-- [x] Add a pure context preprocessor and score only active asserted clauses.
-- [x] Explain ignored inactive context in the result.
+**Verification:**
 
-### Checkpoint: context
+- [x] Add evaluator self-tests for valid optional labels, invalid labels, partial
+  coverage, and privacy-safe mismatch output.
+- [x] Run `npm test`.
 
-- [x] New contrasts and the complete regression suite pass.
+**Dependencies:** None.
 
-### Phase 3: Measured accuracy
+**Files likely touched:**
 
-- [x] Add explicit assessed/unassessed output semantics.
-- [x] Add corpus schema, evaluator, metrics, and evaluator self-tests.
+- `tests/evaluate.mjs`
+- `tests/evaluate.test.mjs`
+- `tests/fixtures/accuracy-corpus.json`
+- `tasks/v0.4.1-evidence-calibration-spec.md`
 
-### Phase 4: Release and review
+**Estimated scope:** Medium (3–4 files).
 
-- [x] Update README, framework, version metadata, changelog, and architecture decision.
-- [x] Run syntax, tests, privacy scan, source hygiene, and five-axis review.
+## Task 2: Define and detect business-consequence facts
+
+**Description:** Establish an auditable consequence contract that recognises explicit
+process impairment/blocking, preserves configured system-status consequences as
+inferences, and rejects generic technical symptoms as insufficient evidence. Start
+with a focused set of high-value school operations rather than a broad ontology.
+
+**Acceptance criteria:**
+
+- [x] The result exposes a consequence level, optional process label, evidence, and
+  `explicit`/`inferred`/`unknown` provenance.
+- [x] “Teachers cannot mark the roll” is explicit blocked attendance work; a system
+  name or “Canvas is slow” alone is not a blocked process.
+- [x] Existing status-derived consequences stay visible but are marked inferred.
+
+**Verification:**
+
+- [x] Add RED/green contrast tests for each initial process phrase and its nearby
+  non-consequence wording.
+- [x] Run `node --check` on changed engine modules and `npm test`.
+
+**Dependencies:** Task 1 establishes the evaluation label contract.
+
+**Files likely touched:**
+
+- `js/engine/consequence.js` (new) or a small extracted equivalent
+- `js/engine/analyzer.js`
+- `js/data/phrases.js`
+- `tests/tests.js`
+
+**Estimated scope:** Medium (4 files).
+
+### Checkpoint: fact contract
+
+- [x] Existing corpus remains valid and evaluator reports facet coverage.
+- [x] New consequence facts are explainable and nearby counterexamples stay unchanged.
+- [ ] `npm test` and source hygiene are green.
+
+### Phase 2: Use consequence conservatively
+
+## Task 3: Connect consequence to scoring, confidence, and follow-up ranking
+
+**Description:** Consume the new fact through documented contributions to impact and
+urgency, not direct priority rules. Make missing business consequence a ranked
+follow-up when it could change the matrix cell. Simulated answers must use the same
+consequence contract as manual refinement will use.
+
+**Acceptance criteria:**
+
+- [x] Explicit `blocked` adds only the approved, documented contributions; no priority
+  can rise from a consequence phrase without supporting scope/risk/time evidence.
+- [x] `impaired` is either a minimal approved contribution or explanatory only, as
+  resolved in the spec's open question; its behaviour is test-covered.
+- [x] A consequence question appears ahead of lower-value questions only when a
+  hypothetical answer changes priority or increases confidence.
+
+**Verification:**
+
+- [x] Test impact, urgency, final priority, confidence, and ranked questions for
+  explicit, inferred, and unknown consequence cases.
+- [x] Run `npm test`.
+
+**Dependencies:** Task 2.
+
+**Files likely touched:**
+
+- `js/engine/analyzer.js`
+- `js/engine/impact.js`
+- `js/engine/urgency.js`
+- `js/engine/confidence.js`
+- `tests/tests.js`
+
+**Estimated scope:** Large (5 files); split into impact/urgency and question-ranking
+subtasks if the first implementation exceeds one focused session.
+
+## Task 4: Add analyst consequence confirmation
+
+**Description:** Add a refinement control for `unknown` / `impaired` / `blocked` that
+is dirty-tracked like the existing controls. The confirmation must be passed into the
+same analysis path, visibly labelled manual, and reset when a different ticket is
+analysed.
+
+**Acceptance criteria:**
+
+- [x] An untouched control creates no override; a changed control recalculates using
+  `source: 'manual'` and is reported in the reasoning/printed result.
+- [x] Reset and fresh-ticket behaviour clear the manual consequence rather than
+  retaining it invisibly.
+- [x] Keyboard and label behaviour follow the existing refinement controls.
+
+**Verification:**
+
+- [x] Add focused analysis/UI-control tests for manual consequence result states;
+  consequence result states.
+- [ ] Manually verify recomputation in the browser with a ticket missing consequence.
+- [x] Run `npm test`.
+
+**Dependencies:** Task 3.
+
+**Files likely touched:**
+
+- `index.html`
+- `js/ui/refine-controls.js`
+- `js/engine/analyzer.js`
+- `js/ui/render-result.js`
+- `tests/tests.js`
+
+**Estimated scope:** Medium (5 files).
+
+### Checkpoint: end-to-end evidence path
+
+- [x] Explicit, inferred, and manual consequence cases show distinct provenance.
+- [x] Final priority remains traceable to impact, urgency, and the unchanged matrix.
+- [x] A fresh analysis contains no stale manual evidence.
+
+### Phase 3: Calibrate, document, and release
+
+## Task 5: Add a balanced calibration fixture and regression contrasts
+
+**Description:** Expand the schema example with synthetic, non-production pairs that
+exercise scope, consequence, deadline, workaround, and critical risk independently.
+This verifies evaluator plumbing and protects against regression; it is explicitly not
+used to claim field accuracy.
+
+**Acceptance criteria:**
+
+- [x] Each new pair differs in one decision-relevant fact and declares the expected
+  final decision and labelled facets.
+- [x] The fixture contains no real names, school identifiers, contact details, or
+  copied ticket content.
+- [x] The evaluator output identifies facet mismatches useful for future approved data.
+
+**Verification:**
+
+- [x] Run `node tests/evaluate.mjs tests/fixtures/accuracy-corpus.json`.
+- [x] Run `npm test`.
+
+**Dependencies:** Tasks 1–4.
+
+**Files likely touched:**
+
+- `tests/fixtures/accuracy-corpus.json`
+- `tests/tests.js`
+- `tests/evaluate.test.mjs`
+
+**Estimated scope:** Small (3 files).
+
+## Task 6: Publish release documentation and complete the verification gate
+
+**Description:** Update the framework, README, changelog, and version metadata to
+describe consequence provenance, facet-level evaluation, the approved-corpus workflow,
+and v0.4.1's deliberate limits.
+
+**Acceptance criteria:**
+
+- [x] Documentation describes the new fact and analyst confirmation accurately.
+- [x] Documentation distinguishes synthetic schema examples from independently
+  labelled production calibration data.
+- [x] Version and changelog consistently identify v0.4.1.
+
+**Verification:**
+
+- [ ] Run `npm test`, changed-file syntax checks, and `git -c core.whitespace=cr-at-eol diff --check`.
+- [ ] Manually inspect an explicit, inferred, unknown, and manual consequence result.
+- [ ] Complete code review before merge.
+
+**Dependencies:** Tasks 1–5.
+
+**Files likely touched:**
+
+- `README.md`
+- `PRIORITY-FRAMEWORK.md`
+- `CHANGELOG.md`
+- `package.json`
+
+**Estimated scope:** Medium (4 files).
+
+### Checkpoint: release candidate
+
+- [ ] Full test suite and privacy scan pass.
+- [ ] Corpus evaluator and schema fixture pass locally.
+- [ ] Source hygiene passes.
+- [ ] Reviewer confirms matrix policy, privacy boundary, and provenance are preserved.
 
 ## Risks and mitigations
 
 | Risk | Impact | Mitigation |
 | --- | --- | --- |
-| Context filtering hides a real incident | High | Require strong inactive cues and add active counterexamples |
-| A current `resolved` word suppresses an unresolved incident | High | Scope status to clauses and prefer the latest explicit update |
-| Manual facets create unconditional escalation | Medium | Gate them to matching risks and preserve matrix policy |
-| Compatibility break for existing UI | Medium | Add fields; keep assessed-ticket `priority` unchanged |
-| Metrics imply unsupported accuracy | Medium | Ship only schema/example fixtures and document corpus limits |
+| Generic failure language is mistaken for a blocked business process | High | Require process-specific wording or configured status evidence; add close counterexamples. |
+| Consequence gets double-counted through symptom and blocked wording | High | List each scoring contribution and assert score/priority contrasts. |
+| Synthetic fixtures look like a production accuracy claim | Medium | Mark every fixture as schema-only; publish no percentage as a field result. |
+| Manual confirmation leaks into a different ticket | High | Preserve dirty-state/reset tests and reset controls on fresh analysis. |
+| New UI control obscures analyst judgement | Medium | Label manual provenance in reasoning and keep direct impact/urgency overrides available. |
+| Unapproved corpus contains sensitive school data | High | Keep corpus external/local until an explicit approval and anonymisation procedure exists. |
 
-## Open questions
+## Open questions for approval
 
-- None blocking for implementation. Real calibration numbers require a future labelled
-  corpus supplied by the organisation.
+- Approve the proposed initial consequence levels (`unknown`, `impaired`, `blocked`)
+  and the narrow first process vocabulary (attendance, payroll, enrolment, reporting,
+  teaching/learning access).
+- Decide whether `impaired` should change impact in v0.4.1 or stay explanatory until a
+  labelled corpus supports a safe calibration.

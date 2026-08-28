@@ -9,9 +9,9 @@
 export const EXAMPLES = [
   {
     id: 'ex01',
-    title: 'Broken, but a workaround exists',
+    title: 'Known system, but a workaround exists',
     group: 'Urgency wording',
-    text: 'This is broken but I can work without it for now.',
+    text: 'Canvas is broken but I can work without it for now.',
     expected: ['P3'],
     note: 'Workaround detected, low urgency, scope unknown.'
   },
@@ -19,17 +19,17 @@ export const EXAMPLES = [
     id: 'ex02',
     title: 'Needed in three days, manual process available',
     group: 'Urgency wording',
-    text: 'This is broken and I need it within three days. We can process it manually until then.',
+    text: 'Canvas is broken and I need it within three days. We can process it manually until then.',
     expected: ['P3', 'P2'],
     note: 'Medium urgency: a workaround is holding, but a deadline is approaching.'
   },
   {
     id: 'ex03',
-    title: 'FYI, please investigate when possible',
+    title: 'Known system, please investigate when possible',
     group: 'Urgency wording',
-    text: 'Just reporting an issue. Please investigate when possible.',
-    expected: ['P4', 'P3'],
-    note: 'Low urgency wording with no stated consequence.'
+    text: 'Canvas has an issue. Please investigate when possible.',
+    expected: ['P4'],
+    note: 'A named system but no stated consequence, deadline, or workaround.'
   },
   {
     id: 'ex04',
@@ -393,35 +393,35 @@ export const EXAMPLES = [
   },
   {
     id: 'ex49',
-    title: 'SendHQ Mail Carers — vendor bug on vendor side (now fixed)',
+    title: 'SendHQ Mail Carers filter request',
     group: 'Integration',
     text: 'Update SendHQ to show parents with Mail Carers only from Edumate',
-    expected: ['P3', 'P4'],
-    note: 'Service request to filter SendHQ to Mail Carers from Edumate. Vendor-managed integration with no customer-side settings — now resolved, so low urgency. Source-of-truth question still applies.'
+    expected: ['P4'],
+    note: 'A low-urgency configuration request. The ticket states no failure, scope, or deadline.'
   },
   {
     id: 'ex50',
-    title: 'Seesaw SS/JS English — non-roll-call classes never synced via Wonde',
+    title: 'Seesaw class-sync request',
     group: 'Real ticket wording',
     text: 'I was told I could use Seesaw to share Photos with students and Parents safely; sync SS English and JS English to Seesaw',
-    expected: ['P3', 'P4'],
-    note: 'Request to sync two non-roll-call English classes to Seesaw. Neither rolls via Edumate→Wonde→Seesaw — Wonde only carries roll-call classes, so manual Seesaw entry is the workaround. In this case SS English was also absent in Edumate (no source data), so even manual entry lacked class/teachers/students to use. Tests hidden-dependency and source-of-truth (Edumate) for non-roll-call.'
+    expected: ['P4'],
+    note: 'A request to sync two named classes. The ticket gives no deadline, outage, or stated business consequence.'
   },
   {
     id: 'ex51',
     title: 'Helpdesk is down — ticketing system',
     group: 'Helpdesk / ITSM',
     text: 'Helpdesk is down!',
-    expected: ['P2', 'P3'],
-    note: 'Complaint as received — just “Helpdesk is down!” No scope/deadline in ticket. Helpdesk is the ITSM system where IT, Payroll and schools raise requests, so impact is corporation-wide when down, but ITSM is not payroll/teaching blocking. Admin restarted server and monitored until restored — recovery, not user workaround; brief outage stays P3, longer block would be P2 (P1 only if still blocking payroll cutoff / live incident).'
+    expected: ['P3'],
+    note: 'A named ticketing system is unavailable, but the ticket states no affected population, deadline, or blocked process.'
   },
   {
     id: 'ex52',
-    title: 'Newsletter automation down — PowerAutomate + SIS → SharePoint (2 months, wider community missed)',
+    title: 'Newsletter automation down for one school',
     group: 'Integration',
     text: 'Newsletter automation for a school is down! (has been down for weeks!)',
-    expected: ['P2', 'P3'],
-    note: 'One-school newsletter outage; automation reads SIS (Edumate) and publishes to SharePoint. Down weeks with wider community missing news — high impact despite single school. Slow fix in progress.'
+    expected: ['P3'],
+    note: 'One-school automation outage with no stated deadline, workaround, or documented downstream harm.'
   },
   {
     id: 'ex53',
@@ -433,27 +433,27 @@ export const EXAMPLES = [
   },
   {
     id: 'ex54',
-    title: 'Retrieve person info urgently for risk team',
-    group: 'Service Request',
-    text: 'Retrieve information about this person urgently for risk team',
-    expected: ['P2', 'P3'],
-    note: 'Risk-team service request for one person — “urgently” gives Medium-High urgency. Your python-script lookup to track staff is follow-up action outside quoted request. P2 if deadline today, P3 if next days; privacy flag only if exposed beyond request.'
+    title: 'Approved worker missing from school records',
+    group: 'Safeguarding and compliance',
+    text: 'Risk team approved a person to work with children, but their record cannot be found in the school records and exists only in HR. Please investigate today: they may be working without verified approval, or using our company WWCC to work elsewhere.',
+    expected: ['P2'],
+    note: 'A same-day safeguarding and compliance investigation. The potential harm is serious, but the ticket does not confirm the person is currently working with children; confirm that before treating it as an active P1 exposure.'
   },
   {
     id: 'ex55',
-    title: 'Statement of Service table outdated — update from files',
+    title: 'Statement of Service figures incorrect',
     group: 'Data quality',
-    text: 'Statement of Service table is outdated, please update with the following files: file1, file2, etc.',
-    expected: ['P3', 'P4'],
-    note: 'Reference table refresh — ticket lists files only. Downstream database trigger sync is implementation detail outside quoted request. P3/P4 (small scope, no deadline/data loss).'
+    text: 'Please refresh the Statement of Service table in Laserfiche from the attached payroll-system CSV exports. The figures are incorrect for employment-service reporting and entitlement decisions, including Long Service Leave and teaching-staff promotion assessments.',
+    expected: ['P3'],
+    note: 'Incorrect payroll-derived figures affect employment-service reporting and entitlement decisions. No deadline or affected population is stated.'
   },
   {
     id: 'ex56',
-    title: 'Clipboard timesheet uploaded in SharePoint',
+    title: 'Clipboard CSV timesheets must reach Aurion before payroll cutoff',
     group: 'Payroll',
-    text: 'Hi, we have uploaded a clipboard timesheet in SharePoint',
-    expected: ['P3', 'P4'],
-    note: 'Quoted request only — just the SharePoint upload notice. Context outside quotes: Clipboard is extracurricular management/timesheets; staff CSV is imported via your multi-step checks into payroll (Aurion/Ascender) to ensure on-time pay. Without a stated cutoff it is P4 (small scope, no deadline); with a payroll cutoff it would rise to P3/P2. Tests cryptic “clipboard timesheet” without explanation.'
+    text: 'A school has uploaded a Clipboard CSV timesheet for casual staff, music staff, and sports coaches. The Apps team must complete the manual validation and import steps into Aurion before today’s payroll cutoff or those staff will be paid late.',
+    expected: ['P2'],
+    note: 'A one-school payroll-processing task with a same-day operational cutoff. The manual validation and import steps are the required work, not evidence of a workaround.'
   },
 ];
 

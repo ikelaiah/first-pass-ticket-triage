@@ -5,7 +5,7 @@
  * so re-analysing a ticket never silently converts a *detected* value into a
  * *confirmed* one.
  */
-const SELECT_KEYS = ['scope', 'workaround', 'deadline'];
+const SELECT_KEYS = ['scope', 'workaround', 'consequence', 'deadline'];
 const LEVEL_KEYS = ['impact', 'urgency'];
 const FACET_KEYS = ['contained', 'driver', 'harm'];
 
@@ -82,6 +82,7 @@ export function initRefineControls(root, onChange) {
       dirty.clear();
       if (fields.scope) fields.scope.value = 'unknown';
       if (fields.workaround) fields.workaround.value = 'unknown';
+      if (fields.consequence) fields.consequence.value = 'unknown';
       if (fields.deadline) fields.deadline.value = 'unknown';
       for (const key of [...LEVEL_KEYS, ...FACET_KEYS]) {
         if (fields[key]) fields[key].value = 'auto';

@@ -192,14 +192,22 @@ function hasImmediateNeed(doc) {
  */
 function assessInputRelevance(context) {
   const {
-    systemResult, symptom, domainResult, workTypeResult, risks, serviceManagementSignal
+    doc, systemResult, symptom, domainResult, workTypeResult, risks, serviceManagementSignal
   } = context;
   const signals = [];
+  // "This is broken" tells us neither what "this" is nor whether it belongs
+  // to support. Its domain and incident are inferred from the generic failure,
+  // so neither may bootstrap the relevance decision. This deliberately does
+  // not discard a concrete statement such as "Printing is not working".
+  const unanchoredGenericFailure = symptom.symptom === 'failed' &&
+    /\b(?:this|it)\s+(?:is|was|has|keeps)\s+(?:broken|not working|failing|failed)\b|\b(?:this|it)\s+(?:doesn't|does not|didn't|did not)\s+work\b/i.test(doc.text);
 
   if (systemResult.primary) signals.push('system');
-  if (symptom.severity > SEVERITY.NONE) signals.push('symptom');
-  if (domainResult.domain !== 'unknown') signals.push('domain');
-  if (workTypeResult.workType !== 'unknown') signals.push('work-type');
+  if (symptom.severity > SEVERITY.NONE && !unanchoredGenericFailure) signals.push('symptom');
+  if (domainResult.domain !== 'unknown' && !domainResult.inferred) signals.push('domain');
+  if (workTypeResult.workType !== 'unknown' && workTypeResult.workType !== 'incident') {
+    signals.push('work-type');
+  }
   if (Object.values(risks).some(Boolean)) signals.push('risk');
   if (serviceManagementSignal) signals.push('service-management');
 
@@ -332,16 +340,22 @@ function inferStatusConsequence(doc, systemResult, symptom) {
 
 function detectBlockedProcess(doc, domainResult, symptom, systemResult) {
   const hit = scanPositive(doc, BLOCKED_PROCESS_PHRASES);
-  if (hit.length) return { label: hit[0].entry.label, quote: hit[0].quote, hit: hit[0] };
+  if (hit.length) return {
+    level: 'blocked', process: hit[0].entry.process, label: hit[0].entry.label,
+    quote: hit[0].quote, source: 'explicit', hit: hit[0],
+    evidence: [{ quote: hit[0].quote, meaning: hit[0].entry.label, source: 'consequence' }]
+  };
   if (has(doc, BLOCKED_PROCESS_PHRASES)) return null;
   const statusConsequence = inferStatusConsequence(doc, systemResult, symptom);
   if (statusConsequence) {
     return {
-      label: statusConsequence.blockedProcess,
-      quote: statusConsequence.quote,
-      inferred: true,
+      level: 'blocked', process: statusConsequence.blockedProcess,
+      label: statusConsequence.blockedProcess, quote: statusConsequence.quote,
+      source: 'inferred', inferred: true,
       note: statusConsequence.note,
-      followUpQuestion: statusConsequence.followUpQuestion
+      followUpQuestion: statusConsequence.followUpQuestion,
+      evidence: [{ quote: statusConsequence.quote, meaning: statusConsequence.blockedProcess,
+        source: 'consequence-inferred' }]
     };
   }
   // Fallback: infer blocked process from domain + symptom when explicit BLOCKED phrase present
@@ -781,6 +795,7 @@ function normaliseOverrides(overrides = {}) {
   take('contained', ['contained', 'spreading', 'unknown']);
   take('driver', ['statutory', 'operational', 'preference', 'none']);
   take('harm', ['active', 'pending', 'unknown']);
+  take('consequence', ['impaired', 'blocked', 'unknown']);
   take('impact', LEVEL_VALUES);
   take('urgency', LEVEL_VALUES);
   if (overrides.risks && typeof overrides.risks === 'object') {
@@ -823,7 +838,7 @@ export function analyse(rawText, overrides = {}) {
   const riskResult = detectRisks(doc, { symptom, scope: detectedScope });
 
   // --- manual refinements ----------------------------------------------
-  const scopeResult = applied.scope
+  let scopeResult = applied.scope
     ? {
         ...detectedScope,
         scope: applied.scope,
@@ -833,7 +848,7 @@ export function analyse(rawText, overrides = {}) {
       }
     : detectedScope;
 
-  const workaroundResult = applied.workaround
+  let workaroundResult = applied.workaround
     ? {
         ...detectedWorkaround,
         workaround: applied.workaround,
@@ -842,7 +857,7 @@ export function analyse(rawText, overrides = {}) {
       }
     : detectedWorkaround;
 
-  const deadlineResult = applied.deadline
+  let deadlineResult = applied.deadline
     ? {
         ...detectedDeadline,
         deadline: applied.deadline,
@@ -875,7 +890,7 @@ export function analyse(rawText, overrides = {}) {
   let containment = detectContainment(doc, risks);
   let driver = detectDriver(doc);
   let harmTiming = detectHarmTiming(doc, symptom);
-  const blockedProcess = detectBlockedProcess(doc, domainResult, symptom, systemResult);
+  let blockedProcess = detectBlockedProcess(doc, domainResult, symptom, systemResult);
   // Facet overrides — analyst confirmed values
   if (applied.contained) {
     if (applied.contained === 'contained') containment = { ...containment, contained: true, propagating: false, recurring: false, undetected: false, summary: 'appears contained (manually confirmed)' };
@@ -893,6 +908,21 @@ export function analyse(rawText, overrides = {}) {
       const labelMap = { active: 'harm is happening now', pending: 'harm is waiting to happen', unknown: null };
       harmTiming = { timing: applied.harm, label: labelMap[applied.harm], quote: applied.harm === 'unknown' ? null : 'manual input', source: 'manual' };
     }
+  }
+  if (applied.consequence) {
+    const labelMap = {
+      impaired: 'business process is impaired',
+      blocked: 'business process is blocked',
+      unknown: 'business consequence is unknown'
+    };
+    blockedProcess = {
+      level: applied.consequence,
+      process: null,
+      label: labelMap[applied.consequence],
+      quote: 'manual input',
+      source: 'manual',
+      evidence: [{ quote: 'manual input', meaning: labelMap[applied.consequence], source: 'consequence' }]
+    };
   }
 
   // Confirmed facets are scoring inputs, not display-only annotations. They
@@ -934,19 +964,47 @@ export function analyse(rawText, overrides = {}) {
   const escalated = has(doc, ESCALATION_PHRASES);
   const slaBreached = has(doc, SLA_BREACH_PHRASES);
   const relevance = assessInputRelevance({
-    systemResult, symptom, domainResult, workTypeResult, risks,
+    doc, systemResult, symptom, domainResult, workTypeResult, risks,
     serviceManagementSignal: activeIncident || slaBreached ||
       decisionContext.status !== 'active-or-unspecified'
   });
   const inScope = relevance.inScope;
 
+  // Without a recognised support subject, pronouns such as "this" and "it"
+  // have no safe referent. Do not let their surrounding scope, deadline, or
+  // workaround language answer a triage question; an analyst's explicit
+  // refinement remains authoritative.
+  if (!inScope) {
+    if (!applied.scope) {
+      scopeResult = {
+        ...scopeResult, scope: 'unknown', label: scopeLabel('unknown'), explicit: false,
+        allUsers: false, evidence: []
+      };
+    }
+    if (!applied.workaround) {
+      workaroundResult = {
+        ...workaroundResult, workaround: 'unknown', label: workaroundLabel('unknown'), evidence: []
+      };
+    }
+    if (!applied.deadline) {
+      deadlineResult = {
+        ...deadlineResult, deadline: 'unknown', label: deadlineLabel('unknown'),
+        committed: false, asserted: false, evidence: []
+      };
+    }
+    if (!applied.driver) {
+      driver = { driver: 'unknown', label: null, quote: null, actor: null, committed: false };
+    }
+  }
+
   // --- impact and urgency ----------------------------------------------
   const impactResult = assessImpact(doc, {
-    scopeResult, symptom, riskResult: effectiveRisk, deadlineResult, systemResult
+    scopeResult, symptom, riskResult: effectiveRisk, deadlineResult, systemResult,
+    consequence: blockedProcess
   });
   const urgencyResult = assessUrgency(doc, {
     deadlineResult, workaroundResult, symptom, scopeResult, riskResult: effectiveRisk,
-    differential, driver, harmTiming
+    differential, driver, harmTiming, consequence: blockedProcess
   });
 
   const impactBase = impactResult.impact;
@@ -985,6 +1043,9 @@ export function analyse(rawText, overrides = {}) {
     const workaroundR = ov.workaround
       ? { ...workaroundResult, workaround: ov.workaround, label: workaroundLabel(ov.workaround) }
       : workaroundResult;
+    const consequenceR = ov.consequence
+      ? { level: ov.consequence, quote: 'hypothetical answer', source: 'manual' }
+      : blockedProcess;
     const mods = {
       ...modifiers,
       propagating: Boolean(modifiers.propagating || (ov.propagating && risks.dataIntegrity)),
@@ -993,11 +1054,13 @@ export function analyse(rawText, overrides = {}) {
     };
     const riskSim = { ...effectiveRisk, modifiers: mods };
     const imp = assessImpact(doc, {
-      scopeResult: scopeR, symptom, riskResult: riskSim, deadlineResult: deadlineR, systemResult
+      scopeResult: scopeR, symptom, riskResult: riskSim, deadlineResult: deadlineR, systemResult,
+      consequence: consequenceR
     });
     const urg = assessUrgency(doc, {
       deadlineResult: deadlineR, workaroundResult: workaroundR, symptom,
-      scopeResult: scopeR, riskResult: riskSim, differential, driver, harmTiming
+      scopeResult: scopeR, riskResult: riskSim, differential, driver, harmTiming,
+      consequence: consequenceR
     });
     const mod = applyRiskModifiers({
       impact: imp.impact, urgency: urg.urgency, risks, modifiers: mods, symptom,
@@ -1012,6 +1075,8 @@ export function analyse(rawText, overrides = {}) {
   {
     const changes = (tests) => tests.some((t) => simulate(t) !== priority);
     if (!scopeResult.explicit && changes([{ scope: 'all-schools' }, { scope: 'one-school' }])) keyFacets.push('i1');
+    if ((!blockedProcess || blockedProcess.level === 'unknown') &&
+        changes([{ consequence: 'blocked' }])) keyFacets.push('i2');
     if (deadlineResult.deadline === 'unknown' && changes([{ deadline: 'today' }, { deadline: 'days-2-5' }])) keyFacets.push('u5');
     if (workaroundResult.workaround === 'unknown' && changes([{ workaround: 'no' }, { workaround: 'yes' }])) keyFacets.push('u7');
     if (risks.dataIntegrity && !modifiers.propagating && changes([{ propagating: true }])) keyFacets.push('i4');
@@ -1024,7 +1089,8 @@ export function analyse(rawText, overrides = {}) {
   // --- explanation ------------------------------------------------------
   const confidenceResult = assessConfidence(doc, {
     scopeResult, deadlineResult, workaroundResult, symptom, systemResult,
-    impactResult, urgencyResult, overridesApplied, isQuestion, inScope
+    impactResult, urgencyResult, overridesApplied, isQuestion, inScope,
+    consequence: blockedProcess
   });
 
   // Almost nothing was recognised. That is not evidence of low priority - it
@@ -1076,13 +1142,16 @@ export function analyse(rawText, overrides = {}) {
     ...domainResult.evidence,
     ...workaroundResult.evidence,
     ...deadlineResult.evidence,
+    ...(blockedProcess?.evidence || []),
     ...effectiveRisk.evidence
   ];
 
   // 8-question facets for the dedicated panel
   const eightFacets = {
     i1Scope: { question: 'Who and how many are affected?', answer: scopeResult.label, value: scopeResult.scope, explicit: scopeResult.explicit, quote: scopeResult.evidence[0]?.quote || null },
-    i2Blocked: { question: 'What can they not do that they could do yesterday?', answer: blockedProcess ? blockedProcess.label : (symptom.label !== 'Question / How-To' ? symptom.label : 'Not stated'), quote: blockedProcess?.quote || symptom.evidence[0]?.quote || null, blockedProcess },
+    // I2 is the business process that cannot continue. A technical symptom can
+    // identify the failure mode, but must not be relabelled as its consequence.
+    i2Blocked: { question: 'What can they not do that they could do yesterday?', answer: blockedProcess ? blockedProcess.label : 'Not stated', quote: blockedProcess?.quote || null, blockedProcess },
     i3Irreversibility: { question: 'Wrong / exposed / lost / unsafe vs merely unavailable?', answer: modifiers.exposureActive ? 'Exposed' : risks.dataIntegrity && modifiers.propagating ? 'Wrong + spreading' : risks.dataIntegrity ? 'Wrong data' : risks.privacy ? 'Privacy risk' : risks.safety ? 'Safety' : symptom.severity >= 3 ? 'Unavailable/outage' : 'No irreversibility flagged', risks: Object.keys(risks).filter(k => risks[k]), modifiers },
     i4Containment: { question: 'Contained or spreading / recurring / unknown extent?', answer: containment.summary, containment },
     u5Deadline: { question: 'When do you need this by?', answer: deadlineResult.label, value: deadlineResult.deadline, committed: deadlineResult.committed, quote: deadlineResult.evidence[0]?.quote || null },
@@ -1132,6 +1201,11 @@ export function analyse(rawText, overrides = {}) {
     workaroundLabel: workaroundResult.label,
     deadline: deadlineResult.deadline,
     deadlineLabel: deadlineResult.label,
+    consequence: blockedProcess?.level || 'unknown',
+    businessConsequence: blockedProcess || {
+      level: 'unknown', process: null, label: 'Business consequence not stated',
+      quote: null, source: 'unknown', evidence: []
+    },
 
     // risk
     risks,

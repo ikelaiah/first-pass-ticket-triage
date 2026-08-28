@@ -59,7 +59,7 @@ See [PRIVACY.md](PRIVACY.md) for how to verify this yourself in about a minute.
 - **Suggested reply (draft)** — a polite, short, audience-neutral draft ("what we understood / suggested priority / what we still need"), plus Copy markdown and Download .md for handoff
 - **Share link** — `?t=` URL carries the ticket (2000-char cap); nothing is stored, the link *is* the ticket
 - **Inline relevance nudge** — urgency or blocked wording without a recognised system/symptom gets a hint before analysis
-- **Manual refinement** — confirm scope, workaround, deadline, containment, driver, harm timing or risk and watch the priority recalculate; the printed slip lists what was refined
+- **Manual refinement** — confirm scope, business consequence, workaround, deadline, containment, driver, harm timing or risk and watch the priority recalculate; the printed slip lists what was refined
 - **Interactive priority matrix** — the current cell is highlighted; clicking a cell explains it
 - **Accessible** — semantic HTML, labelled controls, keyboard operable, no colour-only meaning
 - **Offline capable** — once the files are downloaded, it works with the network off
@@ -255,7 +255,7 @@ Open <http://localhost:8000/tests/tests.html> — the suite runs in the page and
 PASS/FAIL line for every assertion.
 
 With Node available, the same suite runs in a terminal; `npm test` runs the complete
-v0.4.0 gate:
+v0.4.1 gate:
 
 ```bash
 node tests/run.mjs      # behavioural suite + privacy scan
@@ -383,9 +383,12 @@ node tests/evaluate.mjs path/to/accuracy-corpus.json
 ```
 
 The evaluator reports exact priority, impact and urgency accuracy, assessed coverage,
-P1 precision/recall, dangerous under-prioritisation, abstentions, and a confusion matrix.
-The checked-in fixture documents the format; it is deliberately not presented as a
-production accuracy claim. Ticket text stays on the machine running the command.
+P1 precision/recall, dangerous under-prioritisation, abstentions, a confusion matrix,
+and per-facet coverage/accuracy for labelled scope, consequence, deadline, driver,
+workaround, and containment. Mismatches identify a case ID and expected/actual fact;
+they never print ticket text. The checked-in fixture documents the format; it is
+deliberately not presented as a production accuracy claim. Ticket text stays on the
+machine running the command.
 
 ---
 
