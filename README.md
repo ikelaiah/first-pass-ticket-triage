@@ -46,9 +46,10 @@ See [PRIVACY.md](PRIVACY.md) for how to verify this yourself in about a minute.
 - **IT-domain classification** — identity, integration, SQL, data pipeline, Power BI, payroll, and more
 - **Critical-risk flags** — payroll, payments, security, privacy, student/staff safety, WWCC/safeguarding, compliance, data integrity, critical integration
 - **Explainable decisions** — evidence → impact → urgency → matrix → priority, shown in full
+- **8 Questions — Impact vs Urgency** — I1 Who/how many? · I2 Blocked process? · I3 Wrong/exposed/lost/unsafe? · I4 Contained or spreading? · U5 When needed? · U6 Deadline driver (requirement vs preference)? · U7 Workaround daily cost? · U8 Harm now or waiting? — each shown as Answered/Inferred/Unknown with row-aligned cards
 - **Confidence scoring** — the tool says when it does not know enough
 - **Missing information + follow-up questions** — the questions that would actually change the answer
-- **Manual refinement** — confirm scope, workaround, deadline or risk and watch the priority recalculate
+- **Manual refinement** — confirm scope, workaround, deadline, containment, driver, harm timing or risk and watch the priority recalculate
 - **Interactive priority matrix** — the current cell is highlighted; clicking a cell explains it
 - **Accessible** — semantic HTML, labelled controls, keyboard operable, no colour-only meaning
 - **Offline capable** — once the files are downloaded, it works with the network off
@@ -102,8 +103,8 @@ Ticket
    ↓
 Natural-language evidence
    ↓
-Scope + Workaround + Deadline + Risk
-   ↓
+Scope + Workaround + Deadline + Risk + Containment + Driver + Harm timing
+   ↓         8 Questions — Impact (I1-I4) vs Urgency (U5-U8)
 Impact + Urgency
    ↓
 3×3 Priority Matrix
@@ -284,7 +285,10 @@ first-pass-triage/
 │   │   ├── negation.js         normalisation, clause splitting, negation-aware matching
 │   │   ├── scope.js            individual … corporation-wide
 │   │   ├── deadline.js         now … no deadline, and asserted vs committed
-│   │   ├── workaround.js       yes / partial / no / unknown
+│   │   ├── workaround.js       yes / partial / no / unknown + daily cost
+│   │   ├── containment.js      contained vs spreading / recurring / unknown
+│   │   ├── driver.js           deadline driver — requirement or preference
+│   │   ├── harm-timing.js      expired vs expiring — harm now or waiting
 │   │   ├── symptom.js          what is happening technically
 │   │   ├── domain.js           identity, integration, SQL, data pipeline, BI, …
 │   │   ├── work-type.js        incident, request, feature, documentation, …
