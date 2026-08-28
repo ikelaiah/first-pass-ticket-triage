@@ -35,6 +35,15 @@ because nothing is saved anywhere.
 
 The application only writes the theme preference (`localStorage` key `theme` = `auto`/`light`/`dark`) and only if you use the System/Light/Dark switcher. Ticket text is never written to `localStorage`, `sessionStorage` or IndexedDB. Should an opt-in ticket-save feature ever be added, it would be explicit, off by default, and documented here.
 
+### The one thing that does carry ticket text: the share link
+
+**Share Link** puts the ticket (first 2000 characters) into the page URL as `?t=` so a
+colleague can open the same analysis. The link is never sent anywhere by the
+application — but anyone you give the link to can read the ticket, and it will appear
+in browser history and server access logs like any URL. **Do not use Share Link for
+sensitive tickets.** Clearing the box removes the parameter from the address bar.
+Downloading the `.md` slip keeps everything on your device.
+
 ---
 
 ## The one honest caveat

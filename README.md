@@ -46,10 +46,13 @@ See [PRIVACY.md](PRIVACY.md) for how to verify this yourself in about a minute.
 - **IT-domain classification** — identity, integration, SQL, data pipeline, Power BI, payroll, and more
 - **Critical-risk flags** — payroll, payments, security, privacy, student/staff safety, WWCC/safeguarding, compliance, data integrity, critical integration
 - **Explainable decisions** — evidence → impact → urgency → matrix → priority, shown in full
-- **8 Questions — Impact vs Urgency** — I1 Who/how many? · I2 Blocked process? · I3 Wrong/exposed/lost/unsafe? · I4 Contained or spreading? · U5 When needed? · U6 Deadline driver (requirement vs preference)? · U7 Workaround daily cost? · U8 Harm now or waiting? — each shown as Answered/Inferred/Unknown with row-aligned cards
+- **8 Questions — Impact vs Urgency** — I1 Who/how many? · I2 Blocked process? · I3 Wrong/exposed/lost/unsafe? · I4 Contained or spreading? · U5 When needed? · U6 Deadline driver (requirement vs preference)? · U7 Workaround daily cost? · U8 Harm now or waiting? — each shown as Answered/Inferred/Unknown with row-aligned cards, and *key driver* badges on the unknowns that could flip the cell
 - **Confidence scoring** — the tool says when it does not know enough
-- **Missing information + follow-up questions** — the questions that would actually change the answer
-- **Manual refinement** — confirm scope, workaround, deadline, containment, driver, harm timing or risk and watch the priority recalculate
+- **Ranked follow-up questions** — diagnostic first, then *would change priority* (verified by re-running the scoring with each hypothetical answer), then *raises confidence*; capped at six
+- **Suggested reply (draft)** — a polite, short, audience-neutral draft ("what we understood / suggested priority / what we still need"), plus Copy markdown and Download .md for handoff
+- **Share link** — `?t=` URL carries the ticket (2000-char cap); nothing is stored, the link *is* the ticket
+- **Inline relevance nudge** — urgency or blocked wording without a recognised system/symptom gets a hint before analysis
+- **Manual refinement** — confirm scope, workaround, deadline, containment, driver, harm timing or risk and watch the priority recalculate; the printed slip lists what was refined
 - **Interactive priority matrix** — the current cell is highlighted; clicking a cell explains it
 - **Accessible** — semantic HTML, labelled controls, keyboard operable, no colour-only meaning
 - **Offline capable** — once the files are downloaded, it works with the network off
@@ -308,7 +311,9 @@ first-pass-triage/
 │       ├── dom.js              small createElement helpers
 │       ├── render-result.js    the result card
 │       ├── render-matrix.js    the interactive matrix
-│       └── refine-controls.js  the manual refinement panel
+│       ├── refine-controls.js  the manual refinement panel
+│       ├── reply.js            audience-neutral draft reply + markdown slip
+│       └── share.js            ?t= URL encode/decode (no storage, no network)
 ├── tests/
 │   ├── tests.html              browser test page
 │   ├── tests.js                the assertions (shared)
@@ -368,6 +373,9 @@ readable diff rather than a hunt.
   list of questions, the questions are the output that matters.
 - 🧠 **It has no memory.** Nothing is stored, so there is no history, no trend and no
   learning from your corrections — by design.
+- 🔗 **The share link is the ticket.** `?t=` URLs contain the pasted text (first 2000
+  characters) so a colleague can open the same analysis — do not use them for
+  sensitive tickets. See [PRIVACY.md](PRIVACY.md).
 
 ---
 
