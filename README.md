@@ -102,14 +102,17 @@ a phrase to `js/data/phrases.js` and a case to the suite — no engine change.
 Ticket
    ↓
 Natural-language evidence
+   ↓  Evidence (Scope · Workaround · Deadline · Symptom · Domain · Risk
+   ↓          · Containment · Driver · Harm timing) — 9 signals
+   ↓  viewed as 8 Questions — Impact I1–I4 vs Urgency U5–U8
+   ↓  I1 Scope  I2 Blocked process (Symptom+Domain)  I3 Wrong/exposed  I4 Contained?
+   ↓  U5 When?  U6 Requirement vs preference?  U7 Daily cost?  U8 Now vs pending?
    ↓
-Scope + Workaround + Deadline + Risk + Containment + Driver + Harm timing
-   ↓         8 Questions — Impact (I1-I4) vs Urgency (U5-U8)
-Impact + Urgency
+Impact + Urgency  (weighted, then critical-risk modifiers)
    ↓
-3×3 Priority Matrix
+3×3 Priority Matrix  (only place a P number is decided)
    ↓
-P1 / P2 / P3 / P4
+P1 / P2 / P3 / P4  + Confidence · Reasoning · Missing info
 ```
 
 The natural-language engine never picks a priority. It establishes **Impact** and

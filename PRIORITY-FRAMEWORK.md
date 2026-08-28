@@ -30,9 +30,12 @@ Ticket text
    ↓  normalise (lowercase, expand contractions, unify spelling)
    ↓  split into clauses (. ; ! ? and "but" / "however")
    ↓  match phrase dictionaries, honouring negation
-Evidence
-   ↓
-Scope · Workaround · Deadline · Symptom · Domain · Work type · Risks
+Evidence — 9 signals
+   ↓  Scope · Workaround (+daily cost) · Deadline · Symptom · Domain · Risks
+   ↓  + Containment · Driver (requirement vs preference) · Harm timing (now vs pending)
+   ↓  viewed as 8 Questions — Impact I1–I4 vs Urgency U5–U8
+   ↓  I1 Scope  I2 Blocked process (Symptom+Domain)  I3 Wrong/exposed  I4 Contained?
+   ↓  U5 When?  U6 Requirement vs preference?  U7 Daily cost?  U8 Now vs pending?
    ↓  weighted scoring
 Impact  +  Urgency
    ↓  critical risk modifiers may raise or lower either value
