@@ -42,8 +42,8 @@ documentation and a five-axis review.
 
 ### Phase 3: Measured accuracy
 
-- [ ] Add explicit assessed/unassessed output semantics.
-- [ ] Add corpus schema, evaluator, metrics, and evaluator self-tests.
+- [x] Add explicit assessed/unassessed output semantics.
+- [x] Add corpus schema, evaluator, metrics, and evaluator self-tests.
 
 ### Phase 4: Release and review
 

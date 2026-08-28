@@ -1005,6 +1005,7 @@ export function analyse(rawText, overrides = {}) {
   // is evidence that the ticket cannot be assessed yet, and the card must say
   // so rather than quietly returning P4.
   const sparseUnrecognisedRequest =
+    decisionContext.status === 'active-or-unspecified' &&
     symptom.severity === 0 &&
     !scopeResult.explicit &&
     !systemResult.primary &&
@@ -1014,6 +1015,8 @@ export function analyse(rawText, overrides = {}) {
     doc.wordCount < 10 &&
     !isQuestion;
   const insufficientInformation = !inScope || sparseUnrecognisedRequest;
+  const assessmentStatus = insufficientInformation ? 'unassessed' : 'assessed';
+  const suggestedPriority = insufficientInformation ? null : priority;
 
   const missingInfo = buildMissingInformation({
     scopeResult, deadlineResult, workaroundResult, systemResult, symptom,
@@ -1071,6 +1074,8 @@ export function analyse(rawText, overrides = {}) {
 
     // headline
     priority,
+    suggestedPriority,
+    assessmentStatus,
     justification: buildJustification({
       scopeResult, workaroundResult, deadlineResult, symptom,
       riskFlags: Object.entries(risks).filter(([, v]) => v)

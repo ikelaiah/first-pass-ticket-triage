@@ -1,0 +1,66 @@
+{
+  "metadata": {
+    "name": "v0.4.0 evaluator schema examples",
+    "kind": "schema-example",
+    "note": "Replace or supplement these examples with independently labelled, anonymised tickets. Do not treat this file as a production accuracy claim."
+  },
+  "cases": [
+    {
+      "id": "active-p1",
+      "text": "Canvas has failed for all schools and today's classes are blocked.",
+      "expected": {
+        "assessmentStatus": "assessed",
+        "priority": "P1",
+        "impact": "high",
+        "urgency": "high"
+      }
+    },
+    {
+      "id": "broad-p2",
+      "text": "Canvas sync has stopped for all schools, but recovery can wait until next week.",
+      "expected": {
+        "assessmentStatus": "assessed",
+        "priority": "P2",
+        "impact": "high",
+        "urgency": "medium"
+      }
+    },
+    {
+      "id": "isolated-p3",
+      "text": "One user cannot log into Laserfiche.",
+      "expected": {
+        "assessmentStatus": "assessed",
+        "priority": "P3",
+        "impact": "low",
+        "urgency": "medium"
+      }
+    },
+    {
+      "id": "how-to-p4",
+      "text": "How do I access Canvas?",
+      "expected": {
+        "assessmentStatus": "assessed",
+        "priority": "P4",
+        "impact": "low",
+        "urgency": "low"
+      }
+    },
+    {
+      "id": "irrelevant-unassessed",
+      "text": "Help, my cat is sad now, highest priority.",
+      "expected": {
+        "assessmentStatus": "unassessed"
+      }
+    },
+    {
+      "id": "resolved-history",
+      "text": "Resolved, no action required. Previous message: Canvas is down for all schools and today's classes are blocked.",
+      "expected": {
+        "assessmentStatus": "assessed",
+        "priority": "P4",
+        "impact": "low",
+        "urgency": "low"
+      }
+    }
+  ]
+}

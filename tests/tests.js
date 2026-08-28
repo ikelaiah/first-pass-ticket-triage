@@ -523,11 +523,21 @@ test('Input relevance', 'non-IT text is unassessed even when it claims urgency',
   const result = analyse('help! my cat is sad now, high priority');
   return ok(
     result.inScope === false && result.insufficientInformation === true &&
-      result.priority === 'P4' && result.confidenceBand === 'low' &&
+      result.priority === 'P4' && result.assessmentStatus === 'unassessed' &&
+      result.suggestedPriority === null && result.confidenceBand === 'low' &&
       result.detail.urgencyResult.claimed === true,
     'inScope=' + result.inScope + ' insufficient=' + result.insufficientInformation +
-      ' priority=' + result.priority + ' confidence=' + result.confidence +
+      ' priority=' + result.priority + ' suggested=' + result.suggestedPriority +
+      ' status=' + result.assessmentStatus + ' confidence=' + result.confidence +
       ' claimed=' + result.detail.urgencyResult.claimed
+  );
+});
+
+test('Input relevance', 'an assessed ticket exposes the actionable suggestion separately', () => {
+  const result = analyse('Canvas sync has stopped across all schools.');
+  return ok(
+    result.assessmentStatus === 'assessed' && result.suggestedPriority === result.priority,
+    result.assessmentStatus + ' / ' + result.suggestedPriority + ' / ' + result.priority
   );
 });
 
@@ -568,7 +578,8 @@ test('Decision context', 'a resolved update is not re-escalated by quoted histor
     'Resolved, no action required. Previous message: Canvas is down for all schools and today’s classes are blocked.'
   );
   return ok(
-    result.priority === 'P4' && result.decisionContext.status === 'resolved' &&
+    result.priority === 'P4' && result.assessmentStatus === 'assessed' &&
+      result.suggestedPriority === 'P4' && result.decisionContext.status === 'resolved' &&
       result.decisionContext.ignored.length > 0,
     result.priority + ' / ' + JSON.stringify(result.decisionContext)
   );

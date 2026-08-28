@@ -4,7 +4,7 @@
 - [x] Connect containment, deadline driver, and harm timing to scoring.
 - [x] Write RED contrast tests for inactive and active incident language.
 - [x] Implement current/resolved/hypothetical/test context preprocessing.
-- [ ] Add explicit assessed/unassessed result fields.
-- [ ] Add the offline labelled-corpus evaluator and fixture schema.
+- [x] Add explicit assessed/unassessed result fields.
+- [x] Add the offline labelled-corpus evaluator and fixture schema.
 - [ ] Update v0.4.0 documentation and release notes.
 - [ ] Run full tests, privacy scan, syntax, diff hygiene, and code review.
