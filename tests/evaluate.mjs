@@ -13,6 +13,15 @@ const PRIORITIES = ['P1', 'P2', 'P3', 'P4'];
 const OUTPUT_LABELS = [...PRIORITIES, 'UNASSESSED'];
 const LEVELS = ['low', 'medium', 'high'];
 const PRIORITY_RANK = { P1: 4, P2: 3, P3: 2, P4: 1 };
+const FACET_DEFINITIONS = {
+  scope: ['unknown', 'individual', 'few-users', 'team', 'cohort', 'one-school',
+    'multiple-schools', 'all-schools', 'corporation-wide'],
+  consequence: ['unknown', 'impaired', 'blocked'],
+  deadline: ['unknown', 'now', 'today', 'tomorrow', 'days-2-5', 'weeks-1-2', 'none'],
+  driver: ['unknown', 'statutory', 'operational', 'preference', 'none'],
+  workaround: ['unknown', 'yes', 'partial', 'no'],
+  containment: ['unknown', 'contained', 'spreading']
+};
 
 function ratio(numerator, denominator) {
   return denominator ? numerator / denominator : null;
@@ -47,8 +56,24 @@ export function validateCorpus(corpus) {
     if (item.expected.urgency !== undefined) {
       assert(LEVELS.includes(item.expected.urgency), at + '.expected.urgency is invalid');
     }
+    for (const [facet, values] of Object.entries(FACET_DEFINITIONS)) {
+      if (item.expected[facet] !== undefined) {
+        assert(values.includes(item.expected[facet]),
+          at + '.expected.' + facet + ' is invalid');
+      }
+    }
   }
   return corpus;
+}
+
+function actualFacet(result, facet) {
+  if (facet === 'driver') return result.driver?.driver || 'unknown';
+  if (facet === 'containment') {
+    if (result.containment?.propagating || result.containment?.recurring) return 'spreading';
+    if (result.containment?.contained) return 'contained';
+    return 'unknown';
+  }
+  return result[facet] || 'unknown';
 }
 
 function emptyConfusion() {
@@ -74,6 +99,10 @@ export function evaluateCases(cases, analyseTicket = analyse) {
   let p1FalseNegative = 0;
   let dangerousUnderPrioritisation = 0;
   let abstentionsOnAssessed = 0;
+  const facets = Object.fromEntries(Object.keys(FACET_DEFINITIONS).map((facet) => [
+    facet, { labelled: 0, correct: 0, accuracy: null }
+  ]));
+  const facetMismatches = [];
 
   for (const item of cases) {
     const result = analyseTicket(item.text);
@@ -107,6 +136,15 @@ export function evaluateCases(cases, analyseTicket = analyse) {
       if (result.urgency === item.expected.urgency) urgencyCorrect += 1;
     }
 
+    for (const facet of Object.keys(FACET_DEFINITIONS)) {
+      if (item.expected[facet] === undefined) continue;
+      const expected = item.expected[facet];
+      const actual = actualFacet(result, facet);
+      facets[facet].labelled += 1;
+      if (actual === expected) facets[facet].correct += 1;
+      else facetMismatches.push({ id: item.id, facet, expected, actual });
+    }
+
     const expectedP1 = expectedPriority === 'P1';
     const actualP1 = actualPriority === 'P1';
     if (expectedP1 && actualP1) p1TruePositive += 1;
@@ -135,6 +173,10 @@ export function evaluateCases(cases, analyseTicket = analyse) {
     }
   }
 
+  for (const facet of Object.values(facets)) {
+    facet.accuracy = ratio(facet.correct, facet.labelled);
+  }
+
   return {
     total: cases.length,
     coverage: ratio(actionable, cases.length),
@@ -151,6 +193,8 @@ export function evaluateCases(cases, analyseTicket = analyse) {
     },
     dangerousUnderPrioritisation,
     abstentionsOnAssessed,
+    facets,
+    facetMismatches,
     confusion,
     mismatches
   };
@@ -170,6 +214,10 @@ export function printReport(report, write = console.log) {
   write('P1 precision / recall: ' + percent(report.p1.precision) + ' / ' + percent(report.p1.recall));
   write('Dangerous under-prioritisations: ' + report.dangerousUnderPrioritisation);
   write('Abstentions on assessed tickets: ' + report.abstentionsOnAssessed);
+  for (const [name, facet] of Object.entries(report.facets || {})) {
+    write(name[0].toUpperCase() + name.slice(1) + ' accuracy: ' + percent(facet.accuracy) +
+      ' (' + facet.labelled + ' labelled)');
+  }
   write('Mismatches: ' + report.mismatches.length);
   write('Confusion matrix (expected rows, actual columns)');
   write(['expected', ...OUTPUT_LABELS].join('\t'));
@@ -179,6 +227,10 @@ export function printReport(report, write = console.log) {
   for (const mismatch of report.mismatches) {
     write('- ' + mismatch.id + ': expected ' + mismatch.expected.priority +
       ', got ' + mismatch.actual.priority);
+  }
+  for (const mismatch of report.facetMismatches || []) {
+    write('- ' + mismatch.id + ' / ' + mismatch.facet + ': expected ' +
+      mismatch.expected + ', got ' + mismatch.actual);
   }
 }
 

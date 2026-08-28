@@ -1,10 +1,11 @@
-# v0.4.0 accuracy checklist
+# v0.4.1 evidence calibration checklist
 
-- [x] Write RED tests for decision-relevant manual facets.
-- [x] Connect containment, deadline driver, and harm timing to scoring.
-- [x] Write RED contrast tests for inactive and active incident language.
-- [x] Implement current/resolved/hypothetical/test context preprocessing.
-- [x] Add explicit assessed/unassessed result fields.
-- [x] Add the offline labelled-corpus evaluator and fixture schema.
-- [x] Update v0.4.0 documentation and release notes.
-- [x] Run full tests, privacy scan, syntax, diff hygiene, and code review.
+- [x] Confirm the v0.4.1 spec assumptions and resolve the `impaired` scoring decision.
+- [x] Add optional decision-facet expectations and facet-level evaluator metrics.
+- [x] Write failing explicit/inferred/generic business-consequence contrasts.
+- [x] Add the explainable consequence fact detector and provenance contract.
+- [x] Connect consequence conservatively to scoring, confidence, and follow-up simulation.
+- [x] Add a dirty-tracked manual consequence refinement and present its provenance.
+- [x] Add balanced, synthetic calibration pairs to the local schema fixture.
+- [x] Update framework, README, package version, and changelog for v0.4.1.
+- [ ] Run full tests, privacy scan, evaluator, syntax, diff hygiene, and code review.

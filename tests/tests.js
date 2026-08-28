@@ -218,7 +218,7 @@ test('Urgency', '"we can continue for now" is low urgency', () =>
   field('The report is broken but we can work without it for now.', 'urgency', 'low'));
 
 test('Urgency', 'a three day deadline with a manual process is medium urgency', () =>
-  field('This is broken and I need it within three days. We can process it manually until then.',
+  field('Canvas is broken and I need it within three days. We can process it manually until then.',
     'urgency', 'medium'));
 
 test('Urgency', '"users cannot work" is high urgency', () =>
@@ -475,6 +475,52 @@ test('Refinement', 'confirming pending certificate harm is active raises urgency
     result.impact + '/' + result.urgency + ' -> ' + result.priority);
 });
 
+/* ------------------------------------------------------ consequence -- */
+
+test('Consequence', 'named attendance work is an explicit blocked consequence', () => {
+  const result = analyse('All schools cannot mark the roll in Canvas today.');
+  return ok(
+    result.consequence === 'blocked' &&
+      result.businessConsequence.source === 'explicit' &&
+      result.businessConsequence.process === 'attendance marking',
+    JSON.stringify(result.businessConsequence)
+  );
+});
+
+test('Consequence', 'a generic technical symptom does not invent a blocked process', () => {
+  const result = analyse('Canvas is slow for one school.');
+  return ok(result.consequence === 'unknown', JSON.stringify(result.businessConsequence));
+});
+
+test('Consequence', 'an authentication symptom does not stand in for a blocked process', () => {
+  const result = analyse("Laserfiche SSO isn't working for one user.");
+  const i2 = result.eightFacets.i2Blocked;
+  return ok(
+    result.symptom === 'authentication-failed' && result.consequence === 'unknown' &&
+      i2.answer === 'Not stated' && i2.quote === null && i2.blockedProcess === null,
+    JSON.stringify(i2)
+  );
+});
+
+test('Consequence', 'an analyst can confirm a blocked consequence with manual provenance', () => {
+  const result = analyse('Canvas is slow for one school.', { consequence: 'blocked' });
+  return ok(
+    result.consequence === 'blocked' && result.businessConsequence.source === 'manual' &&
+      result.detail.impactResult.contributions.some((item) => item.label === 'Business process is blocked'),
+    JSON.stringify(result.businessConsequence)
+  );
+});
+
+test('Consequence', 'an impaired process adds only the documented impact contribution', () => {
+  const result = analyse('Canvas is slow for one school.', { consequence: 'impaired' });
+  return ok(
+    result.businessConsequence.source === 'manual' &&
+      result.detail.impactResult.contributions.some((item) => item.label === 'Business process is impaired') &&
+      !result.detail.urgencyResult.contributions.some((item) => item.label.includes('Business process')),
+    JSON.stringify(result.detail.impactResult.contributions)
+  );
+});
+
 /* -------------------------------------------------------- 20. behaviour -- */
 
 test('Result model', 'an empty ticket returns an empty result', () => {
@@ -516,6 +562,20 @@ test('Input relevance', 'an unfamiliar Mac how-to is recognised support work', (
   return ok(
     result.inScope === true && result.workType === 'documentation' && result.priority === 'P4',
     'inScope=' + result.inScope + ' workType=' + result.workType + ' priority=' + result.priority
+  );
+});
+
+test('Input relevance', 'an unanchored “this is broken” claim does not establish any triage fact', () => {
+  const result = analyse('This is broken but I can work without it for now.');
+  const facets = result.eightFacets;
+  return ok(
+    result.assessmentStatus === 'unassessed' && result.inScope === false &&
+      result.scope === 'unknown' && result.workaround === 'unknown' &&
+      facets.i2Blocked.answer === 'Not stated' && facets.i2Blocked.quote === null &&
+      facets.u5Deadline.value === 'unknown' && facets.u6Driver.driver.driver === 'unknown' &&
+      facets.u7Workaround.workaround === 'unknown' &&
+      facets.u8HarmTiming.harmTiming.timing === 'unknown',
+    JSON.stringify({ status: result.assessmentStatus, signals: result.detail.relevance.signals, facets })
   );
 });
 
@@ -1054,7 +1114,7 @@ test('Real tickets', 'Edumate public-contact status infers the blocked education
   const result = analyse(REAL_TICKET);
   const blocked = result.eightFacets.i2Blocked.blockedProcess;
   return ok(
-    blocked?.inferred === true &&
+    blocked?.inferred === true && blocked.source === 'inferred' &&
       blocked.label === 'student is excluded from class rolls and downstream education-system sync' &&
       blocked.quote === 'public contact',
     JSON.stringify(blocked)
@@ -1081,8 +1141,8 @@ test('Real tickets', '"the class rolls" is a document, not a population', () => 
 test('Real tickets', '"is now showing" is a state, not a deadline', () =>
   field(REAL_TICKET, 'deadline', 'unknown'));
 
-test('Real tickets', '"we need it now" is still a deadline', () =>
-  field('We need this fixed now.', 'deadline', 'now'));
+test('Real tickets', 'a stated system makes "we need it now" a deadline', () =>
+  field('We need Canvas fixed now.', 'deadline', 'now'));
 
 test('Real tickets', 'the wrong record type is named as the symptom', () =>
   field(REAL_TICKET, 'symptom', 'wrong-record-type'));

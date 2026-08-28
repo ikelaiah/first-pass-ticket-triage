@@ -75,6 +75,7 @@ function factChips(result) {
     ['Symptom', result.symptomLabel],
     ['Work type', result.workTypeLabel],
     ['Workaround', result.workaroundLabel],
+    ['Consequence', result.businessConsequence.label + ' (' + result.businessConsequence.source + ')'],
     ['Deadline', result.deadlineLabel]
   ];
   return el('ul', { class: 'chips' }, chips.map(([key, value]) =>
@@ -354,7 +355,7 @@ function refinedLine(result) {
   if (!applied || !Object.keys(applied).length) return null;
   const names = {
     scope: 'Scope', workaround: 'Workaround', deadline: 'Deadline',
-    contained: 'Containment', driver: 'Driver', harm: 'Harm timing',
+    consequence: 'Business consequence', contained: 'Containment', driver: 'Driver', harm: 'Harm timing',
     impact: 'Impact', urgency: 'Urgency'
   };
   const parts = [];

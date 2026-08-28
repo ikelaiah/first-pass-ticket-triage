@@ -1255,18 +1255,24 @@ export const CONTAINED_PHRASES = [
 
 /**
  * I2 blocked business process — what the user can no longer do.
- * Used as a display extractor (pairs BLOCKED_PHRASES with domain), not a weight.
+ * Each entry names the disrupted process so the fact can be scored and explained
+ * without treating a system name or a generic technical symptom as a consequence.
  */
 export const BLOCKED_PROCESS_PHRASES = [
   { m: ['can not mark the roll', 'cannot mark the roll', 'can not mark rolls',
-        'can not enrol', 'cannot enrol', 'can not process enrolments',
-        'can not pay', 'cannot pay', 'can not run payroll', 'can not submit timesheets',
-        'can not teach', 'cannot teach', 'can not run classes',
-        'can not access beacon', 'can not use beacon',
-        'can not send report cards', 'can not generate reports',
-        'can not take attendance', 'attendance not recording',
-        'classes can not start', 'lessons can not start'],
-    label: 'a named business process is blocked' }
+        'can not take attendance', 'attendance not recording'],
+    process: 'attendance marking', label: 'attendance marking is blocked' },
+  { m: ['can not enrol', 'cannot enrol', 'can not process enrolments'],
+    process: 'enrolment processing', label: 'enrolment processing is blocked' },
+  { m: ['can not pay', 'cannot pay', 'can not run payroll', 'can not submit timesheets'],
+    process: 'payroll or payment processing', label: 'payroll or payment processing is blocked' },
+  { m: ['can not teach', 'cannot teach', 'can not run classes', 'classes can not start',
+        'lessons can not start'],
+    process: 'teaching and learning', label: 'teaching and learning is blocked' },
+  { m: ['can not access beacon', 'can not use beacon'],
+    process: 'emergency communication', label: 'emergency communication is blocked' },
+  { m: ['can not send report cards', 'can not generate reports'],
+    process: 'reporting', label: 'reporting is blocked' }
 ];
 
 /** U6 driver — what creates the deadline: a requirement (statutory/operational) or a preference. */

@@ -51,7 +51,7 @@ export function urgencyLevelFromScore(score) {
  * @returns {{ urgency, score, contributions, claimedOnly, floorApplied }}
  */
 export function assessUrgency(doc, ctx) {
-  const { deadlineResult, workaroundResult, symptom, scopeResult, riskResult } = ctx;
+  const { deadlineResult, workaroundResult, symptom, scopeResult, riskResult, consequence } = ctx;
   const modifiers = riskResult.modifiers;
   const contributions = [];
 
@@ -111,6 +111,11 @@ export function assessUrgency(doc, ctx) {
       workaroundResult.workaround === 'yes' ? 0 :
       workaroundResult.workaround === 'no' ? 0.75 : 1.75;
     add(blockedWeight, 'Work is currently blocked', blocked[0].quote);
+  } else if (consequence?.level === 'blocked' && consequence.source !== 'inferred') {
+    const blockedWeight =
+      workaroundResult.workaround === 'yes' ? 0 :
+      workaroundResult.workaround === 'no' ? 0.75 : 1.75;
+    add(blockedWeight, 'Business process is currently blocked', consequence.quote);
   }
 
   // Breadth only adds urgency when something is actually failing. Records that

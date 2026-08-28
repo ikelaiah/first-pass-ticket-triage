@@ -43,11 +43,11 @@ export function impactLevelFromScore(score) {
 
 /**
  * @param {object} doc
- * @param {object} ctx { scopeResult, symptom, riskResult, deadlineResult, systemResult, blocked }
+ * @param {object} ctx { scopeResult, symptom, riskResult, deadlineResult, systemResult, consequence }
  * @returns {{ impact, score, contributions, seriousConsequence }}
  */
 export function assessImpact(doc, ctx) {
-  const { scopeResult, symptom, riskResult, deadlineResult, systemResult } = ctx;
+  const { scopeResult, symptom, riskResult, deadlineResult, systemResult, consequence } = ctx;
   const risks = riskResult.risks;
   const modifiers = riskResult.modifiers;
   const scopeDef = scopeDefinition(scopeResult.scope);
@@ -86,6 +86,11 @@ export function assessImpact(doc, ctx) {
   const blocked = scanPositive(doc, BLOCKED_PHRASES);
   if (blocked.length) {
     add(0.75, 'A business process is blocked', blocked[0].quote);
+  }
+  if (!blocked.length && consequence?.level === 'blocked' && consequence.source !== 'inferred') {
+    add(0.75, 'Business process is blocked', consequence.quote);
+  } else if (consequence?.level === 'impaired' && consequence.source !== 'inferred') {
+    add(0.25, 'Business process is impaired', consequence.quote);
   }
 
   // A fault that repeats has a larger cumulative reach than the instance in
