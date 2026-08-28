@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { evaluateCases, validateCorpus } from './evaluate.mjs';
+import { evaluateCases, printReport, validateCorpus } from './evaluate.mjs';
 
 const cases = [
   { id: 'critical-correct', text: 'a', expected: { assessmentStatus: 'assessed', priority: 'P1', impact: 'high', urgency: 'high' } },
@@ -31,5 +31,10 @@ assert.equal(report.dangerousUnderPrioritisation, 1);
 assert.equal(report.confusion.P1.P3, 1);
 assert.equal(report.confusion.P2.UNASSESSED, 1);
 assert.equal(report.confusion.UNASSESSED.UNASSESSED, 1);
+
+const output = [];
+printReport(report, (line) => output.push(line));
+assert(output.some((line) => line.startsWith('Confusion matrix')));
+assert(output.some((line) => line.includes('P1') && line.includes('UNASSESSED')));
 
 console.log('PASS - evaluation metrics self-test');

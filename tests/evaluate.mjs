@@ -171,6 +171,11 @@ export function printReport(report, write = console.log) {
   write('Dangerous under-prioritisations: ' + report.dangerousUnderPrioritisation);
   write('Abstentions on assessed tickets: ' + report.abstentionsOnAssessed);
   write('Mismatches: ' + report.mismatches.length);
+  write('Confusion matrix (expected rows, actual columns)');
+  write(['expected', ...OUTPUT_LABELS].join('\t'));
+  for (const expected of OUTPUT_LABELS) {
+    write([expected, ...OUTPUT_LABELS.map((actual) => report.confusion[expected][actual])].join('\t'));
+  }
   for (const mismatch of report.mismatches) {
     write('- ' + mismatch.id + ': expected ' + mismatch.expected.priority +
       ', got ' + mismatch.actual.priority);
