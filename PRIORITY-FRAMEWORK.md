@@ -82,7 +82,29 @@ Note what the table refuses to do:
 
 ---
 
-## 4. Impact
+## 4. The eight questions — Impact vs Urgency
+
+Priority is not judged from a symptom alone. It is judged from eight evidence questions, grouped under the two matrix inputs. The result card surfaces all eight in the **8 Questions — Impact vs Urgency** panel (`js/ui/render-result.js:eightQuestionsPanel`, `js/engine/analyzer.js:eightFacets`), the engine detects each one, and follow-up questions are limited to the unknowns that would actually change the priority.
+
+> **Impact** — how much of the world is affected, and how badly.
+> **Urgency** — what happens if we wait.
+
+| # | Question | What it captures | How the engine reads it | Effect on scoring |
+|---|---|---|---|---|
+| **I1** | Who and how many are affected — one person, a team, a cohort, one school, several, or all 19? | Scope breadth. The largest single impact contributor, and the one most often left out. | `js/engine/scope.js` + `js/data/phrases.js:SCOPE_PHRASES` (`SCOPE_DEFINITIONS` rank 0–8, `impactWeight` 0–4.25). Numbers parsed (`35 casual staff` → team `scope.js:30`, `4 schools` → multiple `scope.js:37`) and broadest credible scope wins. Unknown lowers confidence `js/engine/confidence.js:61`. | Impact weight `js/engine/impact.js:61` +1.75 for `allUsers`. `Unknown → Low confidence` and first follow-up. |
+| **I2** | What can they not do right now that they could do yesterday? | The blocked business process, not the symptom. "Canvas is slow" and "teachers cannot mark the roll" are different tickets. | `js/data/phrases.js:BLOCKED_PHRASES` + `BLOCKED_PROCESS_PHRASES` (`can not mark the roll` `phrases.js`) paired with `js/engine/symptom.js` + `js/engine/domain.js`. Extracted as `blockedProcess` `js/engine/analyzer.js:detectBlockedProcess`. | Shown in panel and reasoning `js/engine/analyzer.js:buildReasoning`; no separate numeric weight — symptom/domain already score, but clarifies consequence and drives the next question. |
+| **I3** | Is anything wrong, exposed, lost, or unsafe — as opposed to merely unavailable? | The irreversibility test: bad data, money, privacy, safeguarding, safety. Wrong information is more dangerous than absent information, and this is the question that legitimately makes one affected student a P1. | `js/engine/risks.js` `RISK_DEFINITIONS` (`payroll`, `financial`, `privacy`, `safety`, `safeguarding`, `compliance`, `dataIntegrity`) + risk modifiers (`exposureActive`, `propagating`, `unpaidRisk`) `js/data/phrases.js:RISK_MODIFIERS`. Gated so "contains PII" alone ≠ incident `js/engine/risks.js:111`. | `js/engine/impact.js:121` payroll +0.75, `privacy` +0.75, `exposureActive` +1.5, `safety` +1, etc. `analyzer.js:applyRiskModifiers` may raise Impact and Urgency to High (e.g. active exposure `analyzer.js:256`, safety today `analyzer.js:273`). |
+| **I4** | Is it contained, or is it spreading, recurring, or of unknown extent? | One bad record is remediation; a trigger writing bad records across every school is an emergency. Note this raises impact, not urgency — a recurring fault whose known instances are all corrected is high impact and low urgency. | `js/engine/containment.js` + `js/data/phrases.js:CONTAINED_PHRASES` (`contained to one family`, `not spreading`), `RISK_MODIFIERS.propagating` (`propagat`, `spreading` `phrases.js:989`), `RECURRENCE_PHRASES` (`keeps scrambling` `phrases.js:1059`), `UNDETECTED_PHRASES` (`we do not pick up` `phrases.js:1074`). | `js/engine/impact.js:93` recurrence +1, undetected +1.25, propagating +1.5 (impact, not urgency). Contained is informational — panel shows `appears contained`; no numeric discount. A contained recurring fault is P2 latent, not P1 `PRIORITY-FRAMEWORK.md:189`. |
+| **U5** | When do you need this by? | The anchor. Everything else calibrates it. | `js/engine/deadline.js` `DEADLINE_BUCKETS` now(6,3.5) › today(5,3) › tomorrow(4,1.75) › 2–5d(3,1.25) › 1–2w(2,0.25) › none › unknown. `COMMITMENT_MARKERS` + `isObservationOnly` `deadline.js:52` separates "Today we discover…" (timestamp) from "must be rerun today" (commitment). | Urgency weight `js/engine/urgency.js:68` (`today` +3, `days-2-5` +1.25). `unknown` lowers confidence `confidence.js:65` and becomes first urgency question. |
+| **U6** | What creates the deadline — a requirement or a preference? | What actually happens if missed, and whose rule is it? Statutory (census, NAPLAN), operational (payroll cutoff, class starts, report cards out) is a deadline. "We'd like it by Friday" is a preference with a calendar attached, and scores as one. | `js/engine/driver.js` + `js/data/phrases.js:DRIVER_PHRASES` (`statutory`: census/NAPLAN/nesa, `operational`: payroll cutoff/class starts, `preference`: would like/whenever suits) + `DRIVER_ACTOR_RE` for actor. Refine `index.html:refine-driver`. | Preference reduces urgency −0.5 `js/engine/urgency.js:135`; statutory/operational with timing keeps urgency. Requester seniority scores zero `impact.js:171` — who asked does not decide priority, the event does. |
+| **U7** | Can work continue meanwhile — and what does the workaround cost per day? | Existence and sustainability. A workaround that three registrars feed all day is not relief; it is slower failure. | `js/engine/workaround.js` `WORKAROUND_PHRASES` yes/partial/no `phrases.js:212` + `WORKAROUND_COST_PATTERNS` (`three registrars`, `2 hours per day`, `feeding manually` `phrases.js`) → `costPerDay`/`sustainability`. Refine `index.html:refine-workaround`. | `js/engine/urgency.js:25` `yes −1.25 / partial −0.25 / no +1.75` on **urgency only** — impact untouched `PRIORITY-FRAMEWORK.md:275`. Cost displayed in panel/reasoning `analyzer.js:buildReasoning`; not separately weighted beyond existence (avoids FTE math on vague tickets). |
+| **U8** | Is the harm happening now, or waiting to happen? | Expired versus expiring. Actively exposed versus wrongly linked but unseen. The line between "attend now" and "schedule properly." | `js/engine/harm-timing.js` generalises `expired-credential` vs `expiring-soon` `phrases.js:282` beyond certificates to any data: `HARM_TIMING_PHRASES` (`currently exposed` → active, `expires in 3 days` → pending) + `ACTIVE_NOW_PHRASES` `phrases.js:135`. Refine `index.html:refine-harm`. | Active exposure / expired credential raises urgency (via symptom severity `urgency.js:82` + modifier `analyzer.js:256`); pending/expiring with future deadline floors urgency to Medium `urgency.js:152` and asks `Is issue still occurring, or has it stopped?`. |
+
+Each row shows a state in the UI: **✓ Answered** (explicit phrase found), **○ Inferred** (derived from symptom/domain/risk), **? Unknown** (no evidence — the follow-up question that would change the priority). Unknown lowers confidence and appears in `Missing information` `js/engine/analyzer.js:buildMissingInformation` capped to six questions.
+
+---
+
+## 5. Impact
 
 Impact answers: **how much of the organisation is affected, and how serious is the
 consequence?**
@@ -126,7 +148,7 @@ Canvas is business-critical. This is still Low impact, because nothing is broken
 
 ---
 
-## 5. Urgency
+## 6. Urgency
 
 Urgency answers: **what happens if we wait?**
 
@@ -227,7 +249,7 @@ full weight.
 
 ---
 
-## 6. Scope
+## 7. Scope
 
 | Scope | Typical wording |
 | ----- | --------------- |
@@ -263,7 +285,7 @@ while "no one **at any school** can open their documents" is every school.
 
 ---
 
-## 7. Workaround
+## 8. Workaround
 
 | Value | Meaning | Typical wording |
 | ----- | ------- | --------------- |
@@ -280,7 +302,7 @@ Negation is handled: *"we do not have a workaround"* is read as **No**, not as *
 
 ---
 
-## 8. Deadline
+## 9. Deadline
 
 | Bucket | Typical wording |
 | ------ | --------------- |
@@ -302,7 +324,7 @@ Two distinctions matter:
 
 ---
 
-## 9. Work type
+## 10. Work type
 
 Classified independently of priority: Incident · Service Request · Problem Investigation
 · Data Remediation · Feature Request · Enhancement · Project · Documentation / How-To ·
@@ -318,7 +340,7 @@ High impact + Medium urgency → **P2**.
 
 ---
 
-## 10. Technical domain
+## 11. Technical domain
 
 Identity / Authentication · Access / Authorisation · Certificates / SSL ·
 Application Availability · Application Performance · Windows / Server / Endpoint ·
@@ -337,7 +359,7 @@ the word "identity" never appears).
 
 ---
 
-## 11. Symptom severity
+## 12. Symptom severity
 
 | Severity | Symptoms |
 | -------- | -------- |
@@ -368,7 +390,7 @@ Only the third behaves like an outage.
 
 ---
 
-## 12. Critical risk modifiers
+## 13. Critical risk modifiers
 
 Risks are detected as flags, then a small set of rules may raise or lower Impact and
 Urgency *before* the matrix runs. Every rule that fires is listed in the result card.
@@ -527,7 +549,7 @@ one-school problem.
 
 ---
 
-## 13. Diagnostic behaviour
+## 14. Diagnostic behaviour
 
 Some of what the tool produces is not about priority at all. These four rules
 change *what you do next*, and in practice they save more time than the
@@ -601,7 +623,7 @@ Question tickets are also spared the incident interrogation. Asking "what
 happens if this is not resolved today?" about "what time does the sync run?" is
 noise.
 
-## 14. Expected behaviour
+## 15. Expected behaviour
 
 Not every "it hasn't appeared" is an incident.
 
@@ -624,7 +646,7 @@ Scheduled jobs are configured in `js/config.js`, not hard-coded in the engine.
 
 ---
 
-## 15. Negation
+## 16. Negation
 
 Keyword matching without negation handling produces confident nonsense. Two forms are
 handled, and neither crosses a clause boundary:
@@ -646,7 +668,7 @@ change rather than a negation.
 
 ---
 
-## 16. Confidence
+## 17. Confidence
 
 Confidence describes how much decision-relevant information the ticket actually
 contained — not how likely the answer is to be right.
@@ -674,7 +696,7 @@ Confidence is capped at 95%. The tool never claims certainty.
 
 ---
 
-## 17. Missing information
+## 18. Missing information
 
 When the ticket does not contain enough to decide, the tool says so plainly:
 
@@ -695,7 +717,7 @@ and offers only the questions that are actually relevant:
 
 ---
 
-## 18. Priority definitions
+## 19. Priority definitions
 
 ### P1 — Critical
 
@@ -726,7 +748,7 @@ consequence.
 
 ---
 
-## 19. Worked examples
+## 20. Worked examples
 
 | Ticket | Impact | Urgency | Priority |
 | ------ | ------ | ------- | -------- |
@@ -835,7 +857,7 @@ range, the test accepts the range rather than pretending there is one right answ
 
 ---
 
-## 20. Manual refinement
+## 21. Manual refinement
 
 The analyst can confirm any of scope, workaround, deadline, impact, urgency and the
 critical-risk flags. The priority recalculates immediately, the card is marked
@@ -849,7 +871,7 @@ word, and the tool records that they took it.
 
 ---
 
-## 21. What this framework is not
+## 22. What this framework is not
 
 - It is not an SLA. Response and resolution targets are a separate, local decision.
 - It is not a queue. It suggests a priority; it does not assign, route or escalate.
@@ -857,7 +879,7 @@ word, and the tool records that they took it.
   wording, not a criticism of the person who wrote it.
 - It is not infallible. When it is unsure, it says so — and that is the feature.
 
-## 22. External calibration
+## 23. External calibration
 
 The framework was compared with public, first-party IT service-management guidance on
 27 August 2026. The sources use different priority counts and response targets, so the

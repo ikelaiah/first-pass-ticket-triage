@@ -5,7 +5,7 @@
  * workaround" share the same keyword and must not share the same answer.
  */
 import { scan } from './negation.js';
-import { WORKAROUND_PHRASES } from '../data/phrases.js';
+import { WORKAROUND_PHRASES, WORKAROUND_COST_PATTERNS } from '../data/phrases.js';
 
 const LABELS = {
   yes: 'Yes',
@@ -51,11 +51,28 @@ export function detectWorkaround(doc) {
   else if (votes.partial > 0) workaround = 'partial';
   else if (votes.yes > 0) workaround = 'yes';
 
+  // Cost / sustainability: e.g. "3 registrars feeding all day", "2 hours per day"
+  let costPerDay = null;
+  let sustainability = null;
+  for (const re of WORKAROUND_COST_PATTERNS) {
+    const m = doc.text.match(re);
+    if (m) {
+      costPerDay = m[0].trim();
+      sustainability = /per day|a day|each day|all day/i.test(m[0]) ? 'daily cost' : 'sustainability noted';
+      // Cost description implies a workaround exists even without explicit workaround phrase
+      if (workaround === 'unknown') workaround = 'yes';
+      evidence.push({ quote: m[0].trim(), meaning: 'workaround sustainability/cost: ' + m[0].trim(), source: 'workaround-cost', value: workaround });
+      break;
+    }
+  }
+
   return {
     workaround,
     label: workaroundLabel(workaround),
     votes,
+    costPerDay,
+    sustainability,
     // Only keep the evidence that supports the conclusion.
-    evidence: evidence.filter((e) => e.value === workaround)
+    evidence: evidence.filter((e) => e.value === workaround || e.source === 'workaround-cost')
   };
 }

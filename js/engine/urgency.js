@@ -12,7 +12,8 @@ import {
   CLAIMED_URGENCY_PHRASES,
   ACTIVE_NOW_PHRASES,
   REGRESSION_PHRASES,
-  SLA_BREACH_PHRASES
+  SLA_BREACH_PHRASES,
+  DRIVER_PHRASES
 } from '../data/phrases.js';
 import { deadlineDefinition } from './deadline.js';
 import { scopeDefinition } from './scope.js';
@@ -128,6 +129,12 @@ export function assessUrgency(doc, ctx) {
     if (activeBonus >= 0.5) break;
     activeBonus += hit.entry.w;
     add(hit.entry.w, hit.entry.label, hit.quote);
+  }
+
+  // Preference driver — "would like by Friday" is not a deadline
+  const prefHit = scanPositive(doc, DRIVER_PHRASES.filter(e => e.driver === 'preference'));
+  if (prefHit.length) {
+    add(-0.5, prefHit[0].entry.label, prefHit[0].quote);
   }
 
   // --- the requester says it can wait -----------------------------------

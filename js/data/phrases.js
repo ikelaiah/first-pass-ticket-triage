@@ -223,8 +223,8 @@ export const WORKAROUND_PHRASES = [
         'add manually in seesaw', 'add the classes manually', 'add the classes and students manually', 'teacher to add manually', 'tell the teacher to add',
         'restarted the server', 'restarted server', 'admin restarted', 'until the helpdesk was restored', 'until restored', 'was restored', 'service restored',
         /\b(?:an alternative|a different|another) (?:browser|printer|device|computer|workstation|application|app) (?:works|is working|can be used)\b/,
-        // "enter changes manually", "process the applications manually"
-        /\b(?:process|do|enter|handle|run|complete|key|record|update|load)\s+(?:\w+\s+){0,3}manually\b/],
+        // "enter changes manually", "process the applications manually", "feeding manually"
+        /\b(?:process|do|enter|handle|run|complete|key|record|update|load|feed|feeding)\s+(?:\w+\s+){0,3}manually\b/],
     v: 'yes', label: 'a workaround or manual process exists' },
   { m: ['partial workaround', 'limited workaround', 'only some users', 'works for some',
         'only works sometimes', 'intermittently available', 'partially working',
@@ -1209,4 +1209,73 @@ export const IMMEDIATE_NEED_PATTERNS = [
   /\bstarting (?:now|shortly|in \d)/,
   /\bclass (?:is )?(?:starting|about to start)\b/,
   /\brequired (?:now|today|immediately)\b/
+];
+
+/* ------------------------------------------------- 8-question framework -- */
+
+/** I4 contained — the fault is limited to one record/context and not spreading. */
+export const CONTAINED_PHRASES = [
+  { m: ['contained to', 'isolated to', 'limited to', 'only one family', 'only that family',
+        'only one student', 'only this record', 'not spreading', 'is not spreading',
+        'has not spread', 'no evidence of spreading', 'no other records', 'no other families',
+        'no further records', 'stays on that record', 'does not affect other', 'not affecting other'],
+    w: 0, label: 'the fault appears to be contained' }
+];
+
+/**
+ * I2 blocked business process — what the user can no longer do.
+ * Used as a display extractor (pairs BLOCKED_PHRASES with domain), not a weight.
+ */
+export const BLOCKED_PROCESS_PHRASES = [
+  { m: ['can not mark the roll', 'cannot mark the roll', 'can not mark rolls',
+        'can not enrol', 'cannot enrol', 'can not process enrolments',
+        'can not pay', 'cannot pay', 'can not run payroll', 'can not submit timesheets',
+        'can not teach', 'cannot teach', 'can not run classes',
+        'can not access beacon', 'can not use beacon',
+        'can not send report cards', 'can not generate reports',
+        'can not take attendance', 'attendance not recording',
+        'classes can not start', 'lessons can not start'],
+    label: 'a named business process is blocked' }
+];
+
+/** U6 driver — what creates the deadline: a requirement (statutory/operational) or a preference. */
+export const DRIVER_PHRASES = [
+  { m: ['census', 'naplan', 'nesa', 'acara', 'statutory reporting', 'government reporting',
+        'legal requirement', 'court order', 'compliance deadline', 'audit deadline',
+        'regulatory deadline', 'statutory deadline'],
+    driver: 'statutory', w: 0, label: 'a statutory or compliance deadline drives timing' },
+  { m: ['payroll cutoff', 'pay cutoff', 'pay run due', 'payroll must be processed',
+        'enrolments close', 'enrolment closes', 'class starts', 'classes start',
+        'lesson starts', 'lessons start', 'term starts', 'report cards out',
+        'reports due out', 'attendance roll', 'excursion leaves'],
+    driver: 'operational', w: 0, label: 'an operational or business event drives timing' },
+  { m: ['would like it by', 'would be nice by', 'prefer it by', 'if possible by',
+        'when you get a chance', 'whenever suits', 'no particular rush',
+        'nice to have by', 'at your convenience'],
+    driver: 'preference', w: 0, label: 'a preference rather than a deadline was expressed' }
+];
+
+export const DRIVER_ACTOR_RE = /\b(?:principal|board|executive|auditor|nesa|acara|government|court|payroll team|finance team|registrar) (?:has|have|set|requires|required|deadline|needs|wants)\b/i;
+
+/** U8 harm timing — is harm happening now or waiting to happen. */
+export const HARM_TIMING_PHRASES = {
+  active: [
+    /\b(?:expired|has expired|is expired|no longer valid|already breached|currently exposed|actively exposed|live breach|ongoing exposure|happening now|occurring now|being used now)\b/i,
+    'currently visible', 'actively visible', 'wrongly linked but visible'
+  ],
+  pending: [
+    /\b(?:expires|expiring|will expire|due to expire|about to expire|will be exposed|would be exposed|waiting to happen|if not fixed|before it is used|before approval|before.*goes out)\b/i,
+    'will be used', 'waiting to happen', 'pending exposure'
+  ]
+};
+
+/** U7 workaround cost / sustainability — daily effort of the manual process. */
+export const WORKAROUND_COST_PATTERNS = [
+  /\b(\d+)\s*(?:hours?|hrs?)\s*(?:per|a|each)\s*day\b/i,
+  /\b(\d+)\s*(?:staff|registrars|people|users)\s*(?:per|a|each)\s*day\b/i,
+  /\bextra\s*(\d+)\s*(?:hours?|staff)\b/i,
+  /\bmanual(?:ly)?\s*(?:for|over)\s*(\d+)\s*days?\b/i,
+  /\bfeeding\s*(?:all day|manually)\b/i,
+  /\bthree registrars\b/i,
+  /\bworkaround.*costs?\s*\d+/i
 ];
