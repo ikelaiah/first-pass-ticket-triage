@@ -1050,6 +1050,27 @@ test('Real tickets', 'one student record-type error without a deadline is P4', (
 test('Real tickets', 'one student is individual scope, not a cohort', () =>
   field(REAL_TICKET, 'scope', 'individual'));
 
+test('Real tickets', 'Edumate public-contact status infers the blocked education processes', () => {
+  const result = analyse(REAL_TICKET);
+  const blocked = result.eightFacets.i2Blocked.blockedProcess;
+  return ok(
+    blocked?.inferred === true &&
+      blocked.label === 'student is excluded from class rolls and downstream education-system sync' &&
+      blocked.quote === 'public contact',
+    JSON.stringify(blocked)
+  );
+});
+
+test('Real tickets', 'Edumate public-contact status asks whether billing or an invoice deadline is affected', () => {
+  const result = analyse(REAL_TICKET);
+  return ok(
+    result.followUpQuestions.includes(
+      'Is a class-roll, downstream education-system, or billing/invoice deadline affected?'
+    ),
+    result.followUpQuestions.join(' | ')
+  );
+});
+
 test('Real tickets', '"the class rolls" is a document, not a population', () => {
   const roll = detectScope(createDocument('The student is not showing on the class rolls.'));
   const cohort = detectScope(createDocument('The class cannot log into Canvas.'));

@@ -37,7 +37,7 @@ export function buildReply(result) {
     understood.push('when it is needed (' + f.u5Deadline.answer.toLowerCase() + ')');
   }
   if (f.i2Blocked.blockedProcess) {
-    understood.push('what is blocked (' + f.i2Blocked.blockedProcess.quote + ')');
+    understood.push('what is blocked (' + f.i2Blocked.blockedProcess.label + ')');
   }
 
   const priorityQs = (result.followUpQuestionMeta || [])

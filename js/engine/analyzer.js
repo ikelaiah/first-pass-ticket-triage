@@ -320,10 +320,30 @@ function applyRiskModifiers(context) {
   return { impact, urgency, rules };
 }
 
-function detectBlockedProcess(doc, domainResult, symptom) {
+function inferStatusConsequence(doc, systemResult, symptom) {
+  for (const consequence of organisationConfig.statusConsequences || []) {
+    if (consequence.symptom !== symptom.symptom) continue;
+    if (!systemResult.systems.some((system) => system.id === consequence.system)) continue;
+    const phrase = consequence.phrases.find((candidate) => doc.text.includes(candidate));
+    if (phrase) return { ...consequence, quote: phrase };
+  }
+  return null;
+}
+
+function detectBlockedProcess(doc, domainResult, symptom, systemResult) {
   const hit = scanPositive(doc, BLOCKED_PROCESS_PHRASES);
   if (hit.length) return { label: hit[0].entry.label, quote: hit[0].quote, hit: hit[0] };
   if (has(doc, BLOCKED_PROCESS_PHRASES)) return null;
+  const statusConsequence = inferStatusConsequence(doc, systemResult, symptom);
+  if (statusConsequence) {
+    return {
+      label: statusConsequence.blockedProcess,
+      quote: statusConsequence.quote,
+      inferred: true,
+      note: statusConsequence.note,
+      followUpQuestion: statusConsequence.followUpQuestion
+    };
+  }
   // Fallback: infer blocked process from domain + symptom when explicit BLOCKED phrase present
   // but no named process — the panel will show symptom label instead.
   return null;
@@ -421,6 +441,12 @@ function buildMissingInformation(context) {
       ', the system ' + sourceOfTruth.downstream + ' is synchronised from');
     addQuestion('Is the record set up correctly in ' + sourceOfTruth.source +
       ', which ' + sourceOfTruth.downstream + ' is synchronised from?', 'diagnostic');
+  }
+  if (blockedProcess?.followUpQuestion) {
+    addQuestion(
+      blockedProcess.followUpQuestion,
+      pq([{ deadline: 'today' }])
+    );
   }
   if (!scopeResult.explicit) {
     missing.push('How many users, teams or schools are affected');
@@ -567,7 +593,6 @@ function buildReasoning(context) {
     );
     return unassessedReasoning;
   }
-
   if (decisionContext.status === 'resolved') {
     reasoning.push(
       'The latest explicit update says the incident is resolved or contained. Earlier ' +
@@ -666,6 +691,7 @@ function buildReasoning(context) {
   }
   if (blockedProcess) {
     reasoning.push('Blocked process: ' + blockedProcess.quote + ' — ' + blockedProcess.label + '.');
+    if (blockedProcess.note) reasoning.push(blockedProcess.note);
   }
   if (containment) {
     if (containment.contained) reasoning.push('Containment: ' + containment.summary + ' (' + (containment.containedEvidence?.quote || '') + ').');
@@ -849,7 +875,7 @@ export function analyse(rawText, overrides = {}) {
   let containment = detectContainment(doc, risks);
   let driver = detectDriver(doc);
   let harmTiming = detectHarmTiming(doc, symptom);
-  const blockedProcess = detectBlockedProcess(doc, domainResult, symptom);
+  const blockedProcess = detectBlockedProcess(doc, domainResult, symptom, systemResult);
   // Facet overrides — analyst confirmed values
   if (applied.contained) {
     if (applied.contained === 'contained') containment = { ...containment, contained: true, propagating: false, recurring: false, undetected: false, summary: 'appears contained (manually confirmed)' };
@@ -1056,7 +1082,7 @@ export function analyse(rawText, overrides = {}) {
   // 8-question facets for the dedicated panel
   const eightFacets = {
     i1Scope: { question: 'Who and how many are affected?', answer: scopeResult.label, value: scopeResult.scope, explicit: scopeResult.explicit, quote: scopeResult.evidence[0]?.quote || null },
-    i2Blocked: { question: 'What can they not do that they could do yesterday?', answer: blockedProcess ? blockedProcess.quote : (symptom.label !== 'Question / How-To' ? symptom.label : 'Not stated'), quote: blockedProcess?.quote || symptom.evidence[0]?.quote || null, blockedProcess },
+    i2Blocked: { question: 'What can they not do that they could do yesterday?', answer: blockedProcess ? blockedProcess.label : (symptom.label !== 'Question / How-To' ? symptom.label : 'Not stated'), quote: blockedProcess?.quote || symptom.evidence[0]?.quote || null, blockedProcess },
     i3Irreversibility: { question: 'Wrong / exposed / lost / unsafe vs merely unavailable?', answer: modifiers.exposureActive ? 'Exposed' : risks.dataIntegrity && modifiers.propagating ? 'Wrong + spreading' : risks.dataIntegrity ? 'Wrong data' : risks.privacy ? 'Privacy risk' : risks.safety ? 'Safety' : symptom.severity >= 3 ? 'Unavailable/outage' : 'No irreversibility flagged', risks: Object.keys(risks).filter(k => risks[k]), modifiers },
     i4Containment: { question: 'Contained or spreading / recurring / unknown extent?', answer: containment.summary, containment },
     u5Deadline: { question: 'When do you need this by?', answer: deadlineResult.label, value: deadlineResult.deadline, committed: deadlineResult.committed, quote: deadlineResult.evidence[0]?.quote || null },
