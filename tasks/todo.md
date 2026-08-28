@@ -1,10 +1,10 @@
-# Triage accuracy checklist
+# v0.4.0 accuracy checklist
 
-- [x] Add RED tests for irrelevant/adversarial text.
-- [x] Add RED tests for common application-support wording.
-- [x] Implement relevance assessment and unassessed explanations.
-- [x] Expand deterministic phrase coverage.
-- [x] Add externally calibrated scenario tests.
-- [x] Update the priority framework with sources and limitations.
-- [x] Run the full suite, privacy scan, syntax checks, and diff checks.
-- [x] Complete the five-axis review.
+- [x] Write RED tests for decision-relevant manual facets.
+- [x] Connect containment, deadline driver, and harm timing to scoring.
+- [ ] Write RED contrast tests for inactive and active incident language.
+- [ ] Implement current/resolved/hypothetical/test context preprocessing.
+- [ ] Add explicit assessed/unassessed result fields.
+- [ ] Add the offline labelled-corpus evaluator and fixture schema.
+- [ ] Update v0.4.0 documentation and release notes.
+- [ ] Run full tests, privacy scan, syntax, diff hygiene, and code review.

@@ -450,6 +450,31 @@ test('Refinement', 'ticking the payroll risk with a same-day deadline escalates'
   return ok(after.priority === 'P1' || after.priority === 'P2', after.priority);
 });
 
+test('Refinement', 'confirming that incorrect data is spreading affects scoring', () => {
+  const result = analyse('Incorrect student records are being written across three schools.', {
+    contained: 'spreading'
+  });
+  return ok(
+    result.riskModifiers.propagating === true && result.priority === 'P1',
+    'propagating=' + result.riskModifiers.propagating + ' ' + result.priority
+  );
+});
+
+test('Refinement', 'confirming a requested date is only a preference lowers urgency', () => {
+  const result = analyse('Canvas access is required by Friday.', { driver: 'preference' });
+  return ok(result.urgency === 'low' && result.priority === 'P4',
+    result.impact + '/' + result.urgency + ' -> ' + result.priority);
+});
+
+test('Refinement', 'confirming pending certificate harm is active raises urgency', () => {
+  const result = analyse(
+    'The Laserfiche SSL certificate expires in three days for all schools.',
+    { harm: 'active' }
+  );
+  return ok(result.urgency === 'high' && result.priority === 'P1',
+    result.impact + '/' + result.urgency + ' -> ' + result.priority);
+});
+
 /* -------------------------------------------------------- 20. behaviour -- */
 
 test('Result model', 'an empty ticket returns an empty result', () => {

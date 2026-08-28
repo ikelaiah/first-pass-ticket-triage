@@ -805,7 +805,7 @@ export function analyse(rawText, overrides = {}) {
   const risks = { ...emptyRisks(), ...riskResult.risks, ...(applied.risks || {}) };
   // Re-gate modifiers against the (possibly overridden) risk flags.
   const raw = riskResult.rawModifiers;
-  const modifiers = {
+  let modifiers = {
     ...riskResult.modifiers,
     unpaidRisk: raw.unpaidRisk && (risks.payroll || risks.financial),
     exposureActive: raw.exposureActive && (risks.privacy || risks.security),
@@ -813,7 +813,6 @@ export function analyse(rawText, overrides = {}) {
     decisionRisk: raw.decisionRisk && (symptom.isDataIssue || risks.dataIntegrity),
     immediateSafeguarding: raw.immediateSafeguarding && risks.safeguarding
   };
-  const effectiveRisk = { ...riskResult, risks, modifiers };
 
   // --- expected behaviour ----------------------------------------------
   const expectedBehaviour = detectExpectedBehaviour(doc, symptom);
@@ -846,6 +845,25 @@ export function analyse(rawText, overrides = {}) {
     }
   }
 
+  // Confirmed facets are scoring inputs, not display-only annotations. They
+  // remain gated by the matching risk so a refinement cannot manufacture a
+  // data, privacy, security, or safeguarding concern that was never present.
+  if (applied.contained) {
+    modifiers = {
+      ...modifiers,
+      propagating: applied.contained === 'spreading' && risks.dataIntegrity
+    };
+  }
+  if (applied.harm) {
+    const active = applied.harm === 'active';
+    modifiers = {
+      ...modifiers,
+      exposureActive: active && (risks.privacy || risks.security),
+      immediateSafeguarding: active && risks.safeguarding
+    };
+  }
+  const effectiveRisk = { ...riskResult, risks, modifiers };
+
   const workTypeResult = detectWorkType(doc, {
     symptom,
     risks,
@@ -877,7 +895,7 @@ export function analyse(rawText, overrides = {}) {
   });
   const urgencyResult = assessUrgency(doc, {
     deadlineResult, workaroundResult, symptom, scopeResult, riskResult: effectiveRisk,
-    differential
+    differential, driver, harmTiming
   });
 
   const impactBase = impactResult.impact;
@@ -927,7 +945,7 @@ export function analyse(rawText, overrides = {}) {
     });
     const urg = assessUrgency(doc, {
       deadlineResult: deadlineR, workaroundResult: workaroundR, symptom,
-      scopeResult: scopeR, riskResult: riskSim, differential
+      scopeResult: scopeR, riskResult: riskSim, differential, driver, harmTiming
     });
     const mod = applyRiskModifiers({
       impact: imp.impact, urgency: urg.urgency, risks, modifiers: mods, symptom,

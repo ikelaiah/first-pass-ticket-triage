@@ -46,7 +46,8 @@ export function urgencyLevelFromScore(score) {
 
 /**
  * @param {object} doc
- * @param {object} ctx { deadlineResult, workaroundResult, symptom, scopeResult, riskResult }
+ * @param {object} ctx { deadlineResult, workaroundResult, symptom, scopeResult,
+ *   riskResult, driver, harmTiming }
  * @returns {{ urgency, score, contributions, claimedOnly, floorApplied }}
  */
 export function assessUrgency(doc, ctx) {
@@ -62,10 +63,11 @@ export function assessUrgency(doc, ctx) {
   // --- deadline ---------------------------------------------------------
   const deadlineDef = deadlineDefinition(deadlineResult.deadline);
   const assertedOnly = deadlineResult.asserted === true;
+  const preferenceOnly = ['preference', 'none'].includes(ctx.driver?.driver);
   const deadlineQuote = deadlineResult.evidence[0] ? deadlineResult.evidence[0].quote : undefined;
   if (assertedOnly) {
     add(0.5, 'Immediacy was asserted, but no business consequence was stated', deadlineQuote);
-  } else if (deadlineDef.urgencyWeight) {
+  } else if (deadlineDef.urgencyWeight && !preferenceOnly) {
     add(deadlineDef.urgencyWeight, 'Deadline: ' + deadlineDef.label, deadlineQuote);
   }
 
@@ -133,8 +135,17 @@ export function assessUrgency(doc, ctx) {
 
   // Preference driver — "would like by Friday" is not a deadline
   const prefHit = scanPositive(doc, DRIVER_PHRASES.filter(e => e.driver === 'preference'));
-  if (prefHit.length) {
-    add(-0.5, prefHit[0].entry.label, prefHit[0].quote);
+  if (preferenceOnly || prefHit.length) {
+    add(-0.5,
+      ctx.driver?.label || prefHit[0].entry.label,
+      ctx.driver?.quote || prefHit[0].quote);
+  }
+
+  // Automatic harm timing remains explanatory until calibrated. A human
+  // refinement is decision evidence: active harm adds time pressure, while
+  // pending harm leaves the stated deadline to determine urgency.
+  if (ctx.harmTiming?.source === 'manual' && ctx.harmTiming.timing === 'active') {
+    add(1.25, 'The analyst confirmed that harm is happening now', ctx.harmTiming.quote);
   }
 
   // --- the requester says it can wait -----------------------------------
@@ -159,7 +170,7 @@ export function assessUrgency(doc, ctx) {
   // A stated future deadline means a consequence is approaching, even when
   // a workaround is holding things together in the meantime.
   let floorApplied = false;
-  if (urgency === 'low' && APPROACHING.includes(deadlineResult.deadline)) {
+  if (urgency === 'low' && APPROACHING.includes(deadlineResult.deadline) && !preferenceOnly) {
     urgency = 'medium';
     floorApplied = true;
   }
