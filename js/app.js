@@ -11,11 +11,18 @@ import { renderResult, statusSentence } from './ui/render-result.js';
 import { renderMatrix, renderDefinitions } from './ui/render-matrix.js';
 import { initRefineControls } from './ui/refine-controls.js';
 import { organisationConfig } from './config.js';
+import {
+  encodeTicket, readTicketFromLocation, writeTicketToLocation, tooLongForShare
+} from './ui/share.js';
+import { CLAIMED_URGENCY_PHRASES, BLOCKED_PHRASES } from './data/phrases.js';
+import { has, createDocument } from './engine/negation.js';
 
 const dom = {
   input: document.getElementById('ticket-input'),
   analyseBtn: document.getElementById('analyse-btn'),
+  shareBtn: document.getElementById('share-btn'),
   clearBtn: document.getElementById('clear-btn'),
+  relevanceHint: document.getElementById('relevance-hint'),
   exampleBtn: document.getElementById('example-btn'),
   exampleSelect: document.getElementById('example-select'),
   exampleNote: document.getElementById('example-note'),
@@ -71,11 +78,68 @@ function clearAll() {
   dom.input.value = '';
   dom.exampleNote.textContent = '';
   if (dom.exampleNoteWrap) dom.exampleNoteWrap.hidden = true;
+  if (dom.relevanceHint) dom.relevanceHint.hidden = true;
   state.text = '';
   state.result = null;
   refine.reset();
+  writeTicketToLocation('');
   render(false);
   dom.input.focus();
+}
+
+/** The URL is the only share channel; it carries the ticket text. */
+function shareLink() {
+  if (!dom.input.value.trim()) return;
+  if (tooLongForShare(dom.input.value)) {
+    flashShare('Too long to share — links hold the first 2000 characters.');
+    return;
+  }
+  writeTicketToLocation(dom.input.value);
+  const url = window.location.href;
+  const done = () => flashShare('Link copied — it contains the ticket text.');
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(url).then(done);
+  } else {
+    done();
+  }
+}
+
+let shareTimer = null;
+function flashShare(message) {
+  const hint = document.getElementById('share-hint');
+  if (!hint) return;
+  hint.textContent = message;
+  clearTimeout(shareTimer);
+  shareTimer = setTimeout(() => {
+    hint.textContent = 'The share link contains the ticket text in the URL — do not use it for sensitive tickets.';
+  }, 3000);
+}
+
+/** Inline nudge: urgency/blocked wording without a support signal. */
+let nudgeTimer = null;
+function updateRelevanceHint() {
+  clearTimeout(nudgeTimer);
+  nudgeTimer = setTimeout(() => {
+    const text = dom.input.value;
+    if (!dom.relevanceHint) return;
+    if (!text.trim() || text.trim().length < 12) {
+      dom.relevanceHint.hidden = true;
+      return;
+    }
+    const doc = createDocument(text);
+    const loud = has(doc, CLAIMED_URGENCY_PHRASES) || has(doc, BLOCKED_PHRASES);
+    const result = analyse(text);
+    if (loud && !result.inScope) {
+      dom.relevanceHint.textContent =
+        'This reads as urgent or blocked, but no IT system, symptom or technical ' +
+        'domain was recognised yet. Add the affected system or what happens ' +
+        '(e.g. "Canvas", "cannot log in") so it can be assessed — scope and urgency ' +
+        'words alone do not establish an incident.';
+      dom.relevanceHint.hidden = false;
+    } else {
+      dom.relevanceHint.hidden = true;
+    }
+  }, 400);
 }
 
 function loadExample() {
@@ -133,8 +197,20 @@ function init() {
   refine.reset();
   render(false);
 
+  // A shared link (?t=…) restores the ticket and analyses it immediately.
+  const shared = readTicketFromLocation(window.location);
+  if (shared) {
+    dom.input.value = shared;
+    state.text = shared;
+    state.result = analyse(shared);
+    refine.sync(state.result);
+    render(false);
+  }
+
   dom.analyseBtn.addEventListener('click', analyseFresh);
+  dom.shareBtn.addEventListener('click', shareLink);
   dom.clearBtn.addEventListener('click', clearAll);
+  dom.input.addEventListener('input', updateRelevanceHint);
   dom.exampleBtn.addEventListener('click', loadExample);
   dom.refineReset.addEventListener('click', () => {
     refine.sync(analyse(state.text));
