@@ -106,7 +106,21 @@ export const organisationConfig = {
     },
     sql: { name: 'SQL Server', aliases: ['sql server', 'ssms', 'sql', 'sql server management studio', 'ssms'], critical: false },
     powerautomate: { name: 'Power Automate', aliases: ['power automate', 'powerautomate', 'power-automate', 'flow'], critical: false },
-    sendhq: { name: 'SendHQ', aliases: ['sendhq', 'send hq'], critical: false }
+    sendhq: { name: 'SendHQ', aliases: ['sendhq', 'send hq'], critical: false },
+    // Australian school-sector systems and common vendors (v0.3.1 coverage drop)
+    compass: { name: 'Compass', aliases: ['compass', 'compass portal'], critical: false },
+    synergetic: { name: 'Synergetic', aliases: ['synergetic'], critical: false },
+    tass: { name: 'TASS', aliases: ['tass', 'tass web'], critical: false },
+    seqta: { name: 'Seqta', aliases: ['seqta'], critical: false },
+    schoolbox: { name: 'SchoolBox', aliases: ['schoolbox', 'school box'], critical: false },
+    papercut: { name: 'PaperCut', aliases: ['papercut', 'paper cut'], critical: false },
+    jamf: { name: 'Jamf', aliases: ['jamf', 'jamf pro'], critical: false },
+    veeam: { name: 'Veeam', aliases: ['veeam'], critical: false },
+    okta: { name: 'Okta', aliases: ['okta'], critical: false },
+    meraki: { name: 'Cisco Meraki', aliases: ['meraki'], critical: false },
+    unifi: { name: 'UniFi', aliases: ['unifi', 'ubiquiti'], critical: false },
+    mimecast: { name: 'Mimecast', aliases: ['mimecast'], critical: false },
+    proofpoint: { name: 'Proofpoint', aliases: ['proofpoint'], critical: false }
   },
 
   /**

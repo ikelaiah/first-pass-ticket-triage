@@ -1414,7 +1414,92 @@ test('Handoff', 'refined overrides are listed for the printed slip', () => {
   );
 });
 
-/* ------------------------------------------------------- 28. examples -- */
+/* ------------------------------------- 28. v0.3.1 coverage drop -- */
+
+test('v0.3.1 coverage', 'Jamf is a recognised system and a push gap is an incident', () => {
+  const result = analyse('Jamf is not pushing the macOS update to the Macs in the library.');
+  return ok(result.system === 'Jamf' && result.symptom === 'not-synchronising' &&
+    result.workType === 'incident',
+    result.system + ' / ' + result.symptom + ' / ' + result.workType);
+});
+
+test('v0.3.1 coverage', 'PaperCut print server down is an availability incident', () => {
+  const result = analyse('PaperCut print server is down and students cannot print their assessments.');
+  return ok(result.system === 'PaperCut' && result.symptom === 'unavailable',
+    result.system + ' / ' + result.symptom);
+});
+
+test('v0.3.1 coverage', 'Meraki dropout routes to network with an intermittent symptom', () => {
+  const result = analyse('The Meraki access point in the hall keeps dropping the Wi-Fi during roll call.');
+  return ok(result.system === 'Cisco Meraki' && result.technicalDomain === 'network' &&
+    result.symptom === 'intermittent',
+    result.system + ' / ' + result.technicalDomain + ' / ' + result.symptom);
+});
+
+test('v0.3.1 coverage', 'Mimecast quarantine is not-delivered, not a privacy incident', () => {
+  const result = analyse('A parent email about the excursion was quarantined by Mimecast and never delivered.');
+  return ok(result.system === 'Mimecast' && result.symptom === 'not-delivered' &&
+    result.technicalDomain === 'messaging' && result.risks.privacy === false,
+    result.system + ' / ' + result.symptom + ' / privacy=' + result.risks.privacy);
+});
+
+test('v0.3.1 coverage', 'Proofpoint holding mail is not-delivered', () =>
+  field('Proofpoint is holding the principal’s emails in quarantine.', 'symptom', 'not-delivered'));
+
+test('v0.3.1 coverage', 'Australian school-sector systems are recognised', () => {
+  const checks = [
+    ['Compass portal is showing the wrong timetable for Year 8.', 'Compass'],
+    ['Synergetic is slow for the finance team this morning.', 'Synergetic'],
+    ['The TASS sync to the portal has stopped overnight.', 'TASS'],
+    ['Seqta is not showing the new class lists for Term 4.', 'Seqta'],
+    ['SchoolBox news page is unavailable for all schools.', 'SchoolBox']
+  ];
+  for (const [text, system] of checks) {
+    const result = analyse(text);
+    if (result.system !== system) return ok(false, text + ' -> ' + result.system);
+  }
+  return ok(true, 'Compass, Synergetic, TASS, Seqta, SchoolBox');
+});
+
+test('v0.3.1 coverage', 'blue screen and frozen endpoints are failures', () => {
+  const blue = analyse('A staff member got a blue screen after the Windows update.');
+  const frozen = analyse('My screen is frozen and the laptop will not respond.');
+  return ok(blue.symptom === 'failed' && frozen.symptom === 'failed' &&
+    blue.technicalDomain === 'endpoint-server',
+    blue.symptom + ' / ' + frozen.symptom);
+});
+
+test('v0.3.1 coverage', 'Veeam is a recognised backup system', () => {
+  const result = analyse('The Veeam backup of the file server failed last night.');
+  return ok(result.system === 'Veeam' && result.symptom === 'backup-failed',
+    result.system + ' / ' + result.symptom);
+});
+
+test('v0.3.1 coverage', 'paper and spreadsheet stopgaps are workarounds', () => {
+  const paper = detectWorkaround(createDocument('We are using the paper form until the system is fixed.'));
+  const sheet = detectWorkaround(createDocument('Finance are using a spreadsheet until it is repaired.'));
+  return ok(paper.workaround === 'yes' && sheet.workaround === 'yes',
+    paper.workaround + ' / ' + sheet.workaround);
+});
+
+test('v0.3.1 coverage', 'all casuals is a team-sized scope', () =>
+  field('All casuals are missing from the payroll export.', 'scope', 'team'));
+
+test('v0.3.1 coverage', 'the whole year level is a cohort', () =>
+  field('The whole year level is locked out of the assessment portal.', 'scope', 'cohort'));
+
+test('v0.3.1 coverage', 'Okta routes to identity and is a recognised system', () => {
+  const result = analyse('Okta sign-in is failing for the new starters.');
+  return ok(result.system === 'Okta' && result.technicalDomain === 'identity-auth',
+    result.system + ' / ' + result.technicalDomain);
+});
+
+test('v0.3.1 coverage', 'UniFi and Meraki are recognised network vendors', () => {
+  const unifi = analyse('The UniFi controller shows the whole site offline after the power outage.');
+  return ok(unifi.system === 'UniFi', unifi.system);
+});
+
+/* ------------------------------------------------------- 29. examples -- */
 
 for (const example of EXAMPLES) {
   test('Examples', example.title + ' -> ' + example.expected.join('/'), () =>
