@@ -892,9 +892,10 @@ range, the test accepts the range rather than pretending there is one right answ
 
 ## 21. Manual refinement
 
-The analyst can confirm any of scope, workaround, deadline, impact, urgency and the
-critical-risk flags. The priority recalculates immediately, the card is marked
-*Manually refined*, and confidence rises because a human has supplied the facts.
+The analyst can confirm any of scope, workaround, deadline, containment, deadline
+driver, harm timing, impact, urgency and the critical-risk flags. Decision-relevant
+answers recalculate the priority immediately, the card is marked *Manually refined*,
+and confidence rises because a human has supplied the facts.
 
 Only controls that have actually been changed are treated as overrides, so a detected
 value is never silently promoted to a confirmed one.
@@ -944,3 +945,37 @@ These comparisons support the existing architecture and matrix discipline. They 
 exposed parsing gaps now covered by tests: plural *"crashes,"* conditional
 *"whenever"* versus *"whenever you can,"* Mac how-to wording, installation requests,
 alternative-device workarounds, and unrelated text containing fake priority claims.
+
+---
+
+## 24. Current decision context (v0.4.0)
+
+Priority is calculated from the current asserted situation, not every incident-shaped
+sentence in a pasted thread. Before evidence detection, strong explicit cues classify
+the text as active/unspecified, resolved, or planned/test:
+
+- A current resolution supersedes an older failure description.
+- Quoted earlier messages are retained as context but excluded from scoring.
+- Simulations, disaster-recovery exercises, design requirements and explicit test cases
+  do not count as live incidents.
+- A later explicit recurrence (for example, *"fixed this morning but down again"*)
+  reopens the incident and is scored normally.
+
+Ambiguous wording is not discarded. Without a strong inactive cue, the engine keeps the
+text in the active/unspecified path and asks the analyst to confirm missing facts.
+
+## 25. Assessment status and measured accuracy (v0.4.0)
+
+An analysis now separates the internal matrix result from the actionable suggestion:
+
+- `assessmentStatus: "assessed"` carries `suggestedPriority: "P1"` through `"P4"`.
+- `assessmentStatus: "unassessed"` carries `suggestedPriority: null`.
+- `priority` remains the internal matrix result for compatibility and explanation; it
+  must not be treated as an actionable suggestion when the status is unassessed.
+
+The offline evaluator accepts independently labelled JSON fixtures and reports exact
+priority accuracy, impact and urgency accuracy, assessed coverage, P1 precision and
+recall, dangerous under-prioritisation, abstentions, and a confusion matrix. The
+checked-in corpus is a schema example and regression gate, not evidence of production
+accuracy. Meaningful calibration requires anonymised historical tickets labelled by
+independent triagers and a holdout set that is not used to tune weights.

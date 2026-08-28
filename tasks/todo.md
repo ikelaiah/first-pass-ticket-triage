@@ -6,5 +6,5 @@
 - [x] Implement current/resolved/hypothetical/test context preprocessing.
 - [x] Add explicit assessed/unassessed result fields.
 - [x] Add the offline labelled-corpus evaluator and fixture schema.
-- [ ] Update v0.4.0 documentation and release notes.
+- [x] Update v0.4.0 documentation and release notes.
 - [ ] Run full tests, privacy scan, syntax, diff hygiene, and code review.
