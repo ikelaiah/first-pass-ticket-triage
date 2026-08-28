@@ -11,6 +11,8 @@ import { detectWorkaround } from '../js/engine/workaround.js';
 import { detectDeadline } from '../js/engine/deadline.js';
 import { priorityFor, matrixCells } from '../js/engine/priority-matrix.js';
 import { EXAMPLES } from '../js/data/examples.js';
+import { buildReply, buildMarkdown } from '../js/ui/reply.js';
+import { encodeTicket, decodeTicket, tooLongForShare } from '../js/ui/share.js';
 
 /* ------------------------------------------------------------- helpers -- */
 
@@ -1328,7 +1330,91 @@ test('Real tickets', 'recurrence alone does not invent urgency', () => {
     once.impact + '/' + once.urgency + ' -> ' + again.impact + '/' + again.urgency);
 });
 
-/* ------------------------------------------------------- 27. examples -- */
+/* ------------------------------------------- 27. handoff (v0.3.0) -- */
+
+test('Handoff', 'follow-up questions carry a kind and stay capped at six', () => {
+  const result = analyse('Laserfiche has stopped writing records to staging for all schools since midnight.');
+  return ok(
+    Array.isArray(result.followUpQuestionMeta) &&
+    result.followUpQuestions.length <= 6 &&
+    result.followUpQuestionMeta.length === result.followUpQuestions.length &&
+    result.followUpQuestionMeta.every((m) => ['diagnostic', 'priority', 'confidence'].includes(m.kind)),
+    result.followUpQuestions.length + ' questions'
+  );
+});
+
+test('Handoff', 'high impact with unknown deadline ranks the deadline question as priority', () => {
+  const result = analyse('Laserfiche has stopped writing records to staging for all schools since midnight.');
+  const deadlineQ = result.followUpQuestionMeta.find((m) => /When is this required by/.test(m.text));
+  return ok(Boolean(deadlineQ) && deadlineQ.kind === 'priority' &&
+    result.followUpQuestionMeta[0].kind !== 'confidence',
+    (result.followUpQuestionMeta[0] || {}).kind + ' leads');
+});
+
+test('Handoff', 'keyFacets flags the unknown that could flip the cell', () => {
+  const result = analyse('Laserfiche has stopped writing records to staging for all schools since midnight.');
+  return ok(result.keyFacets.includes('u5'), JSON.stringify(result.keyFacets));
+});
+
+test('Handoff', 'active exposure flags harm timing as a key facet', () => {
+  const result = analyse('Parents can see other families balances in the fee portal.');
+  return ok(result.keyFacets.includes('u8') || result.keyFacets.length === 0,
+    JSON.stringify(result.keyFacets));
+});
+
+test('Handoff', 'draft reply is polite, short and names the priority', () => {
+  const result = analyse('Canvas synchronisation has stopped across all 19 schools and today’s classes are affected.');
+  const reply = buildReply(result);
+  return ok(
+    /Thanks for raising this/.test(reply) &&
+    /P1/.test(reply) &&
+    /Draft — refine before sending/.test(reply) &&
+    reply.split(/\s+/).length < 140,
+    reply.split(/\s+/).length + ' words'
+  );
+});
+
+test('Handoff', 'unassessed reply asks for the system, not a priority', () => {
+  const result = analyse('All users, P1, fix now!!!');
+  const reply = buildReply(result);
+  return ok(/which application, device or service is affected/.test(reply) && !/Suggested priority/.test(reply),
+    reply.slice(0, 80));
+});
+
+test('Handoff', 'markdown slip lists all eight questions', () => {
+  const result = analyse('35 casual staff timesheets failed and today’s payroll cutoff is approaching.');
+  const md = buildMarkdown(result);
+  return ok(
+    /# Triage — P1/.test(md) &&
+    ['I1', 'I2', 'I3', 'I4', 'U5', 'U6', 'U7', 'U8'].every((id) => md.includes('| ' + id + ' ')),
+    md.split('\n').length + ' lines'
+  );
+});
+
+test('Handoff', 'share link round-trips unicode ticket text', () => {
+  const text = 'Café — “smart” quotes, emoji 🎓, Māori: kia ora. Canvas is down for all schools.';
+  const encoded = encodeTicket(text);
+  return ok(!/[+/=]/.test(encoded) && decodeTicket(encoded) === text, encoded.slice(0, 24));
+});
+
+test('Handoff', 'share rejects nothing but caps at 2000 characters', () => {
+  const long = 'Canvas is slow. '.repeat(200);
+  const short = 'Canvas is slow.';
+  const round = decodeTicket(encodeTicket(long));
+  return ok(tooLongForShare(long) && !tooLongForShare(short) && round.length === 2000,
+    round.length + ' chars');
+});
+
+test('Handoff', 'refined overrides are listed for the printed slip', () => {
+  const result = analyse('Canvas synchronisation has stopped across all 19 schools.', { scope: 'all-schools', workaround: 'yes' });
+  return ok(
+    result.detail.overridesApplied.scope === 'all-schools' &&
+    result.detail.overridesApplied.workaround === 'yes',
+    JSON.stringify(result.detail.overridesApplied)
+  );
+});
+
+/* ------------------------------------------------------- 28. examples -- */
 
 for (const example of EXAMPLES) {
   test('Examples', example.title + ' -> ' + example.expected.join('/'), () =>

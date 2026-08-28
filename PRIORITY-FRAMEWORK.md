@@ -718,6 +718,36 @@ and offers only the questions that are actually relevant:
 
 **A good triage tool knows when it lacks sufficient information.**
 
+### Ranked questions (v0.3.0)
+
+Follow-up questions are capped at six and ranked in three kinds
+(`js/engine/analyzer.js:buildMissingInformation`):
+
+1. **Diagnostic** — changes what to do next: missing context ("as discussed"),
+   source-of-truth checks, differentials, root cause, unknown extent, batch questions.
+   These lead, because in practice they save more time than the priority does (§14).
+2. **Priority** — an answer could move the matrix cell. The engine re-runs the full
+   scoring with each hypothetical answer (`simulate()`) and tags a question *would
+   change priority* only when the simulated P number differs from the current one.
+   Example: "When is this required by?" on a High-impact outage, because *today*
+   would make it P1.
+3. **Confidence** — narrows the assessment but keeps the cell (e.g. workaround daily
+   cost on an active P1 exposure).
+
+The same simulation marks the **key drivers** in the 8-question panel: the one or two
+facets whose unknown answer could flip this ticket's cell get a *key driver* badge.
+Answered facets never get it — it is a prompt to ask, not a verdict.
+
+### Suggested reply and handoff
+
+The card offers a neutral, audience-agnostic draft reply (`js/ui/reply.js`): what was
+understood (I1/U5/I2), the suggested priority in one line, and at most the two
+priority-changing questions. It is always labelled *Draft — refine before sending* and
+ends with the advisory disclaimer. A markdown slip (`buildMarkdown`) and `.md`
+download provide the same facts for ticketing systems. Neither stores nor transmits
+anything; the share link (§PRIVACY) is the only channel and carries the ticket in the
+URL, capped at 2000 characters.
+
 ---
 
 ## 19. Priority definitions

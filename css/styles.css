@@ -1097,6 +1097,11 @@ summary::marker { color: var(--muted); }
 .facet-row.facet--unknown { border-left: 3px solid var(--p2); }
 .facet-row.facet--inferred { border-left: 3px solid var(--accent); }
 .facet-row.facet--answered { border-left: 3px solid var(--down); }
+.facet-row.facet--key {
+  border-left-color: var(--p1);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--p1) 35%, transparent);
+}
+.facet-badge--key { background: var(--p1-tint); color: var(--p1); border-color: var(--p1); }
 .facet-head { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; }
 .facet-num { font-weight: 800; font-size: 0.75rem; letter-spacing: 0.05em; color: var(--muted); }
 .facet-title { font-weight: 700; font-size: 0.88rem; flex: 1 1 auto; }
@@ -1108,6 +1113,54 @@ summary::marker { color: var(--muted); }
 .facet-quote { font-size: 0.82rem; font-style: italic; color: var(--muted); margin-top: 0.15rem; background: var(--surface-3); border-radius: 4px; padding: 0 0.25rem; display: inline-block; }
 .facet-hint { font-size: 0.78rem; margin-top: 0.2rem; line-height: 1.4; }
 .panel-eight h3 { color: var(--accent); }
+
+.q-tag {
+  display: inline-block;
+  margin-right: 0.45rem;
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  padding: 0.05rem 0.45rem;
+  vertical-align: 0.1em;
+}
+.q-tag--diagnostic { color: var(--accent); border-color: var(--accent); }
+.q-tag--priority { color: var(--p1); border-color: var(--p1); background: var(--p1-tint); }
+.q-tag--confidence { color: var(--muted); }
+
+.reply-box {
+  font-family: "Cascadia Mono", Consolas, "SF Mono", Menlo, monospace;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  background: var(--surface-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.7rem 0.85rem;
+  margin: 0 0 0.6rem;
+  user-select: all;
+}
+.panel-reply h3 { color: var(--down); }
+
+.refined-line {
+  margin: 0.4rem 0 0;
+  font-size: 0.8rem;
+  color: var(--muted);
+  border-top: 1px dashed var(--border-strong);
+  padding-top: 0.35rem;
+}
+
+.relevance-hint {
+  margin-top: 0.6rem;
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--p2);
+  border-radius: var(--radius-sm);
+  background: var(--p2-tint);
+  padding: 0.5rem 0.7rem;
+  font-size: 0.85rem;
+}
 
 @media print {
   .site-header .header-privacy, .actions, .site-footer,

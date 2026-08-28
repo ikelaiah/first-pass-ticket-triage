@@ -325,17 +325,29 @@ function buildMissingInformation(context) {
     scopeResult, deadlineResult, workaroundResult, systemResult, symptom,
     risks, modifiers, urgencyResult, impactResult, expectedBehaviour,
     doc, domainResult, isQuestion, knownAnswer, sourceOfTruth, differential,
-    recurring, undetected, inScope, containment, driver, harmTiming, blockedProcess
+    recurring, undetected, inScope, containment, driver, harmTiming, blockedProcess,
+    simulate, currentPriority, currentImpact
   } = context;
 
   const missing = [];
   const questions = [];
-  const addQuestion = (q) => { if (!questions.includes(q)) questions.push(q); };
+  const meta = [];
+  // kind: "diagnostic" = changes what to do next (source of truth, differential,
+  // root cause, missing context); "priority" = answering could move the matrix
+  // cell; "confidence" = narrows the assessment but keeps the cell.
+  const pq = (tests) =>
+    (simulate && tests.some((t) => simulate(t) !== currentPriority)) ? 'priority' : 'confidence';
+  const addQuestion = (q, kind = 'confidence') => {
+    if (questions.includes(q)) return;
+    questions.push(q);
+    meta.push({ text: q, kind });
+  };
 
   if (!inScope) {
     return {
       missing: ['Whether this describes an IT or application-support request'],
       questions: ['What IT system, application, device, or service needs support?'],
+      meta: [{ text: 'What IT system, application, device, or service needs support?', kind: 'priority' }],
       summary: 'No IT system, technical symptom, service request, or support topic ' +
         'was recognised. Treat this result as unassessed rather than as a valid ' +
         'low-priority ticket.'
@@ -350,6 +362,8 @@ function buildMissingInformation(context) {
         missing: [],
         questions: ['Does the requester need access before the next run at ' +
           knownAnswer.scheduledTime + '?'],
+        meta: [{ text: 'Does the requester need access before the next run at ' +
+          knownAnswer.scheduledTime + '?', kind: 'priority' }],
         summary: 'This looks like a question rather than a fault. The configured ' +
           'answer is shown above; confirm it still matches the environment.'
       };
@@ -360,6 +374,10 @@ function buildMissingInformation(context) {
         'Is this general information, or is it needed for something with a deadline?',
         'Is anything currently blocked while waiting for the answer?'
       ],
+      meta: [
+        { text: 'Is this general information, or is it needed for something with a deadline?', kind: 'priority' },
+        { text: 'Is anything currently blocked while waiting for the answer?', kind: 'confidence' }
+      ],
       summary: 'This reads as a question rather than a fault, so the usual incident ' +
         'facts (scope, workaround, outage) do not apply.'
     };
@@ -369,47 +387,49 @@ function buildMissingInformation(context) {
   // conversation we cannot see is missing its most important fact.
   if (doc && has(doc, CONTEXT_ELSEWHERE_PHRASES)) {
     missing.push('The background the request refers to is not in the ticket');
-    addQuestion('What was previously discussed or agreed that this request refers to?');
+    addQuestion('What was previously discussed or agreed that this request refers to?', 'diagnostic');
   }
   if (expectedBehaviour) {
     addQuestion('Is access required before the next scheduled run at ' +
-      expectedBehaviour.scheduledTime + '?');
+      expectedBehaviour.scheduledTime + '?', 'diagnostic');
   }
   if (recurring) {
     missing.push('Why the fault recurs - the root cause is not yet known');
-    addQuestion('What is the root cause, and what stops this happening to the next record?');
+    addQuestion('What is the root cause, and what stops this happening to the next record?', 'diagnostic');
   }
   if (undetected) {
     missing.push('How many other records are affected but unreported');
     addQuestion('How many other records may be affected without anyone noticing, ' +
-      'and can they be found in bulk?');
+      'and can they be found in bulk?', 'diagnostic');
   }
   if (differential) {
     missing.push('What is different about the record that failed');
     addQuestion('What is different about the record that failed - document type, ' +
-      'size, upload time, or a recent status change?');
+      'size, upload time, or a recent status change?', 'diagnostic');
   }
   if (sourceOfTruth) {
     missing.push('Whether the record is correct in ' + sourceOfTruth.source +
       ', the system ' + sourceOfTruth.downstream + ' is synchronised from');
     addQuestion('Is the record set up correctly in ' + sourceOfTruth.source +
-      ', which ' + sourceOfTruth.downstream + ' is synchronised from?');
+      ', which ' + sourceOfTruth.downstream + ' is synchronised from?', 'diagnostic');
   }
   if (!scopeResult.explicit) {
     missing.push('How many users, teams or schools are affected');
     addQuestion(
       'Is this affecting one person, one school, several schools or all ' +
-      organisationConfig.schoolCount + ' schools?'
+      organisationConfig.schoolCount + ' schools?',
+      pq([{ scope: 'all-schools' }, { scope: 'one-school' }])
     );
   }
   if (deadlineResult.deadline === 'unknown') {
     missing.push('When the work is required by');
-    addQuestion('When is this required by?');
-    addQuestion('What happens if this is not resolved today?');
+    addQuestion('When is this required by?', pq([{ deadline: 'today' }, { deadline: 'days-2-5' }]));
+    addQuestion('What happens if this is not resolved today?', pq([{ deadline: 'today' }]));
   }
   if (workaroundResult.workaround === 'unknown') {
     missing.push('Whether a workaround or manual process exists');
-    addQuestion('Is there a workaround or manual process available?');
+    addQuestion('Is there a workaround or manual process available?',
+      pq([{ workaround: 'no' }, { workaround: 'yes' }]));
   }
   if (!systemResult.primary) {
     missing.push('Which system or application is affected');
@@ -419,33 +439,38 @@ function buildMissingInformation(context) {
   const BATCH_DOMAINS = ['data-quality', 'data-pipeline', 'integration-api', 'academic-ops'];
   if (['individual', 'few-users'].includes(scopeResult.scope) &&
       domainResult && BATCH_DOMAINS.includes(domainResult.domain)) {
-    addQuestion('Are other records from the same intake or batch affected?');
+    addQuestion('Are other records from the same intake or batch affected?', 'diagnostic');
   }
 
   if (urgencyResult.claimedOnly) {
     missing.push('The business consequence behind the stated urgency');
-    addQuestion('What is the business consequence if this waits until tomorrow?');
+    addQuestion('What is the business consequence if this waits until tomorrow?',
+      pq([{ deadline: 'today' }]));
   }
   if (symptom.isDataIssue && !modifiers.decisionRisk && !expectedBehaviour) {
     missing.push('Whether incorrect data is visible to users');
-    addQuestion('Is incorrect information visible to users or being used for decisions?');
+    addQuestion('Is incorrect information visible to users or being used for decisions?',
+      pq([{ exposureActive: true }, { decisionRisk: true, deadline: 'today' }]));
   }
   if (symptom.isDataIssue && !modifiers.propagating && !expectedBehaviour) {
     addQuestion('Is the issue still occurring, or has it stopped?');
   }
   if ((risks.payroll || risks.financial) && deadlineResult.deadline === 'unknown') {
     missing.push('The next payroll or payment cutoff');
-    addQuestion('Is a payroll or payment cutoff affected, and when is it?');
+    addQuestion('Is a payroll or payment cutoff affected, and when is it?',
+      pq([{ deadline: 'today' }]));
   }
   if ((risks.privacy || risks.security) && !modifiers.exposureActive) {
     missing.push('Whether anyone has actually accessed the information');
-    addQuestion('Has anyone outside the intended audience actually seen the information?');
+    addQuestion('Has anyone outside the intended audience actually seen the information?',
+      pq([{ exposureActive: true }]));
   }
   if (symptom.isDegraded) {
     addQuestion('Can users still complete their work, or is it effectively unavailable?');
   }
   if (impactResult.impact === 'high' && deadlineResult.deadline === 'unknown') {
-    addQuestion('When does business processing next depend on this?');
+    addQuestion('When does business processing next depend on this?',
+      pq([{ deadline: 'today' }, { deadline: 'days-2-5' }]));
   }
 
   // 8-question framework — only ask when current facets are unknown
@@ -457,11 +482,13 @@ function buildMissingInformation(context) {
   } else if (containment && !containment.propagating && !recurring && !undetected) {
     // Only ask containment if no other spread signal
     if (['individual', 'few-users'].includes(scopeResult.scope) && symptom.isDataIssue) {
-      addQuestion('Is this contained to one record/family, or could it be spreading?');
+      addQuestion('Is this contained to one record/family, or could it be spreading?',
+        pq([{ propagating: true }]));
     }
   }
   if (driver && driver.driver === 'unknown' && deadlineResult.deadline !== 'unknown' && deadlineResult.deadline !== 'none') {
-    addQuestion('What creates the deadline — a requirement (statutory/operational) or a preference? What actually happens if it is missed?');
+    addQuestion('What creates the deadline — a requirement (statutory/operational) or a preference? What actually happens if it is missed?',
+      (urgencyResult.floorApplied && priorityFor(currentImpact, 'low') !== currentPriority) ? 'priority' : 'confidence');
   }
   if (driver && driver.driver === 'preference') {
     addQuestion('Is "by Friday" a requirement (statutory/operational) or a preference? Preferences score lower.');
@@ -472,7 +499,8 @@ function buildMissingInformation(context) {
   if (harmTiming && harmTiming.timing === 'pending') {
     addQuestion('Is harm waiting to happen (expiring) rather than happening now (expired/active exposure)?');
   } else if (harmTiming && harmTiming.timing === 'unknown' && (risks.privacy || risks.security || symptom.severity >= 1.5)) {
-    addQuestion('Is harm happening now, or waiting to happen? (expired/active vs expiring/pending)');
+    addQuestion('Is harm happening now, or waiting to happen? (expired/active vs expiring/pending)',
+      pq([{ exposureActive: true }]));
   }
 
   let summary = '';
@@ -485,7 +513,20 @@ function buildMissingInformation(context) {
         'The suggestion below is based on what the request actually states.';
   }
 
-  return { missing, questions: questions.slice(0, 6), summary };
+  // Diagnostic questions first (they change what to do next), then
+  // priority-changing ones, then confidence-only (stable within each kind),
+  // capped at six.
+  const KIND_ORDER = { diagnostic: 0, priority: 1, confidence: 2 };
+  const paired = meta.map((m, i) => [m, i]);
+  paired.sort((a, b) =>
+    (KIND_ORDER[a[0].kind] - KIND_ORDER[b[0].kind]) || (a[1] - b[1]));
+  const top = paired.slice(0, 6);
+  return {
+    missing,
+    questions: top.map(([m]) => m.text),
+    meta: top.map(([m]) => m),
+    summary
+  };
 }
 
 function buildReasoning(context) {
@@ -862,6 +903,54 @@ export function analyse(rawText, overrides = {}) {
   const urgency = applied.urgency || modified.urgency;
   const priority = priorityFor(impact, urgency);
 
+  // Re-run the scoring with a hypothetical answer, to rank follow-up questions
+  // by whether they could move the matrix cell ("would change priority").
+  const simulate = (ov = {}) => {
+    const scopeR = ov.scope
+      ? { ...scopeResult, scope: ov.scope, label: scopeLabel(ov.scope), explicit: true, allUsers: false }
+      : scopeResult;
+    const deadlineR = ov.deadline
+      ? { ...deadlineResult, deadline: ov.deadline, label: deadlineLabel(ov.deadline), committed: true, asserted: false }
+      : deadlineResult;
+    const workaroundR = ov.workaround
+      ? { ...workaroundResult, workaround: ov.workaround, label: workaroundLabel(ov.workaround) }
+      : workaroundResult;
+    const mods = {
+      ...modifiers,
+      propagating: Boolean(modifiers.propagating || (ov.propagating && risks.dataIntegrity)),
+      exposureActive: Boolean(modifiers.exposureActive || (ov.exposureActive && (risks.privacy || risks.security))),
+      decisionRisk: Boolean(modifiers.decisionRisk || (ov.decisionRisk && (symptom.isDataIssue || risks.dataIntegrity)))
+    };
+    const riskSim = { ...effectiveRisk, modifiers: mods };
+    const imp = assessImpact(doc, {
+      scopeResult: scopeR, symptom, riskResult: riskSim, deadlineResult: deadlineR, systemResult
+    });
+    const urg = assessUrgency(doc, {
+      deadlineResult: deadlineR, workaroundResult: workaroundR, symptom,
+      scopeResult: scopeR, riskResult: riskSim, differential
+    });
+    const mod = applyRiskModifiers({
+      impact: imp.impact, urgency: urg.urgency, risks, modifiers: mods, symptom,
+      deadlineResult: deadlineR, scopeResult: scopeR, workTypeResult, expectedBehaviour,
+      immediateNeed, activeIncident, inScope
+    });
+    return priorityFor(mod.impact, mod.urgency);
+  };
+
+  // The one or two facets whose unknown answer could flip this ticket's cell.
+  const keyFacets = [];
+  {
+    const changes = (tests) => tests.some((t) => simulate(t) !== priority);
+    if (!scopeResult.explicit && changes([{ scope: 'all-schools' }, { scope: 'one-school' }])) keyFacets.push('i1');
+    if (deadlineResult.deadline === 'unknown' && changes([{ deadline: 'today' }, { deadline: 'days-2-5' }])) keyFacets.push('u5');
+    if (workaroundResult.workaround === 'unknown' && changes([{ workaround: 'no' }, { workaround: 'yes' }])) keyFacets.push('u7');
+    if (risks.dataIntegrity && !modifiers.propagating && changes([{ propagating: true }])) keyFacets.push('i4');
+    if ((risks.privacy || risks.security) && !modifiers.exposureActive && changes([{ exposureActive: true }])) keyFacets.push('u8');
+    if (driver.driver === 'unknown' && deadlineResult.deadline !== 'unknown' &&
+        deadlineResult.deadline !== 'none' && urgencyResult.floorApplied &&
+        priorityFor(impact, 'low') !== priority) keyFacets.push('u6');
+  }
+
   // --- explanation ------------------------------------------------------
   const confidenceResult = assessConfidence(doc, {
     scopeResult, deadlineResult, workaroundResult, symptom, systemResult,
@@ -886,7 +975,8 @@ export function analyse(rawText, overrides = {}) {
     scopeResult, deadlineResult, workaroundResult, systemResult, symptom,
     risks, modifiers, urgencyResult, impactResult, expectedBehaviour,
     doc, domainResult, isQuestion, knownAnswer, sourceOfTruth, differential,
-    recurring, undetected, inScope, containment, driver, harmTiming, blockedProcess
+    recurring, undetected, inScope, containment, driver, harmTiming, blockedProcess,
+    simulate, currentPriority: priority, currentImpact: impact
   });
 
   const rules = modified.rules.slice();
@@ -1002,6 +1092,8 @@ export function analyse(rawText, overrides = {}) {
     missingInformation: missingInfo.missing,
     missingInformationSummary: missingInfo.summary,
     followUpQuestions: missingInfo.questions,
+    followUpQuestionMeta: missingInfo.meta,
+    keyFacets,
 
     // explainability chain
     chain: {

@@ -9,6 +9,7 @@ import {
   priorityDefinition, MATRIX, IMPACT_ORDER, URGENCY_ORDER
 } from '../engine/priority-matrix.js';
 import { organisationConfig } from '../config.js';
+import { buildReply, buildMarkdown } from './reply.js';
 
 /** Non-colour severity indicator: four blocks, filled by severity. */
 function severityBlocks(priority) {
@@ -188,9 +189,19 @@ function missingSection(result) {
       result.missingInformation.map((item) => el('li', {}, item))));
   }
   if (result.followUpQuestions.length) {
+    const metaBy = new Map((result.followUpQuestionMeta || []).map((m) => [m.text, m.kind]));
     nodes.push(el('h4', {}, 'Suggested follow-up questions'));
     nodes.push(el('ul', { class: 'questions' },
-      result.followUpQuestions.map((q) => el('li', {}, q))));
+      result.followUpQuestions.map((q) => {
+        const kind = metaBy.get(q) || 'confidence';
+        const tag = kind === 'diagnostic'
+          ? 'changes what to do next'
+          : kind === 'priority' ? 'would change priority' : 'raises confidence';
+        return el('li', {}, [
+          el('span', { class: 'q-tag q-tag--' + kind }, tag),
+          q
+        ]);
+      })));
   }
   if (!nodes.length) {
     nodes.push(el('p', { class: 'muted' },
@@ -230,16 +241,21 @@ function eightQuestionsPanel(result) {
     const cls = state === 'answered' ? 'facet-badge--ok' : state === 'inferred' ? 'facet-badge--mid' : 'facet-badge--unknown';
     return el('span', { class: 'facet-badge ' + cls }, map[state] || state);
   };
-  const row = (num, title, value, state, quote, hint) => el('li', { class: 'facet-row facet--' + state }, [
-    el('div', { class: 'facet-head' }, [
-      el('span', { class: 'facet-num' }, num),
-      el('span', { class: 'facet-title' }, title),
-      badge(state)
-    ]),
-    el('div', { class: 'facet-value' }, value || '—'),
-    quote ? el('div', { class: 'facet-quote' }, '"' + quote + '"') : null,
-    hint ? el('div', { class: 'facet-hint muted' }, hint) : null
-  ]);
+  const keySet = new Set(result.keyFacets || []);
+  const row = (num, title, value, state, quote, hint) => {
+    const key = keySet.has(num.toLowerCase());
+    return el('li', { class: 'facet-row facet--' + state + (key ? ' facet--key' : '') }, [
+      el('div', { class: 'facet-head' }, [
+        el('span', { class: 'facet-num' }, num),
+        el('span', { class: 'facet-title' }, title),
+        key ? el('span', { class: 'facet-badge facet-badge--key' }, 'key driver') : null,
+        badge(state)
+      ]),
+      el('div', { class: 'facet-value' }, value || '—'),
+      quote ? el('div', { class: 'facet-quote' }, '"' + quote + '"') : null,
+      hint ? el('div', { class: 'facet-hint muted' }, hint) : null
+    ]);
+  };
   // Determine state per facet
   const i1State = f.i1Scope.explicit ? 'answered' : 'unknown';
   const i2State = f.i2Blocked.blockedProcess ? 'answered' : (f.i2Blocked.quote ? 'inferred' : 'unknown');
@@ -275,6 +291,81 @@ function panel(title, body, extraClass) {
     el('h3', {}, title),
     body
   ]);
+}
+
+function copyButton(text, label) {
+  return el('button', {
+    class: 'btn btn-quiet btn-copy',
+    type: 'button',
+    onClick: (e) => {
+      const btn = e.currentTarget;
+      const done = () => {
+        const prev = btn.textContent;
+        btn.textContent = 'Copied';
+        setTimeout(() => { btn.textContent = prev; }, 1400);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done);
+      } else {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        done();
+      }
+    }
+  }, label);
+}
+
+/** Polite, short, audience-neutral draft reply + handoff exports. */
+function replySection(result) {
+  const reply = buildReply(result);
+  const markdown = buildMarkdown(result);
+  const download = () => {
+    const blob = new Blob([markdown], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'triage-' + result.priority + '.md';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
+  return el('div', {}, [
+    el('pre', { class: 'reply-box' }, reply),
+    el('div', { class: 'actions' }, [
+      copyButton(reply, 'Copy reply'),
+      copyButton(markdown, 'Copy markdown'),
+      el('button', { class: 'btn btn-quiet', type: 'button', onClick: download }, 'Download .md')
+    ]),
+    el('p', { class: 'hint muted' },
+      'A neutral draft for any audience — refine before sending. Nothing is stored or transmitted.')
+  ]);
+}
+
+/** One line listing what the analyst overrode, so the printed slip shows it. */
+function refinedLine(result) {
+  const applied = result.detail && result.detail.overridesApplied;
+  if (!applied || !Object.keys(applied).length) return null;
+  const names = {
+    scope: 'Scope', workaround: 'Workaround', deadline: 'Deadline',
+    contained: 'Containment', driver: 'Driver', harm: 'Harm timing',
+    impact: 'Impact', urgency: 'Urgency'
+  };
+  const parts = [];
+  for (const [key, value] of Object.entries(applied)) {
+    if (key === 'risks') {
+      const on = Object.entries(value).filter(([, v]) => v).map(([k]) => k);
+      if (on.length) parts.push('Risks: ' + on.join(', '));
+    } else {
+      parts.push((names[key] || key) + ' = ' + value);
+    }
+  }
+  if (!parts.length) return null;
+  return el('p', { class: 'refined-line' }, 'Refined by analyst: ' + parts.join(' · '));
 }
 
 /** Short sentence announced to assistive technology. */
@@ -337,6 +428,7 @@ export function renderResult(container, result, options = {}) {
       ]),
       el('p', { class: 'banner-headline' }, def.headline),
       heroLevels(result),
+      refinedLine(result),
       severityBlocks(result.priority)
     ]),
     el('div', { class: 'banner-side' }, miniMatrix(result))
@@ -387,8 +479,9 @@ export function renderResult(container, result, options = {}) {
           'Ignored about ' + result.strippedChars.toLocaleString() +
           ' characters of email signatures, disclaimers and image references.')
       : null,
-    // Eight questions panel — the boss framework, visible on every result
+    // Eight questions panel — the framework, visible on every result
     panel('8 Questions — Impact vs Urgency', eightQuestionsPanel(result), 'panel-eight'),
+    panel('Suggested reply (draft)', replySection(result), 'panel-reply'),
     // The reasoning chain is the point of the tool, and it holds a two-column
     // split of its own, so it gets the full width rather than half of it.
     panel('Why ' + result.priority + '?', chainSection(result), 'panel-chain'),
