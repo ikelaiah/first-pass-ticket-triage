@@ -142,6 +142,37 @@
           </div>
 
           <div class="refine-field">
+            <label for="refine-contained">Containment</label>
+            <select id="refine-contained">
+              <option value="auto">Auto (from evidence)</option>
+              <option value="contained">Contained — one record/context</option>
+              <option value="spreading">Spreading / recurring</option>
+              <option value="unknown">Unknown extent</option>
+            </select>
+          </div>
+
+          <div class="refine-field">
+            <label for="refine-driver">Deadline driver</label>
+            <select id="refine-driver">
+              <option value="auto">Auto (from evidence)</option>
+              <option value="statutory">Statutory / compliance (census, NAPLAN, WWCC)</option>
+              <option value="operational">Operational (payroll cutoff, class starts)</option>
+              <option value="preference">Preference ("would like by Friday")</option>
+              <option value="none">No deadline</option>
+            </select>
+          </div>
+
+          <div class="refine-field">
+            <label for="refine-harm">Harm timing</label>
+            <select id="refine-harm">
+              <option value="auto">Auto (from evidence)</option>
+              <option value="active">Happening now (expired / exposed)</option>
+              <option value="pending">Waiting to happen (expiring / pending)</option>
+              <option value="unknown">Unknown</option>
+            </select>
+          </div>
+
+          <div class="refine-field">
             <label for="refine-impact">Impact override</label>
             <select id="refine-impact">
               <option value="auto">Auto (from evidence)</option>

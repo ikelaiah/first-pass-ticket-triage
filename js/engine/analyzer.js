@@ -30,8 +30,12 @@ import {
   IMMEDIATE_NEED_PATTERNS, CONTEXT_ELSEWHERE_PHRASES,
   WORKING_COMPARATOR_PHRASES, CONTRAST_PHRASES,
   ACTIVE_INCIDENT_PHRASES, ESCALATION_PHRASES,
-  RECURRENCE_PHRASES, UNDETECTED_PHRASES, SLA_BREACH_PHRASES
+  RECURRENCE_PHRASES, UNDETECTED_PHRASES, SLA_BREACH_PHRASES,
+  BLOCKED_PROCESS_PHRASES
 } from '../data/phrases.js';
+import { detectContainment } from './containment.js';
+import { detectDriver } from './driver.js';
+import { detectHarmTiming } from './harm-timing.js';
 
 const TIME_12H = /\b(\d{1,2})(?::(\d{2}))?\s*(am|pm)\b/g;
 const TIME_24H = /\b([01]?\d|2[0-3]):([0-5]\d)\b/g;
@@ -307,12 +311,21 @@ function applyRiskModifiers(context) {
   return { impact, urgency, rules };
 }
 
+function detectBlockedProcess(doc, domainResult, symptom) {
+  const hit = scanPositive(doc, BLOCKED_PROCESS_PHRASES);
+  if (hit.length) return { label: hit[0].entry.label, quote: hit[0].quote, hit: hit[0] };
+  if (has(doc, BLOCKED_PROCESS_PHRASES)) return null;
+  // Fallback: infer blocked process from domain + symptom when explicit BLOCKED phrase present
+  // but no named process — the panel will show symptom label instead.
+  return null;
+}
+
 function buildMissingInformation(context) {
   const {
     scopeResult, deadlineResult, workaroundResult, systemResult, symptom,
     risks, modifiers, urgencyResult, impactResult, expectedBehaviour,
     doc, domainResult, isQuestion, knownAnswer, sourceOfTruth, differential,
-    recurring, undetected, inScope
+    recurring, undetected, inScope, containment, driver, harmTiming, blockedProcess
   } = context;
 
   const missing = [];
@@ -435,7 +448,32 @@ function buildMissingInformation(context) {
     addQuestion('When does business processing next depend on this?');
   }
 
-
+  // 8-question framework — only ask when current facets are unknown
+  if (!blockedProcess && symptom.severity >= 2 && !isQuestion) {
+    addQuestion('What can they not do right now that they could do yesterday? (blocked business process, not just symptom)');
+  }
+  if (containment && containment.contained) {
+    // contained is good news — no question, but keep reasoning
+  } else if (containment && !containment.propagating && !recurring && !undetected) {
+    // Only ask containment if no other spread signal
+    if (['individual', 'few-users'].includes(scopeResult.scope) && symptom.isDataIssue) {
+      addQuestion('Is this contained to one record/family, or could it be spreading?');
+    }
+  }
+  if (driver && driver.driver === 'unknown' && deadlineResult.deadline !== 'unknown' && deadlineResult.deadline !== 'none') {
+    addQuestion('What happens at that deadline — and who set it? (statutory/operational deadline vs preference)');
+  }
+  if (driver && driver.driver === 'preference') {
+    addQuestion('Is "by Friday" a business/regulatory deadline or a preference? It scores as a preference.');
+  }
+  if (workaroundResult.workaround === 'yes' && !workaroundResult.costPerDay) {
+    addQuestion('What does the workaround cost per day — how many staff/hours does manual processing take?');
+  }
+  if (harmTiming && harmTiming.timing === 'pending') {
+    addQuestion('Is harm waiting to happen (expiring) rather than happening now (expired/active exposure)?');
+  } else if (harmTiming && harmTiming.timing === 'unknown' && (risks.privacy || risks.security || symptom.severity >= 1.5)) {
+    addQuestion('Is harm happening now, or waiting to happen? (expired/active vs expiring/pending)');
+  }
 
   let summary = '';
   if (missing.length) {
@@ -455,7 +493,8 @@ function buildReasoning(context) {
     scopeResult, systemResult, domainResult, symptom, workaroundResult,
     deadlineResult, impactResult, urgencyResult, rules, priority,
     impact, urgency, expectedBehaviour, urgencyBase, impactBase, knownAnswer, isQuestion,
-    sourceOfTruth, differential, escalated, recurring, undetected, inScope
+    sourceOfTruth, differential, escalated, recurring, undetected, inScope,
+    containment, driver, harmTiming, blockedProcess
   } = context;
 
   const reasoning = [];
@@ -563,6 +602,24 @@ function buildReasoning(context) {
       'even though the business can continue for now.'
     );
   }
+  if (blockedProcess) {
+    reasoning.push('Blocked process: ' + blockedProcess.quote + ' — ' + blockedProcess.label + '.');
+  }
+  if (containment) {
+    if (containment.contained) reasoning.push('Containment: ' + containment.summary + ' (' + (containment.containedEvidence?.quote || '') + ').');
+    else if (containment.propagating) reasoning.push('Containment: ' + containment.summary + ' — raises impact, not urgency.');
+    else if (containment.recurring || containment.undetected) reasoning.push('Containment: ' + containment.summary + '.');
+  }
+  if (driver && driver.driver !== 'unknown') {
+    const who = driver.actor ? ' (' + driver.actor + ')' : '';
+    reasoning.push('Driver: ' + driver.label + who + (driver.quote ? ' — "' + driver.quote + '"' : '') + '.');
+  }
+  if (harmTiming && harmTiming.timing !== 'unknown') {
+    reasoning.push('Harm timing: ' + harmTiming.label + (harmTiming.quote ? ' — "' + harmTiming.quote + '"' : '') + '.');
+  }
+  if (workaroundResult.costPerDay) {
+    reasoning.push('Workaround cost: ' + workaroundResult.costPerDay + ' — ' + (workaroundResult.sustainability || 'manual effort') + '.');
+  }
   for (const rule of rules) {
     reasoning.push('Modifier applied: ' + rule.label);
   }
@@ -633,6 +690,9 @@ function normaliseOverrides(overrides = {}) {
   take('scope');
   take('workaround', ['yes', 'partial', 'no', 'unknown']);
   take('deadline');
+  take('contained', ['contained', 'spreading', 'unknown']);
+  take('driver', ['statutory', 'operational', 'preference', 'none']);
+  take('harm', ['active', 'pending', 'unknown']);
   take('impact', LEVEL_VALUES);
   take('urgency', LEVEL_VALUES);
   if (overrides.risks && typeof overrides.risks === 'object') {
@@ -722,6 +782,28 @@ export function analyse(rawText, overrides = {}) {
   // what kind of ticket this is - so they are established before work type.
   const recurring = has(doc, RECURRENCE_PHRASES);
   const undetected = has(doc, UNDETECTED_PHRASES);
+  let containment = detectContainment(doc, risks);
+  let driver = detectDriver(doc);
+  let harmTiming = detectHarmTiming(doc, symptom);
+  const blockedProcess = detectBlockedProcess(doc, domainResult, symptom);
+  // Facet overrides — analyst confirmed values
+  if (applied.contained) {
+    if (applied.contained === 'contained') containment = { ...containment, contained: true, propagating: false, recurring: false, undetected: false, summary: 'appears contained (manually confirmed)' };
+    else if (applied.contained === 'spreading') containment = { ...containment, contained: false, propagating: true, summary: 'appears to be spreading (manually confirmed)' };
+    else if (applied.contained === 'unknown') containment = { ...containment, contained: false, propagating: false, recurring: false, undetected: true, summary: 'unknown extent (manually confirmed)' };
+  }
+  if (applied.driver) {
+    if (applied.driver !== 'auto') {
+      const labelMap = { statutory: 'a statutory or compliance deadline drives timing', operational: 'an operational or business event drives timing', preference: 'a preference rather than a deadline was expressed', none: 'no deadline driver' };
+      driver = { driver: applied.driver, label: labelMap[applied.driver] || applied.driver, quote: 'manual input', actor: driver.actor, committed: applied.driver !== 'preference' && applied.driver !== 'none' };
+    }
+  }
+  if (applied.harm) {
+    if (applied.harm !== 'auto') {
+      const labelMap = { active: 'harm is happening now', pending: 'harm is waiting to happen', unknown: null };
+      harmTiming = { timing: applied.harm, label: labelMap[applied.harm], quote: applied.harm === 'unknown' ? null : 'manual input', source: 'manual' };
+    }
+  }
 
   const workTypeResult = detectWorkType(doc, {
     symptom,
@@ -804,7 +886,7 @@ export function analyse(rawText, overrides = {}) {
     scopeResult, deadlineResult, workaroundResult, systemResult, symptom,
     risks, modifiers, urgencyResult, impactResult, expectedBehaviour,
     doc, domainResult, isQuestion, knownAnswer, sourceOfTruth, differential,
-    recurring, undetected, inScope
+    recurring, undetected, inScope, containment, driver, harmTiming, blockedProcess
   });
 
   const rules = modified.rules.slice();
@@ -819,7 +901,8 @@ export function analyse(rawText, overrides = {}) {
     scopeResult, systemResult, domainResult, symptom, workaroundResult,
     deadlineResult, impactResult, urgencyResult, rules, priority,
     impact, urgency, expectedBehaviour, impactBase, urgencyBase, knownAnswer, isQuestion,
-    sourceOfTruth, differential, escalated, recurring, undetected, inScope
+    sourceOfTruth, differential, escalated, recurring, undetected, inScope,
+    containment, driver, harmTiming, blockedProcess
   });
 
   const evidenceDetail = [
@@ -831,6 +914,18 @@ export function analyse(rawText, overrides = {}) {
     ...deadlineResult.evidence,
     ...effectiveRisk.evidence
   ];
+
+  // 8-question facets for the dedicated panel
+  const eightFacets = {
+    i1Scope: { question: 'Who and how many are affected?', answer: scopeResult.label, value: scopeResult.scope, explicit: scopeResult.explicit, quote: scopeResult.evidence[0]?.quote || null },
+    i2Blocked: { question: 'What can they not do that they could do yesterday?', answer: blockedProcess ? blockedProcess.quote : (symptom.label !== 'Question / How-To' ? symptom.label : 'Not stated'), quote: blockedProcess?.quote || symptom.evidence[0]?.quote || null, blockedProcess },
+    i3Irreversibility: { question: 'Wrong / exposed / lost / unsafe vs merely unavailable?', answer: modifiers.exposureActive ? 'Exposed' : risks.dataIntegrity && modifiers.propagating ? 'Wrong + spreading' : risks.dataIntegrity ? 'Wrong data' : risks.privacy ? 'Privacy risk' : risks.safety ? 'Safety' : symptom.severity >= 3 ? 'Unavailable/outage' : 'No irreversibility flagged', risks: Object.keys(risks).filter(k => risks[k]), modifiers },
+    i4Containment: { question: 'Contained or spreading / recurring / unknown extent?', answer: containment.summary, containment },
+    u5Deadline: { question: 'When do you need this by?', answer: deadlineResult.label, value: deadlineResult.deadline, committed: deadlineResult.committed, quote: deadlineResult.evidence[0]?.quote || null },
+    u6Driver: { question: 'What happens then — and who set it? (deadline vs preference)', answer: driver.driver === 'unknown' ? 'Not stated' : driver.label, driver },
+    u7Workaround: { question: 'Can work continue — and at what daily cost?', answer: workaroundResult.label + (workaroundResult.costPerDay ? ' (' + workaroundResult.costPerDay + ')' : ''), workaround: workaroundResult.workaround, costPerDay: workaroundResult.costPerDay },
+    u8HarmTiming: { question: 'Harm happening now or waiting to happen? (expired vs expiring)', answer: harmTiming.timing === 'unknown' ? 'Not stated' : harmTiming.label, harmTiming }
+  };
 
   const riskFlags = Object.entries(risks)
     .filter(([, value]) => value)
@@ -894,6 +989,11 @@ export function analyse(rawText, overrides = {}) {
     differential,
     recurring,
     undetected,
+    containment,
+    driver,
+    harmTiming,
+    blockedProcess,
+    eightFacets,
 
     evidence: evidenceDetail.map((e) => e.meaning),
     evidenceDetail,

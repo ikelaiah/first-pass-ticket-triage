@@ -7,6 +7,7 @@
  */
 const SELECT_KEYS = ['scope', 'workaround', 'deadline'];
 const LEVEL_KEYS = ['impact', 'urgency'];
+const FACET_KEYS = ['contained', 'driver', 'harm'];
 
 /**
  * @param {HTMLElement} root      the panel element
@@ -14,7 +15,7 @@ const LEVEL_KEYS = ['impact', 'urgency'];
  */
 export function initRefineControls(root, onChange) {
   const fields = {};
-  for (const key of [...SELECT_KEYS, ...LEVEL_KEYS]) {
+  for (const key of [...SELECT_KEYS, ...LEVEL_KEYS, ...FACET_KEYS]) {
     fields[key] = root.querySelector('#refine-' + key);
   }
   const riskInputs = Array.from(root.querySelectorAll('input[data-risk]'));
@@ -44,6 +45,9 @@ export function initRefineControls(root, onChange) {
       for (const key of LEVEL_KEYS) {
         if (fields[key] && fields[key].value !== 'auto') overrides[key] = fields[key].value;
       }
+      for (const key of FACET_KEYS) {
+        if (dirty.has(key) && fields[key] && fields[key].value !== 'auto') overrides[key] = fields[key].value;
+      }
       const risks = {};
       for (const input of riskInputs) {
         if (dirty.has('risk:' + input.dataset.risk)) risks[input.dataset.risk] = input.checked;
@@ -65,6 +69,9 @@ export function initRefineControls(root, onChange) {
       for (const key of LEVEL_KEYS) {
         if (fields[key]) fields[key].value = 'auto';
       }
+      for (const key of FACET_KEYS) {
+        if (fields[key]) fields[key].value = 'auto';
+      }
       for (const input of riskInputs) {
         input.checked = Boolean(result.risks[input.dataset.risk]);
       }
@@ -76,7 +83,7 @@ export function initRefineControls(root, onChange) {
       if (fields.scope) fields.scope.value = 'unknown';
       if (fields.workaround) fields.workaround.value = 'unknown';
       if (fields.deadline) fields.deadline.value = 'unknown';
-      for (const key of LEVEL_KEYS) {
+      for (const key of [...LEVEL_KEYS, ...FACET_KEYS]) {
         if (fields[key]) fields[key].value = 'auto';
       }
       for (const input of riskInputs) input.checked = false;

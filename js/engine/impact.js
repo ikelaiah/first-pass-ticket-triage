@@ -14,7 +14,8 @@ import {
   BLOCKED_PHRASES,
   ESCALATION_PHRASES,
   RECURRENCE_PHRASES,
-  UNDETECTED_PHRASES
+  UNDETECTED_PHRASES,
+  CONTAINED_PHRASES
 } from '../data/phrases.js';
 import { scopeDefinition } from './scope.js';
 import { SEVERITY } from './symptom.js';
@@ -97,6 +98,14 @@ export function assessImpact(doc, ctx) {
   const undetected = scanPositive(doc, UNDETECTED_PHRASES);
   if (undetected.length) {
     add(undetected[0].entry.w, undetected[0].entry.label, undetected[0].quote);
+  }
+
+  // Contained vs spreading — contained does not reduce impact (still a fault)
+  // but is recorded for the 8-question panel; spreading already +1.5 via propagating.
+  const contained = scanPositive(doc, CONTAINED_PHRASES);
+  if (contained.length) {
+    // No numeric change — containment is informational, not a discount.
+    // The panel shows "appears contained" and missing-info avoids asking about spread.
   }
 
   // Deletion and lost backups are about *recoverability*, which the ordinary
