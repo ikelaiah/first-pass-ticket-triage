@@ -65,8 +65,8 @@ The engine is tuned for school-sector IT support. It recognises:
 
 | Area | Covered wording |
 | ---- | --------------- |
-| **Devices** | Intune/MDM, Chromebooks, iPads, BYOD, device enrolment, lockdown browsers, imaging |
-| **Systems** | Canvas, Seesaw, Edumate, EnrolHQ, Wonde, Laserfiche, Power BI, Entra ID, Aurion, Ascender Pay, ANZ/ABA, Calumo, Clipboard, Microsoft 365, Outlook, Office suite, Microsoft Copilot, Microsoft Teams, Google Classroom, Canva, SoundTrap, Flexischools, CompliSpace, Moodle, ReadSpeaker, Clever, PortalHQ, Wherescape, Inlogik, APValet, FatZebra, Tyro, BPay, Azure DevOps, SQL Server, SQL Server Management Studio, DBeaver, IBM DB2, PostgreSQL, SQLite, Power Automate, PowerShell, Python, Bash/Linux terminal, Confluence, helpdesk/ITSM |
+| **Devices** | Intune/MDM, Jamf, Chromebooks, iPads, BYOD, device enrolment, lockdown browsers, imaging, blue screens/frozen endpoints |
+| **Systems** | Canvas, Seesaw, Edumate, EnrolHQ, Wonde, Laserfiche, Power BI, Entra ID, Okta, Aurion, Ascender Pay, ANZ/ABA, Calumo, Clipboard, Microsoft 365, Outlook, Office suite, Microsoft Copilot, Microsoft Teams, Google Classroom, Canva, SoundTrap, Flexischools, CompliSpace, Moodle, ReadSpeaker, Clever, PortalHQ, Wherescape, Inlogik, APValet, FatZebra, Tyro, BPay, Azure DevOps, SQL Server, SQL Server Management Studio, DBeaver, IBM DB2, PostgreSQL, SQLite, Power Automate, PowerShell, Python, Bash/Linux terminal, Confluence, helpdesk/ITSM, Compass, Synergetic, TASS, Seqta, SchoolBox, PaperCut, Veeam |
 | **DevOps** | Azure Repos / Pipelines / Boards, build and release failures, broken builds in production, expired service connections, offline agents, blocked pull requests, branch policies, merge conflicts, work items |
 | **Collaboration** | Teams meetings and calls, join failures, audio/video, screen sharing, channels, class teams, guest access, recordings |
 | **Databases** | SQL Server, DB2 (SQLCODE, tablespaces, deadlocks), PostgreSQL (replication lag, vacuum, connection pools, "relation does not exist"), SQLite (locked database, malformed file) |
@@ -89,8 +89,8 @@ The engine is tuned for school-sector IT support. It recognises:
 | **Process** | change freezes and unapproved changes, SLA breaches, stakeholder escalation, UAT vs production, monitoring gaps, daylight-saving drift |
 | **Statutory** | WWCC/safeguarding, compliance audits, government and attendance reporting, NAPLAN, census |
 | **Accessibility** | WCAG, screen readers, keyboard navigation, contrast, assistive technology |
-| **Infrastructure** | Windows/servers, shared drives, file servers, printing, disk and storage capacity, network, DNS, VPN, firewall |
-| **Messaging** | email and notification delivery, SMS, invitations, queue backlogs |
+| **Infrastructure** | Windows/servers, shared drives, file servers, printing/PaperCut, disk and storage capacity, network, DNS, VPN, firewall, Meraki/UniFi/Aruba access points, wireless dropouts |
+| **Messaging** | email and notification delivery, SMS, invitations, queue backlogs, Mimecast/Proofpoint quarantine holding legitimate mail |
 | **Email chains** | signature blocks, disclaimers, image references and link wrappers stripped before analysis; observation verbs and counterfactuals distinguished from real deadlines |
 | **Problem signals** | recurrence, unknown extent, a working control ("one synced, one didn't"), source-of-truth checks, known answers from config |
 | **Everything else** | performance degradation, SQL errors, scheduled jobs, Power BI refresh, feature requests, documentation, expected scheduled behaviour |

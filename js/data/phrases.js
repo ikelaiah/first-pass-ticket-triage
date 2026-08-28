@@ -48,7 +48,8 @@ export const SCOPE_PHRASES = [
   // Team / department
   { m: ['the team', 'our team', 'a team', 'the department', 'our department', 'registrar team', 'registrars',
         'finance team', 'payroll team', 'admin team', 'the office', 'reception staff', 'business unit',
-        'the faculty', 'head office', 'central office'],
+        'the faculty', 'head office', 'central office',
+        'all casuals', 'every casual', 'the casuals'],
     v: 'team', w: 2, label: 'a team or department' },
 
   // Cohort
@@ -58,7 +59,8 @@ export const SCOPE_PHRASES = [
         /\byear \d{1,2} students\b/, /\byear (?:[1-9]|1[0-2])\b/, 'whole class', 'a subject group',
         'kindergarten', 'the new intake', 'an entire year', 'naplan',
         /\b(?:two|three|four|several|multiple) classes\b/,
-        /\ball (?:new )?(?:applicants|applications|enrolments)\b/],
+        /\ball (?:new )?(?:applicants|applications|enrolments)\b/,
+        'whole year level', 'entire year level', 'the year level'],
     v: 'cohort', w: 2, label: 'a class or cohort' },
 
   // One school
@@ -224,7 +226,10 @@ export const WORKAROUND_PHRASES = [
         'restarted the server', 'restarted server', 'admin restarted', 'until the helpdesk was restored', 'until restored', 'was restored', 'service restored',
         /\b(?:an alternative|a different|another) (?:browser|printer|device|computer|workstation|application|app) (?:works|is working|can be used)\b/,
         // "enter changes manually", "process the applications manually", "feeding manually"
-        /\b(?:process|do|enter|handle|run|complete|key|record|update|load|feed|feeding)\s+(?:\w+\s+){0,3}manually\b/],
+        /\b(?:process|do|enter|handle|run|complete|key|record|update|load|feed|feeding)\s+(?:\w+\s+){0,3}manually\b/,
+        // paper-based stopgaps (v0.3.1)
+        'paper form', 'paper forms', 'using the paper', 'using paper', 'paper process',
+        'spreadsheet workaround', 'using a spreadsheet', 'on the spreadsheet'],
     v: 'yes', label: 'a workaround or manual process exists' },
   { m: ['partial workaround', 'limited workaround', 'only some users', 'works for some',
         'only works sometimes', 'intermittently available', 'partially working',
@@ -296,6 +301,8 @@ export const SYMPTOMS = [
         'renewal is due', 'needs renewing', 'due for renewal'] },
   { id: 'not-synchronising', label: 'Not Synchronising', severity: 2,
     m: ['not synchronising', 'sync has stopped', 'sync stopped', 'synchronisation has stopped',
+        // MDM / update distribution (v0.3.1)
+        'not pushing', 'will not push', 'not receiving updates', 'update will not install',
         'synchronisation stopped', 'not syncing', 'sync failed', 'synchronisation failed',
         'failed to sync', 'sync is broken', 'not flowing', 'not coming through',
         'not synced', 'are not synced', 'is not synced', 'were not synced',
@@ -351,7 +358,10 @@ export const SYMPTOMS = [
   { id: 'not-delivered', label: 'Not Delivered', severity: 2,
     m: ['not being delivered', 'not delivered', 'failed to send', 'not sending',
         'did not send', 'not going out', 'bouncing', 'undeliverable', 'bounce back',
-        'never arrived', 'not receiving emails', 'notifications are not'] },
+        'never arrived', 'not receiving emails', 'notifications are not',
+        // mail security holding legitimate mail (v0.3.1)
+        'quarantined', 'in quarantine', 'sent to quarantine', 'held in quarantine',
+        'held by the mail filter', 'stuck in quarantine'] },
   { id: 'rejected', label: 'Rejected / Not Accepted', severity: 2,
     m: ['is rejecting', 'are rejecting', 'being rejected', 'was rejected', 'were rejected',
         'not accepting', 'will not accept', 'refuses to accept', 'validation error',
@@ -449,7 +459,11 @@ export const SYMPTOMS = [
         'fault', 'faulted',
         '500 error', 'error 500', '401 error', 'error 401', 'not functioning', 'went wrong',
         'is failing', 'are failing', 'keeps failing', 'failing for', 'fails', 'fails every',
-        'is broken for', 'not behaving'] },
+        'is broken for', 'not behaving',
+        // endpoint failures (v0.3.1)
+        'blue screen', 'bsod', 'frozen', 'is frozen', 'screen is frozen', 'not responding',
+        'will not respond', 'does not respond', 'will not turn on', 'does not turn on',
+        'will not power on', 'no power'] },
   { id: 'missing-data', label: 'Missing Data', severity: 1.5,
     m: ['missing', 'has not appeared', 'have not appeared', 'did not appear', 'not showing',
         'does not show', 'no records', 'not present', 'missing data', 'missing records',
@@ -504,7 +518,9 @@ export const SYMPTOMS = [
         'delayed response', 'degraded performance', 'takes longer', /takes \d{1,2} seconds/] },
   { id: 'intermittent', label: 'Intermittent', severity: 1,
     m: ['intermittent', 'intermittently', 'sometimes fails', 'occasionally fails', 'on and off',
-        'randomly', 'now and then', 'comes and goes'] },
+        'randomly', 'now and then', 'comes and goes',
+        // wireless dropouts (v0.3.1)
+        'keeps dropping', 'keeps dropping out', 'drops out', 'connection drops', 'signal drops'] },
   { id: 'cosmetic', label: 'Cosmetic', severity: 0.5,
     m: ['cosmetic', 'typo', 'spelling mistake', 'misaligned', 'alignment', 'wrong colour',
         'looks odd', 'display glitch', 'formatting issue'] },
@@ -529,6 +545,7 @@ export const DOMAINS = [
         { p: 'authenticate', w: 2 }, { p: 'can not log in', w: 2 }, { p: 'can not log into', w: 2 },
         { p: 'login', w: 1 }, { p: 'log in', w: 1 }, { p: 'sign in', w: 1 }, { p: 'password', w: 1 },
         { p: 'mfa', w: 2 }, { p: 'multi factor', w: 2 }, { p: 'entra', w: 2 }, { p: 'azure ad', w: 2 },
+        { p: 'okta', w: 2.5 }, { p: 'adfs', w: 2 },
         { p: 'token', w: 1.5 }, { p: 'credential', w: 1.5 }, { p: 'credentials', w: 1.5 },
         { p: 'service account', w: 2 }, { p: 'saml', w: 2 }, { p: 'oauth', w: 2 }, { p: 'identity', w: 1 }] },
   { id: 'access-authorisation', label: 'Access / Authorisation',
@@ -570,6 +587,10 @@ export const DOMAINS = [
     m: [{ p: 'workstation', w: 2 }, { p: 'laptop', w: 2 }, { p: 'desktop', w: 1.5 },
         { p: 'windows', w: 1.5 }, { p: 'server', w: 1.5 }, { p: 'virtual machine', w: 2 },
         { p: 'mac', w: 2 }, { p: 'macbook', w: 2.5 }, { p: 'macos', w: 2.5 },
+        // MDM for Mac, print management, backup, storage (v0.3.1)
+        { p: 'jamf', w: 3 }, { p: 'papercut', w: 2.5 }, { p: 'print server', w: 2.5 },
+        { p: 'veeam', w: 2.5 }, { p: 'nas', w: 2 }, { p: 'synology', w: 2.5 },
+        { p: 'blue screen', w: 2.5 }, { p: 'bsod', w: 2.5 },
         { p: 'windows service', w: 2 }, { p: 'reboot', w: 1.5 }, { p: 'disk', w: 1.5 },
         { p: 'storage full', w: 2 }, { p: 'file share', w: 2 }, { p: 'printer', w: 2 },
         { p: 'intune', w: 3 }, { p: 'mdm', w: 3 }, { p: 'chromebook', w: 2.5 },
@@ -697,12 +718,19 @@ export const DOMAINS = [
   { id: 'network', label: 'Network / Connectivity',
     m: [{ p: 'network', w: 2 }, { p: 'dns', w: 2.5 }, { p: 'vpn', w: 2.5 },
         { p: 'firewall', w: 2.5 }, { p: 'wifi', w: 2.5 }, { p: 'connectivity', w: 2 },
-        { p: 'proxy', w: 2 }, { p: 'no internet', w: 2.5 }] },
+        { p: 'proxy', w: 2 }, { p: 'no internet', w: 2.5 },
+        // wireless vendors and hardware (v0.3.1)
+        { p: 'meraki', w: 3 }, { p: 'unifi', w: 3 }, { p: 'ubiquiti', w: 3 },
+        { p: 'aruba', w: 3 }, { p: 'access point', w: 2.5 }, { p: 'wireless', w: 2 },
+        { p: 'router', w: 2.5 }, { p: 'network switch', w: 2.5 }] },
   { id: 'education-apps', label: 'Education Apps / LMS',
     m: [{ p: 'google classroom', w: 3 }, { p: 'classroom', w: 1.5 }, { p: 'canva', w: 2.5 },
         { p: 'soundtrap', w: 3 }, { p: 'moodle', w: 3 }, { p: 'readspeak', w: 3 },
         { p: 'readspeaker', w: 3 }, { p: 'clever', w: 3 }, { p: 'flexischools', w: 2.5 },
-        { p: 'complispace', w: 3 }] },
+        { p: 'complispace', w: 3 },
+        // Australian school-sector systems (v0.3.1)
+        { p: 'compass', w: 3 }, { p: 'synergetic', w: 3 }, { p: 'tass', w: 3 },
+        { p: 'seqta', w: 3 }, { p: 'schoolbox', w: 3 }] },
   { id: 'ai-copilot', label: 'AI / Copilot',
     m: [{ p: 'copilot', w: 3 }, { p: 'microsoft copilot', w: 3 }, { p: 'm365 copilot', w: 3 }] },
   { id: 'payments-gateway', label: 'Payments Gateway',
@@ -757,7 +785,10 @@ export const DOMAINS = [
     m: [{ p: 'email', w: 2 }, { p: 'emails', w: 2 }, { p: 'smtp', w: 2.5 },
         { p: 'mail flow', w: 2.5 }, { p: 'notification', w: 2 }, { p: 'notifications', w: 2 },
         { p: 'sms', w: 2.5 }, { p: 'invitation', w: 2 }, { p: 'invitations', w: 2 },
-        { p: 'distribution list', w: 2.5 }, { p: 'inbox', w: 2 }] },
+        { p: 'distribution list', w: 2.5 }, { p: 'inbox', w: 2 },
+        // mail security gateways (v0.3.1)
+        { p: 'mimecast', w: 3 }, { p: 'proofpoint', w: 3 }, { p: 'quarantine', w: 2.5 },
+        { p: 'mail gateway', w: 2.5 }, { p: 'email gateway', w: 2.5 }] },
   { id: 'documentation', label: 'Documentation',
     m: [{ p: 'documentation', w: 2.5 }, { p: 'how do i', w: 2.5 }, { p: 'where can i find', w: 2.5 },
         { p: 'user guide', w: 2.5 }, { p: 'knowledge base', w: 2.5 }, { p: 'instructions', w: 2 },
