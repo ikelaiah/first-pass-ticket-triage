@@ -22,11 +22,20 @@ function hasModifier(doc, patterns) {
   return null;
 }
 
+// A phrase such as "does not show that data is spreading" is an evidence
+// limitation, not a claim that the data is contained. Keep the answer unknown
+// until the ticket states an affirmative containment fact.
+function propagationIsUnasserted(doc) {
+  return /\b(?:does not|doesn't|cannot|can not|not clear|cannot confirm|can not confirm|no evidence)\b[^.;!?]{0,70}\b(?:spread|spreading|propagat)/i.test(doc.text);
+}
+
 export function detectContainment(doc, risks = {}) {
   const containedHit = scanPositive(doc, CONTAINED_PHRASES);
   const recurringHit = scanPositive(doc, RECURRENCE_PHRASES);
   const undetectedHit = scanPositive(doc, UNDETECTED_PHRASES);
-  const propagatingHit = hasModifier(doc, RISK_MODIFIERS.propagating);
+  const propagatingHit = propagationIsUnasserted(doc)
+    ? null
+    : hasModifier(doc, RISK_MODIFIERS.propagating);
 
   const propagating = Boolean(propagatingHit && risks.dataIntegrity);
   const rawPropagating = Boolean(propagatingHit);

@@ -44,3 +44,41 @@
 - [x] Update release documentation/version and run the full verification suite.
 - [x] Review the focused diff before the existing PR, merge, tag, and release
   workflow.
+
+## v0.7.0 systematic eight-facet NLP robustness
+
+- [x] Confirm and record the v0.6.1 baseline (`532 passed`, catalogue `206/206`).
+- [x] Add independent declarative I1 scope fixture families and state invariants.
+- [x] Add independent declarative I2 blocked-process fixture families and provenance checks.
+- [x] Add independent declarative I3 risk/irreversibility contrasts.
+- [x] Add independent declarative I4 containment, recurrence, propagation, and extent contrasts.
+- [x] Add independent declarative U5 deadline and timestamp contrasts.
+- [x] Add independent declarative U6 requirement/preference driver contrasts.
+- [x] Add independent declarative U7 workaround state, cost, and historical contrasts.
+- [x] Add independent declarative U8 active/pending/unknown harm-timing contrasts.
+- [x] Add facet helpers, tags, coverage report, metamorphic tests, and orthogonality tests.
+- [x] Add contradiction, quoted-history, comparator, and compositional ticket coverage.
+- [x] Run semantic corpus on v0.6.1 and record actual gaps before detector edits.
+- [x] Implement only demonstrated deterministic detector improvements with negative guards.
+- [x] Expand the independent labelled evaluation corpus and report eight-facet denominators.
+- [x] Update Node/browser test reporting, README, CHANGELOG, package version, and release notes.
+- [x] Run the full Node release gate and final diff review.
+- [x] Run the browser runtime check with isolated local headless Chrome/CDP;
+  the test page and representative application cases pass with no page console
+  errors or runtime exceptions.
+
+## v0.7.0 remediation pass: evidence and evaluation correctness
+
+- [x] Add red regressions for active unauthorised access and resolved access context.
+- [x] Add red regressions for pending/hypothetical and negated current exposure.
+- [x] Add payroll topic-versus-active-harm contrast regressions.
+- [x] Add a red read-only report regression and identify its matching phrase.
+- [x] Fix the confirmed engine defects using existing phrase/context/modifier architecture.
+- [x] Add expected-priority validation against the authoritative matrix.
+- [x] Correct objectively inconsistent corpus priorities.
+- [x] Reword the four duplicated semantic cases without changing expectations.
+- [x] Report assessed/unassessed counts and all metric denominators.
+- [x] Report mismatch classifications and explicitly deferred policy disagreements.
+- [x] Re-run the semantic corpus, legacy suite, catalogue gate, evaluator, and v0.6.1 comparison.
+- [x] Review every remaining P1 false positive/negative and unexplained regression.
+- [x] Keep release operations blocked until all known engine defects are resolved.

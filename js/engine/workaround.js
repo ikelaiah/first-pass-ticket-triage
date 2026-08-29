@@ -25,6 +25,15 @@ function flip(value) {
   return value;
 }
 
+function isUncertainClaim(doc, hit) {
+  const clause = doc.clauses[hit.clauseIndex];
+  if (!clause) return false;
+  const before = doc.text.slice(clause.start, hit.start);
+  const after = doc.text.slice(hit.end, clause.end);
+  return /\b(?:whether|if|unsure|unknown|not established|does not say|do not know)\b/i.test(before) ||
+    /\b(?:whether|if|unsure|unknown|not established|does not say|do not know)\b/i.test(after);
+}
+
 /**
  * @returns {{ workaround, label, evidence, votes }}
  */
@@ -33,6 +42,7 @@ export function detectWorkaround(doc) {
   const evidence = [];
 
   for (const hit of scan(doc, WORKAROUND_PHRASES)) {
+    if (isUncertainClaim(doc, hit)) continue;
     const value = hit.negated ? flip(hit.entry.v) : hit.entry.v;
     if (!votes.hasOwnProperty(value)) continue;
     votes[value] += 1;

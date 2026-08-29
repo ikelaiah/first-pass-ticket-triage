@@ -43,6 +43,7 @@ const OBSERVATION_RE = new RegExp(
  * have happened, not what is required. A counterfactual carries no deadline.
  */
 const COUNTERFACTUAL_RE = /\b(?:would have|could have|might have|would be|should have)\b/;
+const QUESTION_ABOUT_RE = /\b(?:a |the )?(?:question|enquiry|inquiry)\s+about\b/;
 
 /**
  * "Today we discover..." and "three schools logged this this morning" state
@@ -51,6 +52,7 @@ const COUNTERFACTUAL_RE = /\b(?:would have|could have|might have|would be|should
  */
 function isObservationOnly(clauseText) {
   if (COMMITMENT_RE.test(clauseText)) return false;
+  if (QUESTION_ABOUT_RE.test(clauseText)) return true;
   return OBSERVATION_RE.test(clauseText) || COUNTERFACTUAL_RE.test(clauseText);
 }
 

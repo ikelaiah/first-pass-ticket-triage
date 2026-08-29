@@ -268,3 +268,186 @@ integrity checks without changing triage scoring or organisation configuration.
 | Merging BrainPOP changes detection identity | High | Keep both source rows/categories and assert one ID for BrainPOP and BrainPOP Jr. |
 | Generic accessibility wording identifies a product | Medium | Remove only unbranded ReadSpeaker aliases and add positive/negative tests. |
 | Catalogue metadata changes triage | High | Keep category fields out of scoring and compare before/after priority expectations. |
+
+## v0.7.0 systematic eight-facet NLP robustness
+
+### Overview
+
+Add a maintainable, dependency-free semantic corpus for I1–I4 and U5–U8,
+independently authored from production phrase dictionaries. The corpus will use
+positive paraphrase families, negative/contrast families, deterministic
+metamorphic checks, facet-orthogonality checks, realistic compositions, and a
+larger labelled evaluation set. Detector changes are made only where the red
+corpus demonstrates a concrete false negative, with regression checks for
+nearby false positives. Impact/Urgency scoring and the authoritative matrix
+remain unchanged.
+
+Baseline recorded before the v0.7.0 corpus and detector edits: the v0.6.1 tag
+(`875fa9b`) passed 532 behavioural assertions; catalogue reconciliation remained
+206/206 source assignments with no missing entities, category assignments, or
+metadata mismatches. The initial red semantic run was retained as the detector
+gap list rather than changing expectations to fit the implementation.
+
+### Architecture decisions
+
+- Keep fixture data as plain ES modules so Node and `tests/tests.html` consume the
+  same readable cases without a Node-only format.
+- Keep the fixture wording independently authored; production dictionaries may
+  define the semantic states under test but never generate fixture sentences.
+- Put stable assertion adapters in `tests/facet-test-helpers.js`; assert machine
+  fields and flags rather than explanation prose.
+- Add a small corpus reporter used by the Node runner and browser page. Its
+  counts measure semantic breadth by facet and tag, not an arbitrary test-count
+  target.
+- Extend the offline evaluator with I3, I4, and U8 labels while preserving the
+  legacy scope/consequence/deadline/driver/workaround/containment fields and
+  report denominators for every metric.
+- Preserve current priority scoring, platform/category neutrality, privacy
+  scanning, catalogue reconciliation, and current-decision-context behavior.
+
+### Ordered tasks
+
+#### Phase 1: Baseline and red corpus
+
+- [x] Add eight declarative fixture modules with 20–40 meaningful cases per
+  facet, positive/negative tags, coverage metadata, and independently authored
+  wording.
+- [x] Add facet helpers, corpus coverage invariants, metamorphic and
+  orthogonality tests, contradiction/history cases, and compositional tickets.
+- [x] Wire the semantic corpus into both Node and browser runners and record
+  the v0.6.1 pass/fail baseline before production detector edits.
+- [x] Expand the independent evaluation corpus to approximately 40–80 labelled
+  realistic tickets and extend metric reporting to all eight facets.
+
+#### Checkpoint: red corpus
+
+- [x] New semantic cases fail only where v0.6.1 lacks the requested recognition;
+  fixture expectations are not changed to match implementation.
+- [x] Existing 532-test regression suite and catalogue gate remain green.
+
+#### Phase 2: Minimal detector slices
+
+- [x] Fix the smallest demonstrated detector gaps, one semantic family at a
+  time, beginning with normalisation/context/negation-sensitive cases.
+- [x] For every detector fix, keep positive paraphrases and add nearby negative,
+  historical, hypothetical, workaround, or comparator guards as applicable.
+- [x] Run the focused family, full regression suite, priority-drift comparison,
+  privacy scan, and syntax checks after each slice.
+
+#### Phase 3: Reporting and documentation
+
+- [x] Print compact per-facet case/tag counts and supported-state coverage from
+  Node and show the same report on the browser test page.
+- [x] Update README with semantic-family, contrast, metamorphic,
+  orthogonality, composition, evaluation, and contributor guidance.
+- [x] Bump package/changelog from 0.6.1 to 0.7.0 and document added/improved/
+  unchanged behavior. Add an ADR only if the final test architecture needs a
+  durable design record.
+
+#### Phase 4: Release candidate gate
+
+- [x] All pre-v0.7.0 tests, semantic cases, evaluator checks, catalogue
+  reconciliation, matrix checks, and privacy scan pass.
+- [x] Browser test runner loads with no page console errors or runtime exceptions
+  and Node runner remains green. The configured browser automation surface was
+  unavailable, so the gate was verified with isolated local headless Chrome/CDP.
+- [x] Review every priority change against the v0.6.1 baseline and explain it
+  as newly recognised explicit evidence; unexplained drift blocks release.
+- [x] Review the final diff for dependency, network, backend, persistence,
+  framework, scoring, category-neutrality, and feature-creep regressions.
+
+### Risks and mitigations
+
+| Risk | Impact | Mitigation |
+| --- | --- | --- |
+| Fixtures mirror production phrases and make tests circular | High | Independently author all sentence text; add a review check against dictionary exports. |
+| Broad wording changes create false business consequences | High | Pair every positive family with contrast/negation/history guards and keep unknown conservative. |
+| New extraction changes priority unexpectedly | High | Capture baseline outputs and diff facet/Impact/Urgency/Priority for every changed case. |
+| Browser and Node suites diverge | Medium | Import the same ES-module fixtures/helpers in both runners and verify the browser page. |
+| Coverage numbers reward trivial variations | Medium | Report positive/negative/other tags and supported-state invariants; do not gate on a global count. |
+
+### Deferred by design
+
+- No LLM, embeddings, probabilistic classifier, network call, backend,
+  telemetry, dependency, build framework, persistence, or scoring redesign.
+- No unrestricted English parser; the target remains deterministic support-ticket
+  English and human-reviewed evidence.
+
+## v0.7.0 remediation pass: evidence and evaluation correctness
+
+### Overview
+
+Continue v0.7.0 without release operations. Fix only confirmed evidence/context
+defects, correct objectively inconsistent expected priorities, reword the four
+duplicated semantic cases, and make the evaluator explain every remaining
+mismatch. Leave documented scoring-policy disagreements unchanged.
+
+### Architecture decisions
+
+- Extend the existing risk-modifier and decision-context phrase families rather
+  than adding new scoring rules or parallel classifiers.
+- Treat explicit negated, resolved, historical, and pending wording as context
+  that gates active evidence; retain topical domain/risk recognition where it is
+  still useful.
+- Make the expected-priority matrix invariant a corpus validation error so
+  invalid ground truth cannot silently affect accuracy metrics.
+- Keep mismatch classifications explicit and conservative: engine defect,
+  ground-truth defect, acceptable ambiguity, or policy disagreement deferred.
+- Preserve the v0.6.1 comparison path, scoring weights, thresholds, matrix, and
+  release gate. No release branch or publication is allowed while a known
+  engine defect or unexplained regression remains.
+
+### Ordered tasks
+
+#### Phase 1: Reproduce and guard confirmed defects
+
+- [x] Add failing positive/contrast regressions for active unauthorised access,
+  resolved access, pending/hypothetical exposure, and negated current exposure.
+- [x] Add failing payroll topic-versus-harm contrast regressions.
+- [x] Add a failing read-only-report regression and identify the exact false
+  `missing-data` phrase match.
+- [x] Fix the smallest existing phrase/context/modifier families and run the
+  focused regressions plus the full legacy suite.
+
+#### Phase 2: Ground truth and test independence
+
+- [x] Add the expected-priority matrix invariant to corpus validation.
+- [x] Correct objectively inconsistent priorities, including
+  `multi-school-attendance-block` and `lost-assessment-submissions`.
+- [x] Reword `i2-attendance-history`, `u5-now-need`, `u5-today-payroll`, and
+  `u5-weeks-until` without changing their semantic expectations.
+- [x] Re-run the independence and orthogonality checks.
+
+#### Phase 3: Evaluator reporting
+
+- [x] Report assessed/unassessed counts and denominators for impact, urgency,
+  and priority alongside every percentage.
+- [x] Report mismatch counts by the four required classifications.
+- [x] Report acceptable alternative priorities only where explicitly reviewed;
+  do not infer alternatives from implementation output.
+- [x] Mark each remaining mismatch as engine defect, ground-truth defect,
+  acceptable ambiguity, or policy disagreement deferred.
+
+#### Checkpoint: remediation verification
+
+- [x] Full semantic corpus passes.
+- [x] All legacy tests pass.
+- [x] Catalogue reconciliation remains 206/206.
+- [x] The 57-case evaluator and v0.6.1 → v0.7.0 comparison run cleanly.
+- [x] Every remaining P1 false positive/negative and priority mismatch has an
+  explicit classification and no unexplained regression remains.
+
+#### Phase 4: Release gate (conditional)
+
+- [x] Browser runtime is verified; GitHub Actions and Pages remain pending.
+- [ ] A release branch, commit, PR, merge, tag, and publication are created only
+  after the remediation checkpoint is clean and no known engine defect remains.
+
+### Risks and mitigations
+
+| Risk | Impact | Mitigation |
+| --- | --- | --- |
+| Negation/context guards hide a genuine active incident | High | Pair every guard with active positive cases and run the full corpus. |
+| Correct labels are changed to fit current implementation | High | Validate expected priorities against the authoritative matrix before scoring. |
+| Reporting disguises policy disagreements as regressions | Medium | Require one explicit classification for every mismatch and defer policy items. |
+| Existing dirty v0.7.0 work is overwritten | High | Preserve unrelated changes and modify only the scoped modules, fixtures, and evaluator. |

@@ -2,6 +2,8 @@
 
 > Local-first, explainable P1–P4 suggestions for IT and application support.
 
+v0.7.0: **Eight-Facet NLP Robustness Hardening**.
+
 Paste a messy ticket, email or work request. Get a suggested priority, the evidence
 behind it, the facts that are missing, and the questions worth asking next.
 
@@ -258,7 +260,7 @@ Open <http://localhost:8000/tests/tests.html> — the suite runs in the page and
 PASS/FAIL line for every assertion.
 
 With Node available, the same suite runs in a terminal; `npm test` runs the complete
-v0.6.1 gate:
+v0.7.0 gate:
 
 ```bash
 node tests/run.mjs      # behavioural suite + privacy scan
@@ -337,8 +339,11 @@ first-pass-triage/
 │   ├── run.mjs                 Node runner + privacy source scan
 │   ├── evaluate.mjs            offline labelled-corpus accuracy metrics
 │   ├── evaluate.test.mjs       evaluator metric self-test
+│   ├── facet-report.js          compact eight-facet coverage report
+│   ├── facet-tests.js           declarative, metamorphic and composition assertions
+│   ├── facet-test-helpers.js    shared facet adapters and state coverage checks
 │   ├── catalogue-coverage.test.mjs source-to-catalogue reconciliation report
-│   └── fixtures/               corpus schema examples (not production accuracy data)
+│   └── fixtures/               semantic facets and labelled corpus (not production accuracy data)
 ├── serve.bat                   double-click launcher for the dev server
 ├── serve.ps1                   local dev server for Windows (not deployed)
 ├── README.md
@@ -439,15 +444,35 @@ schema-example corpus. To evaluate independently labelled, anonymised tickets:
 node tests/evaluate.mjs path/to/accuracy-corpus.json
 ```
 
-The evaluator reports exact priority, impact and urgency accuracy, assessed coverage,
-P1 precision/recall, any under-prioritisation, severe under-prioritisation (two or more
-levels), P1 false negatives and false positives, abstentions, a confusion matrix, and
-per-facet coverage/accuracy for labelled scope, consequence, deadline, driver,
-workaround, and containment. An abstention on a labelled assessed case counts as a
-conservative under-prioritisation miss. Mismatches identify a case ID and expected/actual fact;
-they never print ticket text. The checked-in fixture documents the format; it is
-deliberately not presented as a production accuracy claim. Ticket text stays on the
-machine running the command.
+The evaluator reports assessed/unassessed counts; exact priority, impact and urgency
+accuracy with their denominators; P1 precision/recall with denominators; any
+under-prioritisation; severe under-prioritisation (two or more levels); P1 false
+negatives and false positives; abstentions; a confusion matrix; and per-facet
+coverage/accuracy with denominators for all eight questions: I1 scope, I2 blocked
+process, I3 irreversibility/risk, I4 containment, U5 deadline, U6 driver, U7
+workaround, and U8 harm timing. An abstention on a labelled assessed case counts as a
+conservative under-prioritisation miss. Each Impact/Urgency/Priority mismatch must have
+one explicit review classification, and acceptable alternative priorities are shown
+only when the fixture records them. Mismatches identify a case ID and expected/actual
+fact; they never print ticket text. The checked-in fixture contains 57 independently
+labelled, anonymised-style examples and is deliberately not presented as a production
+accuracy claim. Ticket text stays on the machine running the command.
+
+### Contributing semantic coverage
+
+The v0.7.0 semantic corpus lives in `tests/fixtures/facets/`. Each facet has declarative
+positive and contrast cases, supported-state metadata, and tags for negation, noise,
+history, and boundary wording. `tests/facet-tests.js` adds shared assertions for
+metamorphic variants, orthogonality, contradiction, and realistic compositions; the
+Node and browser runners consume the same modules. The runner prints per-facet case
+counts, tag counts, and supported-state denominators.
+
+When adding wording, first add a failing fixture case with the smallest semantic
+expectation. Add a nearby negative or historical case when the wording could be
+ambiguous, then make the narrowest dictionary or normalisation change that fixes it.
+Do not import production phrase dictionaries into fixtures or generate fixture text
+from them: that would make the test circular. Keep impact/urgency scoring and the
+authoritative matrix out of facet detectors; changes to those are separate decisions.
 
 ---
 

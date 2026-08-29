@@ -5,8 +5,13 @@
  * applied, but they never map straight to a priority. "This system contains
  * PII" is not an incident; "parent details are visible to another parent" is.
  */
-import { scan, isNegated } from './negation.js';
-import { RISK_DEFINITIONS, RISK_MODIFIERS } from '../data/phrases.js';
+import { scan, scanPositive, isNegated } from './negation.js';
+import {
+  PAYROLL_FAILURE_PHRASES,
+  PAYROLL_SUCCESS_PHRASES,
+  RISK_DEFINITIONS,
+  RISK_MODIFIERS
+} from '../data/phrases.js';
 
 export const RISK_KEYS = RISK_DEFINITIONS.map((r) => r.key);
 
@@ -29,12 +34,22 @@ function matchModifier(doc, patterns) {
     let m;
     while ((m = re.exec(doc.text)) !== null) {
       if (m[0] === '') { re.lastIndex += 1; continue; }
-      if (!isNegated(doc, m.index, m.index + m[0].length)) {
+      if (!isNegated(doc, m.index, m.index + m[0].length) && !accessIsNegated(doc, m.index)) {
         return { quote: m[0].trim(), index: m.index };
       }
     }
   }
   return null;
+}
+
+// The generic negation linker deliberately does not treat "one" as a linker:
+// "no one can work" must not cancel every later phrase in a clause. Modifiers
+// that describe access/exposure need this narrower guard for constructions such
+// as "no one can access another family's record".
+function accessIsNegated(doc, start) {
+  const clause = doc.clauses.find((candidate) => start >= candidate.start && start < candidate.end);
+  const before = clause ? doc.text.slice(clause.start, start) : doc.text.slice(0, start);
+  return /\b(?:no one|nobody|not anyone|no user|no users)\b[^.;!?]{0,70}\b(?:can|could|is|are|able to|exposed|visible|accessible)\b[^.;!?]{0,30}$/i.test(before);
 }
 
 /**
@@ -48,21 +63,51 @@ export function detectRisks(doc, context = {}) {
   const evidence = [];
   const dismissed = [];
 
-  const entries = RISK_DEFINITIONS.map((r) => ({ m: r.m, v: r.key, label: r.label }));
-  for (const hit of scan(doc, entries)) {
-    if (hit.negated) {
-      dismissed.push({ quote: hit.quote, meaning: hit.entry.label + ' explicitly ruled out' });
-      continue;
+  // Scan each family separately. A longest-match pass across every family
+  // would allow a long data-integrity phrase to hide an overlapping payroll
+  // or financial signal such as \"wrong payment amount\".
+  for (const definition of RISK_DEFINITIONS) {
+    const entries = [{ m: definition.m, v: definition.key, label: definition.label }];
+    for (const hit of scan(doc, entries)) {
+      if (hit.negated || accessIsNegated(doc, hit.start)) {
+        dismissed.push({ quote: hit.quote, meaning: hit.entry.label + ' explicitly ruled out' });
+        continue;
+      }
+      if (!risks[hit.entry.v]) {
+        risks[hit.entry.v] = true;
+        evidence.push({
+          quote: hit.quote,
+          meaning: hit.entry.label + ' risk referenced',
+          source: 'risk',
+          key: hit.entry.v
+        });
+      }
     }
-    if (!risks[hit.entry.v]) {
-      risks[hit.entry.v] = true;
-      evidence.push({
-        quote: hit.quote,
-        meaning: hit.entry.label + ' risk referenced',
-        source: 'risk',
-        key: hit.entry.v
-      });
+  }
+
+  // Keep payroll terminology available to the domain classifier, but do not
+  // turn an explicitly successful pay outcome into an active risk flag.
+  const successfulPayroll = scanPositive(doc, [{
+    m: PAYROLL_SUCCESS_PHRASES,
+    v: 'payroll-success',
+    label: 'Payroll success'
+  }]);
+  const payrollFailureEvidence = scanPositive(doc, [{
+    m: PAYROLL_FAILURE_PHRASES,
+    v: 'payroll-failure',
+    label: 'Payroll failure'
+  }]);
+  const hasPayrollFailureEvidence = payrollFailureEvidence.length > 0 ||
+    Boolean(matchModifier(doc, RISK_MODIFIERS.unpaidRisk));
+  if (successfulPayroll.length && !hasPayrollFailureEvidence) {
+    risks.payroll = false;
+    for (let i = evidence.length - 1; i >= 0; i -= 1) {
+      if (evidence[i].key === 'payroll') evidence.splice(i, 1);
     }
+    dismissed.push({
+      quote: successfulPayroll[0].quote,
+      meaning: 'Payroll harm explicitly ruled out'
+    });
   }
 
   // A shared integration is only a *risk* when something has actually failed.

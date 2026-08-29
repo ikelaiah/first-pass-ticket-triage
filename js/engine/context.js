@@ -11,10 +11,10 @@ const QUOTED_HISTORY_RE =
   /\bprevious message\s*:|^\s*-{2,}\s*original message\s*-{2,}\s*$|^\s*on .{1,100} wrote:\s*$/im;
 
 const RESOLVED_RE =
-  /(?:^resolved\b|\b(?:is|was|has been|now) (?:fixed|resolved|restored|recovered)\b|\b(?:working again|back online|no action required|access (?:has|had|was) been removed|issue (?:is|was) contained)\b)/g;
+  /(?:^resolved\b|\bpreviously resolved\b|\b(?:is|was|has been|now) (?:fixed|resolved|restored|recovered)\b|\b(?:working again|back online|no action (?:is )?required|for (?:historical )?context only|access (?:has|had|was) (?:been )?(?:removed|revoked)|(?:account|access) (?:has|was) been secured|has been secured|issue (?:is|was) contained)\b)/g;
 
 const REOPENED_RE =
-  /\b(?:not (?:fixed|resolved|restored)|still (?:down|failing|failed|broken|blocked|unavailable)|(?:down|failed|failing|broken|blocked|unavailable) again|remains? (?:down|broken|blocked|unavailable)|continues? to fail)\b/g;
+  /\b(?:not (?:fixed|resolved|restored)|still (?:down|failing|failed|broken|blocked|unavailable|has access)|(?:down|failed|failing|broken|blocked|unavailable) again|remains? (?:down|broken|blocked|unavailable)|continues? to fail|access (?:has|have) not been revoked)\b/g;
 
 const PLANNED_TEST_RE =
   /\b(?:test case|simulate|simulation|disaster recovery exercise|dr exercise|tabletop exercise|acceptance test|the design must|design requirement|example scenario|hypothetical)\b/;
