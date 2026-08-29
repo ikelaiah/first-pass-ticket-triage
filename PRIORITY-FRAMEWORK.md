@@ -43,7 +43,7 @@ Impact × Urgency
    ↓  the 3×3 matrix — the only place a P number is decided
 P1 / P2 / P3 / P4
    ↓
-Confidence · Reasoning · Missing information · Follow-up questions
+Assessment confidence · Evidence completeness · Reasoning · Missing information · Follow-up questions
 ```
 
 The natural-language engine **never** assigns a priority directly. If a rule wants a
@@ -671,15 +671,17 @@ change rather than a negation.
 
 ---
 
-## 17. Confidence
+## 17. Assessment confidence and evidence completeness
 
-Confidence describes how much decision-relevant information the ticket actually
-contained — not how likely the answer is to be right.
+Assessment confidence is a qualitative description of how much decision-relevant
+information the ticket actually contains. Evidence completeness is a numeric heuristic
+for that coverage. Neither is a probability, a calibrated chance of correctness, or a
+guarantee that the suggested priority is right.
 
-Confidence rises when scope, deadline, workaround, system and symptom are stated, and
-when a human confirms inputs in the refinement panel.
+Evidence completeness rises when scope, deadline, workaround, system and symptom are
+stated, and when a human confirms inputs in the refinement panel.
 
-Confidence falls when:
+Evidence completeness falls when:
 
 - scope is unknown
 - no deadline or business consequence is given
@@ -689,13 +691,14 @@ Confidence falls when:
 - the request is very short
 - signals conflict ("urgent" alongside a working workaround; high impact with no deadline)
 
-| Band | Score |
+| Assessment confidence band | Heuristic evidence completeness |
 | ---- | ----- |
 | High | 75%+ |
 | Medium | 50–74% |
 | Low | below 50% |
 
-Confidence is capped at 95%. The tool never claims certainty.
+The heuristic is capped at 95%. The UI and handoff text label it as heuristic and not a
+probability; the tool never claims certainty.
 
 ---
 
@@ -731,8 +734,8 @@ Follow-up questions are capped at six and ranked in three kinds
    change priority* only when the simulated P number differs from the current one.
    Example: "When is this required by?" on a High-impact outage, because *today*
    would make it P1.
-3. **Confidence** — narrows the assessment but keeps the cell (e.g. workaround daily
-   cost on an active P1 exposure).
+3. **Confidence/evidence completeness** — narrows the assessment but keeps the cell
+   (e.g. workaround daily cost on an active P1 exposure).
 
 The same simulation marks the **key drivers** in the 8-question panel: the one or two
 facets whose unknown answer could flip this ticket's cell get a *key driver* badge.
@@ -745,8 +748,8 @@ understood (I1/U5/I2), the suggested priority in one line, and at most the two
 priority-changing questions. It is always labelled *Draft — refine before sending* and
 ends with the advisory disclaimer. A markdown slip (`buildMarkdown`) and `.md`
 download provide the same facts for ticketing systems. Neither stores nor transmits
-anything; the share link (§PRIVACY) is the only channel and carries the ticket in the
-URL, capped at 2000 characters.
+anything; the share link (§PRIVACY) is the only channel and carries the ticket in a
+`#t=` URL fragment, capped at 2000 characters.
 
 ---
 
@@ -975,7 +978,11 @@ An analysis now separates the internal matrix result from the actionable suggest
 
 The offline evaluator accepts independently labelled JSON fixtures and reports exact
 priority accuracy, impact and urgency accuracy, assessed coverage, P1 precision and
-recall, dangerous under-prioritisation, abstentions, and a confusion matrix. The
+recall, any under-prioritisation, severe under-prioritisation (two or more priority
+levels), P1 false negatives and false positives, abstentions, and a confusion matrix.
+An abstention on a labelled assessed case is counted conservatively below P4 for the
+under-prioritisation metrics. Mismatch reports identify only a case ID and
+expected/actual facts; they never print ticket text or other ticket content. The
 checked-in corpus is a schema example and regression gate, not evidence of production
 accuracy. Meaningful calibration requires anonymised historical tickets labelled by
 independent triagers and a holdout set that is not used to tune weights.
@@ -1005,3 +1012,19 @@ scope, consequence, deadline, deadline driver, workaround, and containment. Its
 checked-in examples are synthetic plumbing tests, not a field-accuracy claim. Weight
 calibration requires an approved, anonymised, independently labelled corpus and a
 holdout set.
+
+## 27. Release boundary notes (v0.5.0)
+
+- Share links use `#t=` fragments, capped at 2000 characters. Legacy `?t=` links are
+  accepted once and removed from the address bar after reading.
+- Expected-behaviour scheduling is deliberately conservative: a clock time matters
+  only when it is grammatically attached to a supported record creation/update event;
+  unrelated meetings, access windows, reports, past dates and hypothetical text do not
+  silently de-escalate an active incident.
+- `priorityFor(impact, urgency)` is the raw matrix helper and validates both inputs.
+  An actionable result requires `assessmentStatus: "assessed"` and a non-null
+  `suggestedPriority`; the internal matrix cell is retained for explanation only when
+  the engine abstains.
+- Priority and queue state are separate concepts. This release has no queue workflow;
+  a future queue state must not silently change impact or urgency, and ticket age must
+  not silently escalate priority.

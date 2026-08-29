@@ -40,6 +40,17 @@ import { prepareDecisionContext } from './context.js';
 
 const TIME_12H = /\b(\d{1,2})(?::(\d{2}))?\s*(am|pm)\b/g;
 const TIME_24H = /\b([01]?\d|2[0-3]):([0-5]\d)\b/g;
+const CLOCK_TOKEN = '(?:\\d{1,2}(?::\\d{2})?\\s*(?:am|pm)|(?:[01]?\\d|2[0-3]):[0-5]\\d)';
+const SCHEDULE_EVENT_TIME = new RegExp(
+  '\\b(?:added|created|updated|entered|registered|enrolled|assigned|provisioned|' +
+  'imported|uploaded|set\\s+up)\\b' +
+  '(?=[^.!?;\\n]{0,90}\\b(?:staff|account|record|user|student|enrolment|application|' +
+  'employee|teacher|class|member|contact)\\b)' +
+  '(?:(?!\\b(?:but|and|because|while|although)\\b)[^.!?;\\n]){0,90}?' +
+  '\\bat\\s+(' + CLOCK_TOKEN + ')\\b', 'g'
+);
+const PAST_DATE_MARKER = /\b(?:yesterday|last\s+(?:night|evening|week|month|monday|tuesday|wednesday|thursday|friday|saturday|sunday)|previous(?:ly)?|earlier|the day before)\b/;
+const EVENT_NEGATION = /\b(?:not|never|no|did\s+not|didn['’]t|was\s+not|wasn['’]t|were\s+not|weren['’]t)\s+(?:\w+\s+){0,3}$/;
 
 function toMinutes(hours, minutes, meridiem) {
   let h = hours % 12;
@@ -73,17 +84,38 @@ function scheduledTimeToMinutes(value) {
   return (h || 0) * 60 + (min || 0);
 }
 
+function hasMissingRecordSignal(symptom, text) {
+  const missingIds = ['missing-data', 'partial-data', 'not-synchronising', 'not-writing'];
+  return symptom.all.some((item) => missingIds.includes(item.id)) ||
+    /\b(?:not|never)\s+(?:in|on|showing in|appearing in)\s+(?:canvas|edumate)\b/.test(text);
+}
+
+function findScheduledCreationTime(text, job, scheduled) {
+  const clauses = text.split(/[.!?;\n]+/);
+  for (const clause of clauses) {
+    if (PAST_DATE_MARKER.test(clause)) continue;
+    SCHEDULE_EVENT_TIME.lastIndex = 0;
+    let match;
+    while ((match = SCHEDULE_EVENT_TIME.exec(clause)) !== null) {
+      const event = match[0];
+      const beforeEvent = clause.slice(0, match.index);
+      if (EVENT_NEGATION.test(beforeEvent)) continue;
+      if (!job.keywords.some((keyword) => event.includes(keyword))) continue;
+      if (/\b(?:meeting|appointment|lesson|assessment|access)\b/.test(event)) continue;
+      const time = parseClockTimes(match[1])[0];
+      if (time && time.minutes > scheduled) return time;
+    }
+  }
+  return null;
+}
+
 /**
  * "Added at 10am, hasn't appeared yet" - when the record was created after the
  * scheduled run, nothing has failed yet.
  */
 export function detectExpectedBehaviour(doc, symptom, config = organisationConfig) {
   if (symptom.severity > SEVERITY.DATA) return null;
-  const MISSING = ['missing-data', 'partial-data', 'not-synchronising', 'not-writing'];
-  if (!symptom.all.some((s) => MISSING.includes(s.id))) return null;
-
-  const times = parseClockTimes(doc.text);
-  if (!times.length) return null;
+  if (!hasMissingRecordSignal(symptom, doc.text)) return null;
 
   for (const job of config.scheduledJobs) {
     const hits = job.keywords.filter((k) => doc.text.includes(k)).length;
@@ -91,7 +123,7 @@ export function detectExpectedBehaviour(doc, symptom, config = organisationConfi
     if (hits < needed) continue;
 
     const scheduled = scheduledTimeToMinutes(job.scheduledTime);
-    const after = times.find((t) => t.minutes > scheduled);
+    const after = findScheduledCreationTime(doc.text, job, scheduled);
     if (!after) continue;
 
     return {

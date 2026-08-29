@@ -681,6 +681,7 @@ select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in s
 .priority-P2 { --p-color: var(--p2); --p-tint: var(--p2-tint); }
 .priority-P3 { --p-color: var(--p3); --p-tint: var(--p3-tint); }
 .priority-P4 { --p-color: var(--p4); --p-tint: var(--p4-tint); }
+.priority-unassessed { --p-color: var(--muted); --p-tint: var(--surface-2); }
 
 .priority-inline {
   color: var(--p-color);

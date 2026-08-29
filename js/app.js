@@ -87,7 +87,7 @@ function clearAll() {
   dom.input.focus();
 }
 
-/** The URL is the only share channel; it carries the ticket text. */
+/** The URL fragment is the only share channel; it carries the ticket text. */
 function shareLink() {
   if (!dom.input.value.trim()) return;
   if (tooLongForShare(dom.input.value)) {
@@ -111,7 +111,7 @@ function flashShare(message) {
   hint.textContent = message;
   clearTimeout(shareTimer);
   shareTimer = setTimeout(() => {
-    hint.textContent = 'The share link contains the ticket text in the URL — do not use it for sensitive tickets.';
+    hint.textContent = 'The share link contains ticket text in the URL fragment — fragments are not sent to the server; do not use it for sensitive tickets.';
   }, 3000);
 }
 
@@ -197,7 +197,8 @@ function init() {
   refine.reset();
   render(false);
 
-  // A shared link (?t=…) restores the ticket and analyses it immediately.
+  // A shared link (#t=…) restores the ticket and analyses it immediately.
+  // Legacy ?t= links are accepted by share.js and cleaned from the address bar.
   const shared = readTicketFromLocation(window.location);
   if (shared) {
     dom.input.value = shared;

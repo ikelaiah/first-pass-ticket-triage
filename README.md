@@ -19,13 +19,14 @@ All analysis is performed locally using deterministic JavaScript rules. No AI pr
 no server, no analytics, no telemetry, no cookies, no account, no API key.
 
 The page is served over the network like any other web page — that part is unavoidable.
-What *is* guaranteed is that nothing you paste is transmitted anywhere. The application
+What *is* guaranteed is that the application does not transmit pasted ticket text. The application
 contains no `fetch()`, `XMLHttpRequest`, `WebSocket`, `sendBeacon` or `EventSource` call,
-loads no external font, script or stylesheet, and writes nothing to `localStorage`.
+loads no external font, script or stylesheet, and does not store ticket text in
+`localStorage`, `sessionStorage` or IndexedDB.
 
-Ticket text lives in memory only and disappears when you refresh or close the tab.
-
-Ticket text lives in memory only and disappears when you refresh or close the tab. The only key ever written to `localStorage` is the theme preference (`theme` = `auto`/`light`/`dark`).
+Ticket text lives in memory only and disappears when you refresh or close the tab. The
+only value the application may write to `localStorage` is the theme preference
+(`theme` = `auto`/`light`/`dark`).
 
 See [PRIVACY.md](PRIVACY.md) for how to verify this yourself in about a minute.
 
@@ -52,12 +53,14 @@ See [PRIVACY.md](PRIVACY.md) for how to verify this yourself in about a minute.
 - **Critical-risk flags** — payroll, payments, security, privacy, student/staff safety, WWCC/safeguarding, compliance, data integrity, critical integration
 - **Explainable decisions** — evidence → impact → urgency → matrix → priority, shown in full
 - **8 Questions — Impact vs Urgency** — I1 Who/how many? · I2 Blocked process? · I3 Wrong/exposed/lost/unsafe? · I4 Contained or spreading? · U5 When needed? · U6 Deadline driver (requirement vs preference)? · U7 Workaround daily cost? · U8 Harm now or waiting? — each shown as Answered/Inferred/Unknown with row-aligned cards, and *key driver* badges on the unknowns that could flip the cell
-- **Confidence scoring** — the tool says when it does not know enough
+- **Assessment confidence and evidence completeness** — heuristic evidence coverage,
+  clearly labelled as not a probability
 - **Explicit abstention** — unassessed input has no actionable suggested priority; the
   internal matrix result remains visible only to explain why the engine abstained
 - **Ranked follow-up questions** — diagnostic first, then *would change priority* (verified by re-running the scoring with each hypothetical answer), then *raises confidence*; capped at six
 - **Suggested reply (draft)** — a polite, short, audience-neutral draft ("what we understood / suggested priority / what we still need"), plus Copy markdown and Download .md for handoff
-- **Share link** — `?t=` URL carries the ticket (2000-char cap); nothing is stored, the link *is* the ticket
+- **Share link** — `#t=` URL fragment carries the ticket (2000-char cap); fragments are
+  not sent to the server, nothing is stored, and the link *is* the ticket
 - **Inline relevance nudge** — urgency or blocked wording without a recognised system/symptom gets a hint before analysis
 - **Manual refinement** — confirm scope, business consequence, workaround, deadline, containment, driver, harm timing or risk and watch the priority recalculate; the printed slip lists what was refined
 - **Interactive priority matrix** — the current cell is highlighted; clicking a cell explains it
@@ -122,7 +125,7 @@ Impact + Urgency  (weighted, then critical-risk modifiers)
    ↓
 3×3 Priority Matrix  (only place a P number is decided)
    ↓
-P1 / P2 / P3 / P4  + Confidence · Reasoning · Missing info
+P1 / P2 / P3 / P4  + Assessment confidence · Evidence completeness · Reasoning · Missing info
 ```
 
 The natural-language engine never picks a priority. It establishes **Impact** and
@@ -255,12 +258,15 @@ Open <http://localhost:8000/tests/tests.html> — the suite runs in the page and
 PASS/FAIL line for every assertion.
 
 With Node available, the same suite runs in a terminal; `npm test` runs the complete
-v0.4.1 gate:
+v0.5.0 gate:
 
 ```bash
 node tests/run.mjs      # behavioural suite + privacy scan
 npm test               # suite + evaluator self-test + schema corpus
 ```
+
+The repository also runs `npm test` automatically on every push and pull request via
+GitHub Actions. The workflow needs no secrets and installs no application packages.
 
 The Node runner also performs a static source scan that fails the build if any
 `fetch`, `XMLHttpRequest`, `WebSocket`, `sendBeacon` or remote asset reference is ever
@@ -281,8 +287,8 @@ introduced.
    - Branch: `main`, folder: `/ (root)`
 4. Save. The site publishes at `https://<user>.github.io/<repo>/`.
 
-No build step, no workflow file and no secrets are required. The site works from a
-project subpath because every asset reference is relative.
+There is no application build step. The test-only workflow needs no secrets. The site
+works from a project subpath because every asset reference is relative.
 
 ---
 
@@ -323,7 +329,7 @@ first-pass-triage/
 │       ├── render-matrix.js    the interactive matrix
 │       ├── refine-controls.js  the manual refinement panel
 │       ├── reply.js            audience-neutral draft reply + markdown slip
-│       └── share.js            ?t= URL encode/decode (no storage, no network)
+│       └── share.js            #t= URL encode/decode (no storage, no network)
 ├── tests/
 │   ├── tests.html              browser test page
 │   ├── tests.js                the assertions (shared)
@@ -344,7 +350,11 @@ first-pass-triage/
 
 ## 🔧 Configuration
 
-Organisation-specific values live in one file: [`js/config.js`](js/config.js).
+Organisation-specific values live in one replaceable, public configuration file:
+[`js/config.js`](js/config.js). This release keeps the working school count, systems,
+data flows and scheduled jobs together because splitting deployment settings from the
+static application would be more invasive; a future configuration split should retain
+the same no-secrets boundary.
 
 ```javascript
 export const organisationConfig = {
@@ -355,7 +365,7 @@ export const organisationConfig = {
   },
   scheduledJobs: [
     { name: 'Casual Staff Canvas Sync', scheduledTime: '09:30',
-      keywords: ['casual', 'canvas', 'staff'], minKeywords: 3 }
+      keywords: ['casual', 'canvas', 'staff'], minKeywords: 2 }
   ]
 };
 ```
@@ -383,9 +393,11 @@ node tests/evaluate.mjs path/to/accuracy-corpus.json
 ```
 
 The evaluator reports exact priority, impact and urgency accuracy, assessed coverage,
-P1 precision/recall, dangerous under-prioritisation, abstentions, a confusion matrix,
-and per-facet coverage/accuracy for labelled scope, consequence, deadline, driver,
-workaround, and containment. Mismatches identify a case ID and expected/actual fact;
+P1 precision/recall, any under-prioritisation, severe under-prioritisation (two or more
+levels), P1 false negatives and false positives, abstentions, a confusion matrix, and
+per-facet coverage/accuracy for labelled scope, consequence, deadline, driver,
+workaround, and containment. An abstention on a labelled assessed case counts as a
+conservative under-prioritisation miss. Mismatches identify a case ID and expected/actual fact;
 they never print ticket text. The checked-in fixture documents the format; it is
 deliberately not presented as a production accuracy claim. Ticket text stays on the
 machine running the command.
@@ -404,9 +416,17 @@ machine running the command.
   list of questions, the questions are the output that matters.
 - 🧠 **It has no memory.** Nothing is stored, so there is no history, no trend and no
   learning from your corrections — by design.
-- 🔗 **The share link is the ticket.** `?t=` URLs contain the pasted text (first 2000
-  characters) so a colleague can open the same analysis — do not use them for
-  sensitive tickets. See [PRIVACY.md](PRIVACY.md).
+- 🔗 **The share link is the ticket.** New `#t=` URL fragments contain the pasted text
+  (first 2000 characters) so a colleague can open the same analysis. Fragments are not
+sent to the server, but anyone with the link can read the ticket; do not use them for
+sensitive tickets. Legacy `?t=` links are accepted once and cleaned from the address
+bar, but may already have exposed ticket text in the initial server request. Prefer
+the fragment format. See [PRIVACY.md](PRIVACY.md).
+
+Queue management is deliberately separate from priority and is not implemented here.
+Priority answers “how important and time-sensitive is this?”; a future queue state
+should answer “what should I do with this ticket next?”. Ticket age must not silently
+increase impact or urgency.
 
 ---
 

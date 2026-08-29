@@ -12,7 +12,11 @@ import { detectDeadline } from '../js/engine/deadline.js';
 import { priorityFor, matrixCells } from '../js/engine/priority-matrix.js';
 import { EXAMPLES } from '../js/data/examples.js';
 import { buildReply, buildMarkdown } from '../js/ui/reply.js';
-import { encodeTicket, decodeTicket, tooLongForShare } from '../js/ui/share.js';
+import { statusSentence } from '../js/ui/render-result.js';
+import {
+  encodeTicket, decodeTicket, tooLongForShare, readTicketFromLocation,
+  writeTicketToLocation
+} from '../js/ui/share.js';
 
 /* ------------------------------------------------------------- helpers -- */
 
@@ -26,17 +30,25 @@ function ok(pass, message) {
   return { pass, message };
 }
 
-/** Assert the suggested priority is one of the acceptable answers. */
+/** Assert an actionable, user-facing priority recommendation. */
 function priority(text, expected, overrides) {
   const list = Array.isArray(expected) ? expected : [expected];
   const result = analyse(text, overrides || {});
-  const pass = list.includes(result.priority);
+  const actual = result.assessmentStatus === 'assessed' ? result.suggestedPriority : null;
+  const pass = list.includes(actual);
   return ok(
     pass,
-    result.priority + ' (' + result.impactLabel + ' impact / ' +
+    actual + ' (' + result.assessmentStatus + '; internal ' + result.priority + '; ' +
+      result.impactLabel + ' impact / ' +
       result.urgencyLabel + ' urgency)' +
-      (pass ? '' : ' - expected ' + list.join(' or '))
+    (pass ? '' : ' - expected ' + list.join(' or '))
   );
+}
+
+/** Assert the raw matrix result for tests that intentionally bypass assessment status. */
+function matrixPriority(text, expected, overrides) {
+  const result = analyse(text, overrides || {});
+  return ok(result.priority === expected, result.priority + ' (raw matrix result)');
 }
 
 /** Assert a top-level field of the result model. */
@@ -76,7 +88,25 @@ test('Matrix', 'nine cells are rendered', () => {
 });
 
 test('Matrix', 'manual impact and urgency overrides drive the matrix', () =>
-  priority('Something happened.', 'P1', { impact: 'high', urgency: 'high' }));
+  matrixPriority('Something happened.', 'P1', { impact: 'high', urgency: 'high' }));
+
+test('Matrix', 'invalid impact is rejected instead of silently falling back', () => {
+  try {
+    priorityFor('critical', 'high');
+    return ok(false, 'invalid impact did not throw');
+  } catch (error) {
+    return ok(/impact/i.test(error.message), error.message);
+  }
+});
+
+test('Matrix', 'invalid urgency is rejected instead of silently falling back', () => {
+  try {
+    priorityFor('low', 'urgent');
+    return ok(false, 'invalid urgency did not throw');
+  } catch (error) {
+    return ok(/urgency/i.test(error.message), error.message);
+  }
+});
 
 /* ------------------------------------------------------------ 2. scope -- */
 
@@ -399,6 +429,48 @@ test('Expected behaviour', 'immediate teaching need raises urgency again', () =>
   return ok(result.priority !== 'P4', result.priority);
 });
 
+test('Expected behaviour', 'an unrelated parent meeting time is not linked to the sync', () => {
+  const result = analyse(
+    'Casual staff member is still missing from Canvas. Parent meeting is at 11am.'
+  );
+  return ok(result.detail.expectedBehaviour === null && result.workType !== 'expected-behaviour',
+    JSON.stringify({ expected: result.detail.expectedBehaviour, workType: result.workType }));
+});
+
+test('Expected behaviour', 'meeting time does not de-escalate a live Canvas incident', () => {
+  const result = analyse("Canvas still hasn't updated. I have a meeting at 11am.");
+  return ok(result.detail.expectedBehaviour === null && result.priority !== 'P4',
+    result.priority + ' / ' + JSON.stringify(result.detail.expectedBehaviour));
+});
+
+test('Expected behaviour', 'a teaching access request time is not a creation event', () => {
+  const result = analyse('The teacher needs access at 10am.');
+  return ok(result.detail.expectedBehaviour === null, JSON.stringify(result.detail.expectedBehaviour));
+});
+
+test('Expected behaviour', 'a report timestamp is not a creation event', () => {
+  const result = analyse('The issue was reported at 11am.');
+  return ok(result.detail.expectedBehaviour === null, JSON.stringify(result.detail.expectedBehaviour));
+});
+
+test('Expected behaviour', 'yesterday creation remains assessable as a possible fault', () => {
+  const result = analyse(
+    'We added a casual staff member yesterday at 10am. They are still missing from Canvas today.'
+  );
+  return ok(result.detail.expectedBehaviour === null && result.assessmentStatus === 'assessed' &&
+    result.suggestedPriority !== null && result.workType !== 'expected-behaviour',
+    JSON.stringify({ expected: result.detail.expectedBehaviour, status: result.assessmentStatus,
+      suggested: result.suggestedPriority, workType: result.workType }));
+});
+
+test('Expected behaviour', 'a same-day staff account creation can be expected after the run', () => {
+  const result = analyse(
+    'We created the staff account at 10:15am and it is not in Canvas yet.'
+  );
+  return ok(result.detail.expectedBehaviour?.job?.name === 'Casual Staff Canvas Sync' &&
+    result.workType === 'expected-behaviour', JSON.stringify(result.detail.expectedBehaviour));
+});
+
 /* --------------------------------------------------- 17. feature and doc -- */
 
 test('Feature request', 'individual convenience feature -> P4', () =>
@@ -601,6 +673,11 @@ test('Input relevance', 'an assessed ticket exposes the actionable suggestion se
   );
 });
 
+test('Input relevance', 'a normal P4 assertion cannot accept an unassessed raw P4', () => {
+  const outcome = priority('All users, P1, fix now!!!', 'P4');
+  return ok(outcome.pass === false && /unassessed/.test(outcome.message), outcome.message);
+});
+
 test('Input relevance', 'scope and priority claims cannot turn unrelated text into P1', () => {
   const result = analyse(
     'Help! My cat is sad now. All users are affected. P1 highest priority.'
@@ -750,7 +827,7 @@ const SCENARIOS = [
   [['P2', 'P3'], 'Microsoft 365 is having an outage on their end and staff cannot access Outlook.'],
   [['P3', 'P4'], 'Please provide a data extract of enrolments for the audit next week.'],
   [['P1', 'P2'], 'A student with an expired WWCC supervisor is unsupervised on site right now.'],
-  [['P4', 'P3'], 'Could you add a shortcut to the enrolment screen? It would save a few clicks.']
+  [['P4', 'P3'], 'Could you add a shortcut to the EnrolHQ enrolment screen? It would save a few clicks.']
 ];
 
 for (const [expected, text] of SCENARIOS) {
@@ -1296,6 +1373,17 @@ test('Real tickets', 'documents get their own domain', () =>
 test('Real tickets', 'one working and one failing is a problem investigation', () =>
   field(DOC_SYNC_CHAT, 'workType', 'problem-investigation'));
 
+test('Real tickets', 'one working record among 19 failures keeps the differential visible', () => {
+  const result = analyse(
+    'One student synced correctly, but the remaining 19 students are failing.'
+  );
+  return ok(
+    result.differential !== null && result.priority !== 'P1' &&
+      result.reasoning.some((line) => /system-wide failure is unlikely/.test(line)),
+    JSON.stringify({ priority: result.priority, differential: result.differential })
+  );
+});
+
 test('Real tickets', 'the differential is detected and explained', () => {
   const result = analyse(DOC_SYNC_CHAT);
   return ok(
@@ -1568,6 +1656,87 @@ test('Handoff', 'share link round-trips unicode ticket text', () => {
   const text = 'Café — “smart” quotes, emoji 🎓, Māori: kia ora. Canvas is down for all schools.';
   const encoded = encodeTicket(text);
   return ok(!/[+/=]/.test(encoded) && decodeTicket(encoded) === text, encoded.slice(0, 24));
+});
+
+test('Handoff', 'confidence output is labelled as heuristic evidence completeness', () => {
+  const result = analyse('Canvas synchronisation has stopped across all 19 schools and today’s classes are affected.');
+  const md = buildMarkdown(result);
+  const status = statusSentence(result);
+  return ok(
+    /Assessment confidence: High/.test(md) &&
+      /Evidence completeness: \d+% \(heuristic/.test(md) &&
+      /Assessment confidence: High/.test(status) &&
+      /Evidence completeness: \d+% \(heuristic\)/.test(status),
+    md + ' | ' + status
+  );
+});
+
+test('Handoff', 'new share links put the encoded ticket in the fragment', () => {
+  const previousWindow = globalThis.window;
+  let written = null;
+  globalThis.window = {
+    location: { pathname: '/triage/', search: '', hash: '' },
+    history: { replaceState: (_state, _title, url) => { written = url; } }
+  };
+  try {
+    writeTicketToLocation('Canvas is down for all schools.');
+    return ok(written.startsWith('/triage/#t=') && !written.includes('?t='), written);
+  } finally {
+    if (previousWindow === undefined) delete globalThis.window;
+    else globalThis.window = previousWindow;
+  }
+});
+
+test('Handoff', 'a ticket can be decoded from the share fragment', () => {
+  const text = 'Canvas is down for all schools.';
+  return ok(readTicketFromLocation({ search: '', hash: '#t=' + encodeTicket(text) }) === text,
+    'fragment did not round-trip');
+});
+
+test('Handoff', 'legacy query links still load and remove the ticket parameter', () => {
+  const previousWindow = globalThis.window;
+  let cleaned = null;
+  globalThis.window = {
+    history: { replaceState: (_state, _title, url) => { cleaned = url; } }
+  };
+  try {
+    const text = 'Canvas is down for one school.';
+    const actual = readTicketFromLocation({
+      pathname: '/triage/', search: '?mode=shared&t=' + encodeTicket(text), hash: ''
+    });
+    return ok(actual === text && cleaned === '/triage/?mode=shared', String(cleaned));
+  } finally {
+    if (previousWindow === undefined) delete globalThis.window;
+    else globalThis.window = previousWindow;
+  }
+});
+
+test('Handoff', 'sharing and reading never touch web storage', () => {
+  const previousWindow = globalThis.window;
+  const previousLocal = globalThis.localStorage;
+  const previousSession = globalThis.sessionStorage;
+  const forbidden = new Proxy({}, { get() { throw new Error('storage was accessed'); } });
+  globalThis.localStorage = forbidden;
+  globalThis.sessionStorage = forbidden;
+  globalThis.window = {
+    location: { pathname: '/triage/', search: '', hash: '' },
+    history: { replaceState() {} }
+  };
+  try {
+    const text = 'Private ticket text.';
+    writeTicketToLocation(text);
+    return ok(readTicketFromLocation({ search: '', hash: '#t=' + encodeTicket(text) }) === text,
+      'share round trip completed without storage access');
+  } catch (error) {
+    return ok(false, error.message);
+  } finally {
+    if (previousWindow === undefined) delete globalThis.window;
+    else globalThis.window = previousWindow;
+    if (previousLocal === undefined) delete globalThis.localStorage;
+    else globalThis.localStorage = previousLocal;
+    if (previousSession === undefined) delete globalThis.sessionStorage;
+    else globalThis.sessionStorage = previousSession;
+  }
 });
 
 test('Handoff', 'share rejects nothing but caps at 2000 characters', () => {

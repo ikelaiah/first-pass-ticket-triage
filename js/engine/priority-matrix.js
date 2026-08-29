@@ -21,8 +21,17 @@ export const LEVEL_RANK = { low: 0, medium: 1, high: 2 };
 
 /** The authoritative lookup. */
 export function priorityFor(impact, urgency) {
-  const row = MATRIX[urgency] || MATRIX.low;
-  return row[impact] || 'P4';
+  if (!IMPACT_ORDER.includes(impact)) {
+    throw new TypeError(
+      'Invalid impact level "' + String(impact) + '"; expected low, medium, or high.'
+    );
+  }
+  if (!URGENCY_ORDER.includes(urgency)) {
+    throw new TypeError(
+      'Invalid urgency level "' + String(urgency) + '"; expected low, medium, or high.'
+    );
+  }
+  return MATRIX[urgency][impact];
 }
 
 export function raiseLevel(level, target) {

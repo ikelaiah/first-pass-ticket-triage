@@ -14,7 +14,7 @@ const FOOTER =
 export function buildReply(result) {
   if (!result || result.empty) return '';
 
-  if (!result.inScope) {
+  if (!result.inScope || result.assessmentStatus !== 'assessed' || !result.suggestedPriority) {
     return [
       'Thanks for getting in touch.',
       '',
@@ -63,6 +63,8 @@ export function buildReply(result) {
 /** Markdown triage slip for handoff into tickets, docs or email. */
 export function buildMarkdown(result) {
   if (!result || result.empty) return '';
+  const assessed = result.assessmentStatus === 'assessed' && Boolean(result.suggestedPriority);
+  const recommendation = assessed ? result.suggestedPriority : 'Unassessed';
   const f = result.eightFacets || {};
   const facet = (id, label) => {
     const item = f[id];
@@ -70,11 +72,14 @@ export function buildMarkdown(result) {
     return '| ' + label + ' | ' + String(item.answer).replace(/\|/g, '\\|') + ' |';
   };
   const out = [];
-  out.push('# Triage — ' + result.priority + ' (' + result.priorityName + ')');
+  out.push('# Triage — ' + recommendation + ' (' +
+    (assessed ? result.priorityName : 'More information needed') + ')');
   out.push('');
   out.push('- Impact: ' + result.impactLabel);
   out.push('- Urgency: ' + result.urgencyLabel);
-  out.push('- Confidence: ' + result.confidence + '% (' + result.confidenceLabel + ')');
+  out.push('- Assessment confidence: ' + result.confidenceLabel + ' (heuristic)');
+  out.push('- Evidence completeness: ' + result.confidence + '% (heuristic; not a probability)');
+  if (!assessed) out.push('- Internal matrix result: ' + result.priority + ' (not actionable)');
   if (result.justification) out.push('- Justification: ' + result.justification);
   out.push('');
   out.push('| Question | Answer |');
