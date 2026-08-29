@@ -230,26 +230,26 @@ integrity checks without changing triage scoring or organisation configuration.
 
 #### Phase 1: Red tests and source audit
 
-- [ ] Add three-/four-column parser regressions and metadata-fidelity assertions.
-- [ ] Add BrainPOP family, alias-integrity, and ReadSpeaker regressions.
-- [ ] Confirm the untouched v0.6.0 baseline and record affected source rows.
+- [x] Add three-/four-column parser regressions and metadata-fidelity assertions.
+- [x] Add BrainPOP family, alias-integrity, and ReadSpeaker regressions.
+- [x] Confirm the untouched v0.6.0 baseline and record affected source rows.
 
 #### Phase 2: Minimal catalogue fixes
 
-- [ ] Make the reconciliation parser header-driven and report metadata matches,
+- [x] Make the reconciliation parser header-driven and report metadata matches,
   table shapes, and duplicate literal aliases.
-- [ ] Correct all 47 malformed source records and their affected catalogue-level
+- [x] Correct all 47 malformed source records and their affected catalogue-level
   metadata; merge BrainPOP source rows into one canonical entity.
-- [ ] Remove only the generic `screen reader`/`reader` ReadSpeaker aliases and
+- [x] Remove only the generic `screen reader`/`reader` ReadSpeaker aliases and
   review the listed ambiguous bare aliases for necessary guards.
 
 #### Phase 3: Documentation and release verification
 
-- [ ] Update README, ADR-003 if needed, CHANGELOG, package version, and release
+- [x] Update README, ADR-003 if needed, CHANGELOG, package version, and release
   task tracking with the narrow v0.6.1 invariant.
-- [ ] Run `npm test`, syntax/privacy/static checks, metadata URL checks, and a
+- [x] Run `npm test`, syntax/privacy/static checks, metadata URL checks, and a
   final five-axis code review.
-- [ ] Confirm priority expectations, organisation configuration, and dependency
+- [x] Confirm priority expectations, organisation configuration, and dependency
   boundaries are unchanged before release operations.
 
 ### Checkpoints
