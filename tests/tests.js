@@ -14,6 +14,7 @@ import { EXAMPLES } from '../js/data/examples.js';
 import { buildReply, buildMarkdown } from '../js/ui/reply.js';
 import { statusSentence } from '../js/ui/render-result.js';
 import { registerFacetTests } from './facet-tests.js';
+import { legacyRegressionCases } from './fixtures/legacy-regressions.js';
 import {
   encodeTicket, decodeTicket, tooLongForShare, readTicketFromLocation,
   writeTicketToLocation
@@ -2268,6 +2269,42 @@ for (const example of EXAMPLES) {
 }
 
 registerFacetTests(test, ok);
+
+function legacyFacetState(result, facet) {
+  if (facet === 'i1') return result.eightFacets.i1Scope.value;
+  if (facet === 'i2') return result.eightFacets.i2Blocked.blockedProcess?.level || 'unknown';
+  if (facet === 'i3') {
+    const value = result.eightFacets.i3Irreversibility;
+    if (value.modifiers.exposureActive && value.risks.includes('privacy')) return 'privacy-exposure';
+    if (value.risks.includes('privacy')) return 'privacy-context';
+    if (value.risks.includes('dataIntegrity')) return 'incorrect-data';
+    if (value.risks.includes('financial') || value.risks.includes('payroll')) return 'financial-harm';
+    return 'unknown';
+  }
+  if (facet === 'i4') {
+    const value = result.eightFacets.i4Containment.containment;
+    if (value.propagating) return 'spreading';
+    if (value.recurring) return 'recurring';
+    if (value.undetected) return 'unknown-extent';
+    if (value.contained) return 'contained';
+    return 'unknown';
+  }
+  if (facet === 'u5') return result.eightFacets.u5Deadline.value;
+  if (facet === 'u6') return result.eightFacets.u6Driver.driver.driver;
+  if (facet === 'u7') return result.eightFacets.u7Workaround.workaround;
+  if (facet === 'u8') return result.eightFacets.u8HarmTiming.harmTiming.timing;
+  return 'unknown';
+}
+
+for (const item of legacyRegressionCases) {
+  test('v0.7.0 legacy regression', item.id, () => {
+    const result = analyse(item.text);
+    const mismatches = Object.entries(item.expected)
+      .filter(([facet, expected]) => legacyFacetState(result, facet) !== expected)
+      .map(([facet, expected]) => facet + '=' + legacyFacetState(result, facet) + ' expected ' + expected);
+    return ok(mismatches.length === 0, mismatches.join('; ') || 'all expected facet states');
+  });
+}
 
 /* --------------------------------------------------------------- run -- */
 

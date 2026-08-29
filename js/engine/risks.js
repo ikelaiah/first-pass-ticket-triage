@@ -49,7 +49,7 @@ function matchModifier(doc, patterns) {
 function accessIsNegated(doc, start) {
   const clause = doc.clauses.find((candidate) => start >= candidate.start && start < candidate.end);
   const before = clause ? doc.text.slice(clause.start, start) : doc.text.slice(0, start);
-  return /\b(?:no one|nobody|not anyone|no user|no users)\b[^.;!?]{0,70}\b(?:can|could|is|are|able to|exposed|visible|accessible)\b[^.;!?]{0,30}$/i.test(before);
+  return /\b(?:no one|nobody|not anyone|no user|no users)\b[^.;!?]{0,70}\b(?:can|could|is|are|able to|exposed|visible|accessible|has been shown|have been shown|has been given|have been given)\b[^.;!?]{0,30}$/i.test(before);
 }
 
 /**

@@ -29,4 +29,8 @@ export const cases = [
   caseWith('u7-unknown-topic', 'The ticket mentions a workaround but does not say whether it works now.', 'unknown', 'unknown', 'noise'),
   caseWith('u7-unknown-conditional', 'If there is a fallback, the team has not confirmed it.', 'unknown', 'unknown', 'hypothetical'),
   caseWith('u7-no-manual', 'There is no manual option for this process.', 'no', 'negation'),
+  caseWith('u7-yes-on-paper', 'Teachers are still taking attendance on paper.', 'yes', 'manual'),
+  caseWith('u7-no-paper-roll', 'There is no paper roll or other process available.', 'no', 'negation'),
+  caseWith('u7-yes-browser-completes', 'Chrome lets two administrators complete the checks while Edge is down.', 'yes', 'alternative'),
+  caseWith('u7-partial-paper-enrolments', 'The paper process works for some enrolments but not for the remaining cases.', 'partial', 'partial'),
 ];

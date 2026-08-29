@@ -82,3 +82,23 @@
 - [x] Re-run the semantic corpus, legacy suite, catalogue gate, evaluator, and v0.6.1 comparison.
 - [x] Review every remaining P1 false positive/negative and unexplained regression.
 - [x] Keep release operations blocked until all known engine defects are resolved.
+
+## v0.7.1 NLP Evaluation Integrity & Regression Hardening
+
+- [x] Confirm the clean v0.7.0 baseline on `main` and record exact metrics.
+- [x] Add evaluator integrity mutation tests and enforce duplicate IDs/text,
+  enum, matrix, reviewed-alternative, and mismatch-classification contracts.
+- [x] Add corpus-quality statistics with visible labelled denominators.
+- [x] Add 15–25 independently authored realistic evaluation tickets.
+- [x] Run and record the new-ticket v0.7.0 baseline before detector changes;
+  classify every mismatch.
+- [x] Protect semantic/evaluation/legacy fixture independence and exact-copy
+  duplication.
+- [x] Add targeted cross-facet and major v0.7.0 regression coverage.
+- [x] Fix only proven deterministic engine defects with positive and contrast
+  guards; preserve all policy/scoring semantics.
+- [x] Compare v0.7.0 and v0.7.1 complete-corpus behaviour with zero unexplained
+  regressions.
+- [x] Update README/CHANGELOG/version only after meaningful patch improvements.
+- [x] Run full Node/browser/catalogue/privacy/integrity release gates and review
+  the final diff.

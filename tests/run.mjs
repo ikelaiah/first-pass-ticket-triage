@@ -26,7 +26,7 @@ for (const result of results) {
   console.log(status + ' - ' + result.name + '  [' + result.message + ']');
 }
 
-console.log('\n== v0.7.0 semantic corpus coverage ' + '='.repeat(23));
+console.log('\n== v0.7.1 semantic corpus coverage ' + '='.repeat(23));
 for (const line of formatFacetCoverage(buildFacetCoverageReport())) console.log(line);
 
 /* --- static privacy check: the app must contain no network calls --------- */

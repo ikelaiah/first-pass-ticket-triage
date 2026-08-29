@@ -53,4 +53,8 @@ export const cases = [
     { risksAbsent: ['dataIntegrity'] }, 'hypothetical', 'boundary'),
   contrast('i3-no-unsafe-effect', 'The certificate will not cause unsafe access before renewal.',
     { modifiers: { exposureActive: false } }, 'negation', 'boundary'),
+  contrast('i3-no-one-shown-details', "The report contains confidential details, but nobody has been shown another student's information.",
+    { risks: ['privacy'], modifiers: { exposureActive: false } }, 'negation', 'boundary'),
+  contrast('i3-pending-reveal', 'A planned export could reveal student addresses if deployed next quarter.',
+    { risks: ['privacy'], risksAbsent: ['security'], modifiers: { exposureActive: false } }, 'pending', 'boundary'),
 ];

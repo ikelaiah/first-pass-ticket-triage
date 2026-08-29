@@ -49,4 +49,9 @@ export const cases = [
   positive('i1-comparator-broad', 'One test account succeeds while all 19 schools remain affected.', 'all-schools', 'comparison'),
   positive('i1-comparator-other-schools', 'One school works but the other schools fail.', 'multiple-schools', 'comparison'),
   contrast('i1-year-report-not-population', 'The Year 8 report is missing.', 'unknown', 'boundary'),
+  positive('i1-current-narrow-after-history', 'Yesterday every campus timed out. This morning only one registrar cannot submit.', 'individual', 'history', 'comparison'),
+  contrast('i1-unaffected-numbered-comparison', 'One teacher cannot open Seesaw, but the other 26 teachers are working normally.', 'individual', 'comparison', 'boundary'),
+  positive('i1-spelled-number-team', 'Twelve students have the wrong year level in the register.', 'team', 'count'),
+  positive('i1-spelled-number-enrolments', 'Four new enrolments have duplicate IDs.', 'few-users', 'count'),
+  positive('i1-numbered-administrators', 'Two administrators cannot use the browser.', 'few-users', 'count'),
 ];

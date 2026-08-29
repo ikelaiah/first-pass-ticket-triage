@@ -1,5 +1,34 @@
 # Changelog
 
+## [0.7.1] - 2026-08-29 — NLP Evaluation Integrity & Regression Hardening
+
+### Added
+
+- Hardened the offline evaluation corpus with unique IDs and normalised ticket
+  text, controlled-value validation, authoritative matrix checks, reviewed
+  alternatives, explicit mismatch classifications, and visible quality
+  denominators.
+- Added 24 independently authored realistic regression tickets, cross-facet
+  invariants, legacy regression sentences, and semantic/evaluation/legacy
+  exact-copy independence checks.
+- Added a complete v0.7.0 baseline comparison report; all 57 pre-existing
+  evaluation cases retain the same facet and outcome projections.
+
+### Fixed
+
+- Corrected historical/current and unaffected-comparison scope extraction,
+  written-number and administrator counts, paper/browser workaround wording,
+  passive exposure negation, pending `reveal` harm, contained/propagating/
+  unknown-extent context, explicit no-deadline timestamps, and remaining
+  enrolment blocked-process wording.
+
+### Unchanged
+
+- Impact/Urgency scoring, all scoring weights, the authoritative 3×3 P1–P4
+  matrix, policy semantics, catalogue neutrality, and the dependency-free,
+  local-only browser architecture remain unchanged. The evaluation report does
+  not claim that policy disagreements are engine defects.
+
 ## [0.7.0] - 2026-08-29 — Eight-Facet NLP Robustness Hardening
 
 ### Added

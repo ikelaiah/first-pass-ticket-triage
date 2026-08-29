@@ -1,10 +1,10 @@
 {
   "name": "first-pass-triage",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "private": true,
   "type": "module",
   "description": "Local-first IT task triage and priority decision support. Static site - no dependencies, no build step.",
   "scripts": {
-    "test": "node tests/run.mjs && node tests/catalogue-coverage.test.mjs && node tests/evaluate.test.mjs && node tests/evaluate.mjs tests/fixtures/accuracy-corpus.json"
+    "test": "node tests/run.mjs && node tests/catalogue-coverage.test.mjs && node tests/evaluate.test.mjs && node tests/corpus-integrity.test.mjs && node tests/evaluate.mjs tests/fixtures/accuracy-corpus.json"
   }
 }

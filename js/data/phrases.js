@@ -205,7 +205,8 @@ export const COMMITMENT_MARKERS = [
 export const NOT_NEEDED_PATTERNS = [
   /\b(?:do|does|did|will|would|is|are|was|were) not (?:require|required|need|needed)\b/,
   /\bno longer (?:needed|required)\b/,
-  /\bnot (?:needed|required) (?:today|now|immediately|urgently|this week)\b/
+  /\bnot (?:needed|required) (?:today|now|immediately|urgently|this week)\b/,
+  /\bno (?:meeting|submission|deadline|requirement|business event)\b[^.;!?]{0,50}\b(?:today|now|immediately)\b/
 ];
 
 /** "not needed until next week" - the tail is re-parsed as the real deadline. */
@@ -227,12 +228,13 @@ export const WORKAROUND_PHRASES = [
         'add manually in seesaw', 'add the classes manually', 'add the classes and students manually', 'teacher to add manually', 'tell the teacher to add',
         'restarted the server', 'restarted server', 'admin restarted', 'until the helpdesk was restored', 'until restored', 'was restored', 'service restored',
         'workaround exists', 'workaround is available', 'workaround in place', 'paper copy', 'paper rolls',
+        /\bon paper\b/, /\bpaper roll\b/, /\b(?:chrome|firefox|safari|edge) lets?\b[^.;!?]{0,40}\b(?:complete|finish|submit|continue)\b/,
         'there is a workaround', 'we have a workaround',
         /\b(?:an alternative|a different|another|chrome|firefox|safari|edge) (?:browser|printer|device|computer|workstation|application|app)?\s*(?:works|is working|can be used)\b/,
         // "enter changes manually", "process the applications manually", "feeding manually"
         /\b(?:process|do|enter|handle|run|complete|key|record|update|load|feed|feeding)\s+(?:\w+\s+){0,3}manually\b/,
         // paper-based stopgaps (v0.3.1)
-        'paper form', 'paper forms', 'using the paper', 'using paper', 'paper process', 'paper copy', 'paper rolls', 'phone process',
+        'paper form', 'paper forms', 'using the paper', 'using paper', 'paper process', 'paper copy', 'paper roll', 'paper rolls', 'phone process',
         'spreadsheet workaround', 'using a spreadsheet', 'can use a spreadsheet', 'on the spreadsheet'],
     v: 'yes', label: 'a workaround or manual process exists' },
   { m: ['partial workaround', 'limited workaround', 'only some users', 'works for some',
@@ -245,6 +247,7 @@ export const WORKAROUND_PHRASES = [
         /\bonly (?:urgent|some|selected) (?:applications?|cases?|records?)\b[^.;!?]{0,24}\bmanually\b/],
     v: 'partial', label: 'only a partial workaround' },
   { m: ['no workaround', 'without a workaround', 'do not have a workaround', 'does not have a workaround', 'no manual process', 'no alternative',
+        'no paper roll',
         'no other way', 'nothing we can do', 'no way to', 'can not work around',
         'not able to work around', 'no fallback', 'no manual option', 'can not continue',
         'completely blocked', 'stopped entirely', 'nothing else works',
@@ -906,7 +909,7 @@ export const RISK_DEFINITIONS = [
         'debtor', 'fee statement'] },
   { key: 'privacy', label: 'Privacy',
     m: ['pii', 'personal information', 'private information', 'personal data',
-        'student information', 'student details', 'student data', 'parent information',
+        'student information', 'student details', 'student data', 'student address', 'student addresses', 'parent information',
         'parent details', 'staff data', 'staff information', 'confidential', 'privacy',
         'sensitive information', 'medical information', 'health information',
         /\b(?:could|may|might|would) expose (?:records?|data|information)\b/,
@@ -974,9 +977,10 @@ export const RISK_DEFINITIONS = [
         'created as a contact', 'showing as a contact', 'still an applicant',
         'flip flopping', 'keeps reverting', 'overwriting each other',
         // "incorrect carers", "duplicate student records", "wrong year level"
-        /\b(?:incorrect|wrong|duplicate|duplicated|mismatched|invalid)\s+(?:\w+\s+){0,2}(?:carers?|guardians?|contacts?|students?|records?|profiles?|amounts?|payments?|balances?|schools?|classes|parents?|families|enrolments?|year levels?|photos?|names?|addresses?|totals?)\b/,
+        /\b(?:incorrect|wrong|duplicate|duplicated|mismatched|invalid)\s+(?:\w+\s+){0,2}(?:carers?|guardians?|contacts?|students?|records?|profiles?|amounts?|payments?|balances?|schools?|classes|parents?|families|enrolments?|year levels?|photos?|names?|addresses?|ids?|totals?)\b/,
         // "the date of birth is incorrect" - adjective after the noun
-        /\b(?:date of birth|dob|year level|name|address|record|amount|balance|total|class)\s+(?:is|are|was|were|has been|have been)\s+(?:incorrect|wrong|duplicated|mismatched)\b/,
+        /\b(?:date of birth|dob|year level|name|address|record|records|amount|balance|total|class)\s+(?:is|are|was|were|has been|have been)\s+(?:incorrect|wrong|duplicated|mismatched)\b/,
+        /\b(?:record|records|data|entries)\b[^.;!?]{0,32}\b(?:is|are|was|were|has been|have been)\s+(?:incorrect|wrong|duplicated|mismatched)\b/,
         /\b(?:incorrect|wrong|inaccurate|bad)\s+(?:student\s+)?(?:information|data|details|records?)\b/,
         /\bbad records?\b/] },
   { key: 'criticalIntegration', label: 'Critical Integration',
@@ -1057,7 +1061,7 @@ export const RISK_MODIFIERS = {
     /\bpropagat/, /\bspreading\b/, /\bcontinuing to (?:write|create|generate|sync|spread|update)\b/,
     /\bcontinuing to be (?:created|written|generated|updated)\b/,
     /\bacross all\b/, /\bacross every\b/, /\bsilently (?:writing|creating|generating|updating)\b/,
-    /\bflowing (?:downstream|through)\b/, /\bdownstream systems\b/, /\bkeeps (?:writing|creating)\b/,
+    /\bflowing (?:downstream|through)\b/, /\bflowing into downstream\b/, /\bflowing into (?:the )?(?:class list|reports?|systems?)\b/, /\bdownstream systems\b/, /\bkeeps (?:writing|creating)\b/,
     /\bmore records each\b/, /\bgetting worse\b/,
     /\balready (?:synced|synchronised|flowed|propagated|been sent|gone) (?:to|through|out)\b/,
     /\bhas (?:already )?(?:synced|flowed) (?:to|through)\b/
@@ -1147,7 +1151,7 @@ export const UNDETECTED_PHRASES = [
         'we do not catch', 'may not catch', 'do not notice', 'may not notice',
         'we would not know', 'without us knowing', 'how many others', 'how many more',
         'may be more', 'might be more', 'unreported', 'go unnoticed', 'slip through',
-        /\bhow many (?:other|more) (?:records?|cases?|users?|students?|families)\b/],
+        /\bhow many (?:other|more) (?:records?|cases?|users?|students?|families|classes)\b/, 'how many classes'],
     // Deliberately excludes "we only found out because they rang us". That
     // describes how *this* one surfaced - a monitoring gap - not that there is
     // unquantified damage still out there.
@@ -1292,6 +1296,7 @@ export const IMMEDIATE_NEED_PATTERNS = [
 /** I4 contained — the fault is limited to one record/context and not spreading. */
 export const CONTAINED_PHRASES = [
   { m: ['contained to', 'isolated to', 'limited to', 'only one family', 'only that family',
+        /\b(?:batch|import|record|records?)\s+(?:has|have|is|are|was|were)\s+(?:been\s+)?isolated\b/,
         'only one student', 'only this record', 'only this one record', 'not spreading', 'is not spreading',
         'has not spread', 'no evidence of spreading', 'no other records', 'no other families',
         'no further records', 'stays on that record', 'does not affect other', 'not affecting other'],
@@ -1314,7 +1319,7 @@ export const BLOCKED_PROCESS_PHRASES = [
     process: 'attendance marking', label: 'attendance marking is blocked' },
   { m: ['can not enrol', 'cannot enrol', 'can not process enrolments',
         /\b(?:student\s+)?enrolments?\s+can not\s+be\s+processed\b/,
-        /\bcan not\s+complete\s+(?:the\s+)?(?:enrolment|enrolments|enrolment applications?)\b/],
+        /\bcan not\s+complete\s+(?:the\s+)?(?:(?:remaining|affected|these)\s+)?(?:enrolment|enrolments|enrolment applications?)\b/],
     process: 'enrolment processing', label: 'enrolment processing is blocked' },
   { m: ['can not pay', 'cannot pay', 'can not run payroll', 'can not submit timesheets',
         /\b(?:payments?|timesheets?)\s+can not\s+be\s+(?:submitted|processed|completed)\b/],
@@ -1372,7 +1377,7 @@ export const HARM_TIMING_PHRASES = {
     'currently visible', 'actively visible', 'wrongly linked but visible'
   ],
   pending: [
-    /\b(?:expires|expiring|will expire|due to expire|about to expire|will be exposed|would be exposed|could expose|may expose|might expose|could allow|may allow|might allow|would allow|waiting to happen|if not fixed|before it is used|before approval|before.*goes out|at risk of being deleted|before.*excursion|will fail tomorrow)\b/i,
+    /\b(?:expires|expiring|will expire|due to expire|about to expire|will be exposed|would be exposed|could expose|may expose|might expose|could reveal|may reveal|might reveal|would reveal|could allow|may allow|might allow|would allow|waiting to happen|if not fixed|before it is used|before approval|before.*goes out|at risk of being deleted|before.*excursion|will fail tomorrow)\b/i,
     /\b(?:could|may|might|would) (?:allow|grant|enable) unauthorised access\b/i,
     'will be used', 'waiting to happen', 'pending exposure', /\b(?:may|might|could|would)\s+fail\b/
   ]
