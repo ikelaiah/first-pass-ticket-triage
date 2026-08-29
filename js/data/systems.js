@@ -6,17 +6,76 @@
  */
 import { organisationConfig } from '../config.js';
 import { scan } from '../engine/negation.js';
+import { platformCatalogue, platformCatalogueById } from './platform-catalogue.js';
 
-/** Build dictionary entries from the organisation configuration. */
+function catalogueMetadata(id, system) {
+  return platformCatalogueById.get(id) ||
+    platformCatalogue.find((entry) => entry.name === system.name) || null;
+}
+
+function safeCatalogueAliases(catalogue) {
+  if (!catalogue) return [];
+  const guarded = catalogue.guardedAliases || [];
+  if (!guarded.length) return catalogue.aliases || [];
+
+  // A guarded one-word brand must not also retain its unsafe bare alias. Full
+  // product/module names remain safe and continue to match normally.
+  const canonical = catalogue.name.toLowerCase();
+  return (catalogue.aliases || []).filter((alias) =>
+    alias.toLowerCase() !== canonical || alias.includes(' '));
+}
+
+/** Build dictionary entries from organisation config plus generic catalogue data. */
 export function buildSystemEntries(config = organisationConfig) {
-  return Object.entries(config.systems).map(([id, system]) => ({
-    m: system.aliases,
-    v: id,
-    name: system.name,
-    critical: Boolean(system.critical),
-    negate: false,
-    label: system.name + ' referenced'
-  }));
+  const configured = Object.entries(config.systems).map(([id, system]) => {
+    const catalogue = catalogueMetadata(id, system);
+    return {
+      m: [
+        ...(system.aliases || []),
+        ...safeCatalogueAliases(catalogue),
+        ...(catalogue?.guardedAliases || []).map((source) => new RegExp(source, 'i'))
+      ],
+      v: id,
+      name: system.name,
+      critical: Boolean(system.critical),
+      entityType: catalogue?.entityType || 'system',
+      categories: catalogue?.categories || [],
+      sourceNames: catalogue?.sourceNames || [],
+      url: catalogue?.url,
+      typicalLevel: catalogue?.typicalLevel,
+      mainUse: catalogue?.mainUse,
+      negate: false,
+      label: system.name + ' referenced'
+    };
+  });
+
+  // Custom configs are deliberately isolated: callers supplying a deployment
+  // profile still get exactly that profile, while the default app combines it
+  // with generic catalogue identity.
+  if (config !== organisationConfig) return configured;
+
+  const configuredIds = new Set(configured.map((entry) => entry.v));
+  const generic = platformCatalogue
+    .filter((catalogue) => !configuredIds.has(catalogue.id))
+    .map((catalogue) => ({
+      m: [
+        ...safeCatalogueAliases(catalogue),
+        ...(catalogue.guardedAliases || []).map((source) => new RegExp(source, 'i'))
+      ],
+      v: catalogue.id,
+      name: catalogue.name,
+      critical: false,
+      entityType: catalogue.entityType,
+      categories: catalogue.categories,
+      sourceNames: catalogue.sourceNames,
+      url: catalogue.url,
+      typicalLevel: catalogue.typicalLevel,
+      mainUse: catalogue.mainUse,
+      negate: false,
+      label: catalogue.name + ' referenced'
+    }));
+
+  return configured.concat(generic);
 }
 
 const ENTRIES = buildSystemEntries();
@@ -41,6 +100,12 @@ export function detectSystems(doc, config = organisationConfig) {
         id,
         name: hit.entry.name,
         critical: hit.entry.critical,
+        entityType: hit.entry.entityType,
+        categories: hit.entry.categories || [],
+        sourceNames: hit.entry.sourceNames || [],
+        url: hit.entry.url,
+        typicalLevel: hit.entry.typicalLevel,
+        mainUse: hit.entry.mainUse,
         quote: hit.quote,
         count: 1,
         firstIndex: hit.start

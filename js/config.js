@@ -79,14 +79,26 @@ export const organisationConfig = {
     },
     copilot: { name: 'Microsoft Copilot', aliases: ['copilot', 'microsoft copilot', 'm365 copilot', 'copilot for microsoft 365'], critical: false },
     outlook: { name: 'Outlook', aliases: ['outlook', 'exchange online'], critical: false },
-    googleclassroom: { name: 'Google Classroom', aliases: ['google classroom', 'classroom'], critical: false },
-    canva: { name: 'Canva', aliases: ['canva'], critical: false },
+    googleclassroom: { name: 'Google Classroom', aliases: ['google classroom'], critical: false },
+    canva: {
+      name: 'Canva',
+      aliases: [new RegExp('\\bcanva(?=\\s+(?:is\\s+(?:unavailable|failing|not)|was\\s+(?:unavailable|failing|not)|has\\s+(?:failed|stopped)|cannot|can\\s+not))', 'i')],
+      critical: false
+    },
     soundtrap: { name: 'SoundTrap', aliases: ['soundtrap', 'sound trap'], critical: false },
     flexischools: { name: 'Flexischools', aliases: ['flexischools', 'flexi schools'], critical: false },
     complispace: { name: 'CompliSpace', aliases: ['complispace', 'compli space'], critical: false },
-    moodle: { name: 'Moodle', aliases: ['moodle'], critical: false },
-    readspeak: { name: 'ReadSpeaker', aliases: ['readspeak', 'read speaker', 'readspeaker', 'reader'], critical: false },
-    clever: { name: 'Clever', aliases: ['clever'], critical: true },
+    moodle: { name: 'Moodle', aliases: [new RegExp('\\bmoodle(?=\\s+(?:is|was|has|have|lms|course|class|login|unavailable|failing))', 'i')], critical: false },
+    readspeak: {
+      name: 'ReadSpeaker',
+      aliases: [
+        'readspeak', 'read speaker', 'readspeaker',
+        /\bscreen reader\b/i,
+        /\breader(?=\s+(?:is|was|has|have|software|app|accessibility|unavailable|failing))/i
+      ],
+      critical: false
+    },
+    clever: { name: 'Clever', aliases: [new RegExp('\\bclever(?=\\s+(?:is|was|has|have|sync|rostering|provisioning|platform|app|login|dashboard|integration|account|class))', 'i')], critical: true },
     portalhq: { name: 'PortalHQ', aliases: ['portalhq', 'portal hq'], critical: false },
     wherescape: { name: 'Wherescape', aliases: ['wherescape', 'where scape', 'whereescape', 'data warehousing'], critical: false },
     inlogik: { name: 'Inlogik', aliases: ['inlogik'], critical: false },
@@ -111,7 +123,7 @@ export const organisationConfig = {
     powerautomate: { name: 'Power Automate', aliases: ['power automate', 'powerautomate', 'power-automate', 'flow'], critical: false },
     sendhq: { name: 'SendHQ', aliases: ['sendhq', 'send hq'], critical: false },
     // Australian school-sector systems and common vendors (v0.3.1 coverage drop)
-    compass: { name: 'Compass', aliases: ['compass', 'compass portal'], critical: false },
+    compass: { name: 'Compass', aliases: [new RegExp('\\bcompass(?=\\s+(?:education|portal|events?|pay|wellbeing|timetable|student|is|was|has|have|sync|unavailable|failing))', 'i')], critical: false },
     synergetic: { name: 'Synergetic', aliases: ['synergetic'], critical: false },
     tass: { name: 'TASS', aliases: ['tass', 'tass web'], critical: false },
     seqta: { name: 'Seqta', aliases: ['seqta'], critical: false },

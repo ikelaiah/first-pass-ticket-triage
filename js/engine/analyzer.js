@@ -1234,6 +1234,11 @@ export function analyse(rawText, overrides = {}) {
     symptomLabel: symptom.label,
     system: systemResult.primary ? systemResult.primary.name : null,
     systems: systemResult.systems.map((s) => s.name),
+    systemDetails: systemResult.systems.map((system) => {
+      const { firstIndex, ...detail } = system;
+      return detail;
+    }),
+    platformCategories: [...new Set(systemResult.systems.flatMap((system) => system.categories || []))],
     scope: scopeResult.scope,
     scopeLabel: scopeResult.label,
     workaround: workaroundResult.workaround,
