@@ -34,9 +34,11 @@ impact and urgency engines do not read category membership. Technical domains re
 a separate classification.
 
 The checked-in Markdown reference is parsed by an automated Node reconciliation test.
-The test proves every source category assignment maps to a catalogue entity and that
-the entity retains that category. It also reports family/module normalisations and
-guarded ambiguous names.
+The parser derives source-record meaning from each table's headers, including tables
+without a Typical Level column. The test proves every source category assignment maps
+to a catalogue entity, retains its category, and faithfully retains every
+source-provided metadata field. It also reports family/module normalisations,
+guarded ambiguous names, and rejects a literal alias owned by multiple canonical IDs.
 
 ## Alternatives considered
 
@@ -65,5 +67,7 @@ local-first, deterministic, dependency-free, and privacy-preserving.
 - New generic platforms can be added without changing organisation flows or flags.
 - Catalogue categories are available to UI/support routing without priority drift.
 - Ambiguous names require contextual aliases or deliberate false-negative coverage.
+- Literal detection aliases resolve to one canonical catalogue entity; contextual
+  regexes remain outside this deterministic ownership invariant.
 - The reconciliation test must be kept with the source document whenever the source
   inventory changes.

@@ -203,3 +203,68 @@ category membership into impact, urgency or the priority matrix.
 | Short product names create ordinary-language false positives | High | Use exact branded phrases, contextual regexes and negative tests. |
 | Generic metadata changes organisation behaviour | High | Preserve config IDs/flags and keep catalogue categories out of scoring. |
 | Family/module normalisation hides a source row | Medium | Store every source name and category mapping and report normalisations. |
+
+## v0.6.1 catalogue-correctness patch
+
+### Overview
+
+Correct the Markdown-to-catalogue field mapping and strengthen reconciliation so
+every source-provided metadata field is verified. Merge the duplicate BrainPOP
+catalogue family, remove generic ReadSpeaker aliases, and add literal-alias
+integrity checks without changing triage scoring or organisation configuration.
+
+### Architecture decisions
+
+- Derive source-record fields from each Markdown table's headers. A missing
+  Typical Level/Environment/Role column is represented as `null`, while the URL
+  remains the source URL.
+- Keep source records category-specific and preserve every source row even when
+  several rows map to one canonical family.
+- Treat literal catalogue aliases case-insensitively with collapsed whitespace;
+  each literal alias must belong to one canonical ID. Regex/contextual aliases
+  are outside this deterministic ownership check.
+- Keep generic categories as context only. Do not change impact, urgency, the
+  priority matrix, organisation criticality, schedules, or data flows.
+
+### Ordered tasks
+
+#### Phase 1: Red tests and source audit
+
+- [x] Add three-/four-column parser regressions and metadata-fidelity assertions.
+- [x] Add BrainPOP family, alias-integrity, and ReadSpeaker regressions.
+- [x] Confirm the untouched v0.6.0 baseline and record affected source rows.
+
+#### Phase 2: Minimal catalogue fixes
+
+- [x] Make the reconciliation parser header-driven and report metadata matches,
+  table shapes, and duplicate literal aliases.
+- [x] Correct all 47 malformed source records and their affected catalogue-level
+  metadata; merge BrainPOP source rows into one canonical entity.
+- [x] Remove only the generic `screen reader`/`reader` ReadSpeaker aliases and
+  review the listed ambiguous bare aliases for necessary guards.
+
+#### Phase 3: Documentation and release verification
+
+- [x] Update README, ADR-003 if needed, CHANGELOG, package version, and release
+  task tracking with the narrow v0.6.1 invariant.
+- [x] Run `npm test`, syntax/privacy/static checks, metadata URL checks, and a
+  final five-axis code review.
+- [x] Confirm priority expectations, organisation configuration, and dependency
+  boundaries are unchanged before release operations.
+
+### Checkpoints
+
+- **After Phase 1:** new regressions fail for the current parser/catalogue.
+- **After Phase 2:** catalogue reconciliation is 206/206 with zero metadata
+  mismatches and duplicate literal aliases; the full suite remains green.
+- **Release candidate:** version is 0.6.1, diff is narrowly scoped, all checks
+  pass, and the existing PR/tag workflow is available.
+
+### Risks and mitigations
+
+| Risk | Impact | Mitigation |
+| --- | --- | --- |
+| A three-column URL is retained as a level/environment | High | Header-driven parser plus a catalogue-wide URL-in-level assertion. |
+| Merging BrainPOP changes detection identity | High | Keep both source rows/categories and assert one ID for BrainPOP and BrainPOP Jr. |
+| Generic accessibility wording identifies a product | Medium | Remove only unbranded ReadSpeaker aliases and add positive/negative tests. |
+| Catalogue metadata changes triage | High | Keep category fields out of scoring and compare before/after priority expectations. |

@@ -559,6 +559,73 @@ test('Consequence', 'named attendance work is an explicit blocked consequence', 
   );
 });
 
+test('Consequence', 'natural attendance blocking wording is explicit business evidence', () => {
+  const result = analyse("A teacher cannot login to Seesaw for today's class. Teacher cannot mark roll.");
+  const i2 = result.eightFacets.i2Blocked;
+  return ok(
+    result.systems.includes('Seesaw') && result.consequence === 'blocked' &&
+      i2.answer === 'attendance marking is blocked' &&
+      i2.blockedProcess?.process === 'attendance marking' &&
+      i2.blockedProcess?.source === 'explicit' &&
+      result.businessConsequence.source === 'explicit' &&
+      i2.blockedProcess?.evidence?.[0]?.source === 'consequence' &&
+      /can not mark roll/.test(i2.quote || ''),
+    JSON.stringify({ systems: result.systems, i2 })
+  );
+});
+
+test('Consequence', 'a Seesaw login symptom alone does not infer attendance blocking', () => {
+  const result = analyse("A teacher cannot login to Seesaw for today's class.");
+  const i2 = result.eightFacets.i2Blocked;
+  return ok(
+    result.systems.includes('Seesaw') && result.consequence === 'unknown' &&
+      i2.answer === 'Not stated' && i2.blockedProcess === null,
+    JSON.stringify({ systems: result.systems, i2 })
+  );
+});
+
+for (const wording of [
+  'Teacher cannot mark the roll.',
+  "Teacher can't mark roll.",
+  'Teacher can not mark roll.',
+  'Teacher is unable to mark the roll.',
+  'Teacher cannot take attendance.',
+  'Teacher cannot mark attendance.',
+  'Teacher cannot record attendance.',
+  'Teacher cannot enter attendance.',
+  'Teacher cannot take the roll.'
+]) {
+  test('Consequence', 'attendance blocking recognises: ' + wording, () => {
+    const result = analyse(wording);
+    const blocked = result.eightFacets.i2Blocked.blockedProcess;
+    return ok(
+      result.consequence === 'blocked' &&
+        blocked?.process === 'attendance marking' && blocked?.source === 'explicit',
+      JSON.stringify(blocked)
+    );
+  });
+}
+
+for (const wording of [
+  'Teacher can mark the roll normally.',
+  'Teacher can still mark roll.',
+  'Teacher cannot login to Seesaw, but can mark the roll manually.',
+  'How do I mark the roll in Seesaw?',
+  'Please document how teachers mark attendance.',
+  'The teacher marked the roll yesterday.',
+  'Attendance marking is not affected.'
+]) {
+  test('Consequence', 'attendance wording without an explicit block stays unblocked: ' + wording, () => {
+    const result = analyse(wording);
+    const i2 = result.eightFacets.i2Blocked;
+    return ok(
+      result.consequence === 'unknown' && i2.answer === 'Not stated' &&
+        i2.blockedProcess === null,
+      JSON.stringify(i2)
+    );
+  });
+}
+
 test('Consequence', 'a generic technical symptom does not invent a blocked process', () => {
   const result = analyse('Canvas is slow for one school.');
   return ok(result.consequence === 'unknown', JSON.stringify(result.businessConsequence));
@@ -1978,6 +2045,9 @@ const ambiguousCatalogueCases = [
   ['The document is flat.', 'Flat for Education'],
   ['Oliver completed his homework.', 'Oliver'],
   ['Scratch that change.', 'Scratch'],
+  ['Put the clipboard on the desk.', 'Clipboard'],
+  ['Sora was mentioned in the story.', 'Sora'],
+  ['The quill is on the desk.', 'Quill'],
   ['The reader finished the story.', 'ReadSpeaker'],
   ['The classroom was cleaned after lunch.', 'Google Classroom'],
   ['Please send the forms to reception.', 'Microsoft Forms'],
@@ -1990,6 +2060,34 @@ for (const [text, forbidden] of ambiguousCatalogueCases) {
     return ok(!result.systems.includes(forbidden), result.systems.join(', ') || 'no systems');
   });
 }
+
+/* ------------------------------------------- v0.6.1 catalogue correctness -- */
+
+test('v0.6.1 catalogue', 'BrainPOP resolves to one canonical family with both source categories', () => {
+  const result = analyse('BrainPOP videos are not loading.');
+  const matches = result.systemDetails.filter((system) => system.id === 'brainpop');
+  return ok(matches.length === 1 &&
+    matches[0].categories.includes('Broad Curriculum & Learning Platforms') &&
+    matches[0].categories.includes('Educational Video') &&
+    result.systemDetails.length === 1, JSON.stringify(result.systemDetails));
+});
+
+test('v0.6.1 catalogue', 'BrainPOP Jr. maps to the BrainPOP canonical family', () => {
+  const result = analyse('BrainPOP Jr. is unavailable.');
+  return ok(result.systems.length === 1 && result.systemDetails[0]?.id === 'brainpop',
+    JSON.stringify(result.systemDetails));
+});
+
+test('v0.6.1 catalogue', 'generic screen reader wording does not infer ReadSpeaker', () => {
+  const result = analyse('The screen reader is not working with the enrolment form.');
+  return ok(result.technicalDomain === 'accessibility' && !result.systems.includes('ReadSpeaker'),
+    JSON.stringify({ systems: result.systems, domain: result.technicalDomain }));
+});
+
+test('v0.6.1 catalogue', 'explicit ReadSpeaker wording still identifies the product', () => {
+  const result = analyse('ReadSpeaker is not working with the enrolment form.');
+  return ok(result.systems.includes('ReadSpeaker'), result.systems.join(', ') || 'no systems');
+});
 
 /* ------------------------------------------------------- 29. examples -- */
 

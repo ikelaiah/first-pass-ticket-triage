@@ -1263,8 +1263,11 @@ export const CONTAINED_PHRASES = [
  * without treating a system name or a generic technical symptom as a consequence.
  */
 export const BLOCKED_PROCESS_PHRASES = [
-  { m: ['can not mark the roll', 'cannot mark the roll', 'can not mark rolls',
-        'can not take attendance', 'attendance not recording'],
+  { m: [
+      // normalise() expands cannot, can't and unable to to "can not".
+      /\bcan not\s+(?:mark|take|record|enter)\s+(?:the\s+)?(?:rolls?|attendance)\b/,
+      'attendance not recording'
+    ],
     process: 'attendance marking', label: 'attendance marking is blocked' },
   { m: ['can not enrol', 'cannot enrol', 'can not process enrolments'],
     process: 'enrolment processing', label: 'enrolment processing is blocked' },

@@ -258,7 +258,7 @@ Open <http://localhost:8000/tests/tests.html> — the suite runs in the page and
 PASS/FAIL line for every assertion.
 
 With Node available, the same suite runs in a terminal; `npm test` runs the complete
-v0.6.0 gate:
+v0.6.1 gate:
 
 ```bash
 node tests/run.mjs      # behavioural suite + privacy scan
@@ -393,10 +393,17 @@ never contribute to Impact, Urgency, criticality, or the authoritative P1–P4 m
 the ticket’s evidence still determines those values.
 
 Repeated products retain every category. Obvious families such as Compass modules,
-School Bytes modules, SEQTA variants, IXL Maths, Sora by OverDrive, and Reading Eggs
+School Bytes modules, SEQTA variants, IXL Maths, Sora by OverDrive, BrainPOP / BrainPOP Jr., and Reading Eggs
 are represented by one canonical entity with source-name/module mappings, not as
 unrelated vendors. The reconciliation test reports these normalisations and fails if
-a source row or category assignment disappears.
+a source row, category assignment, or source-provided metadata field disappears.
+
+The reconciliation audit verifies, for every source assignment, identity, category
+membership, main use, the typical level/environment/role when the source provides
+one, and URL fidelity. It also checks that each literal alias (case-insensitive with
+whitespace normalised) belongs to one canonical catalogue entity. A source table
+without a Typical Level column is represented with `typicalLevel: null`; its URL is
+never placed in that field.
 
 ### Adding a platform or alias safely
 
@@ -407,8 +414,10 @@ organisation. Prefer an exact branded alias (`Google Classroom`, `Microsoft Form
 or `Teams for Education`) over a short ordinary word. For ambiguous brands such as
 Clever, Compass, Formative, Flat, Oliver, Scratch, Teams, Classroom, Forms, Moodle,
 or Canva, use a contextual/guarded pattern or omit the bare alias and add a negative
-test. Run `npm test`; the Markdown reconciliation reports the source count and names
-any missing entity or category assignment.
+test. BrainPOP and BrainPOP Jr. intentionally share one canonical family while both
+source rows remain auditable. Run `npm test`; the Markdown reconciliation reports
+source metadata mismatches and duplicate literal alias ownership as well as missing
+entities or category assignments.
 
 ## 🧩 Extending the rules
 

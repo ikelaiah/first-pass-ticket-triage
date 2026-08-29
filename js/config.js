@@ -92,9 +92,7 @@ export const organisationConfig = {
     readspeak: {
       name: 'ReadSpeaker',
       aliases: [
-        'readspeak', 'read speaker', 'readspeaker',
-        /\bscreen reader\b/i,
-        /\breader(?=\s+(?:is|was|has|have|software|app|accessibility|unavailable|failing))/i
+        'readspeak', 'read speaker', 'readspeaker'
       ],
       critical: false
     },
@@ -107,7 +105,14 @@ export const organisationConfig = {
     tyro: { name: 'Tyro', aliases: ['tyro', 'tyro payment', 'tyro payments'], critical: false },
     bpay: { name: 'BPay', aliases: ['bpay', 'bpay portal'], critical: false },
     ascender: { name: 'Ascender Pay', aliases: ['ascender', 'ascender pay', 'ascenderpay'], critical: true },
-    clipboard: { name: 'Clipboard', aliases: ['clipboard', 'clip board', 'extracurricular management', 'extra curricular', 'extracurricular'], critical: true },
+    clipboard: {
+      name: 'Clipboard',
+      aliases: [
+        /\bclipboard(?=\s+(?:(?:is|was|has|have)\s+(?:unavailable|failing|not|down|slow|broken)|activities?|sport|music|clubs?|extracurricular|management|app|login|csv|timesheets?))/i,
+        'clip board', 'extracurricular management', 'extra curricular', 'extracurricular'
+      ],
+      critical: true
+    },
     dbeaver: { name: 'DBeaver', aliases: ['dbeaver'], critical: false },
     confluence: { name: 'Confluence', aliases: ['confluence'], critical: false },
     aquia: { name: 'Aquia Data Studio', aliases: ['aquia', 'data studio', 'data studio aquia'], critical: false },

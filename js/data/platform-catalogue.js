@@ -67,7 +67,7 @@ export const platformCatalogue = [
     url: "https://www.tes.com/en-au/for-schools/seqta",
     typicalLevel: "K–12",
     mainUse: "Learning, curriculum, assessment, wellbeing and attendance",
-    sourceRecords: [{"category":"Learning Management Systems (LMS)","name":"SEQTA","mainUse":"Learning, curriculum, assessment, wellbeing and attendance","typicalLevel":"K–12","url":"https://www.tes.com/en-au/for-schools/seqta"},{"category":"Student Information & School Management Systems","name":"SEQTA","mainUse":"Learning, attendance, wellbeing and curriculum management","typicalLevel":"K–12","url":"https://www.tes.com/en-au/for-schools/seqta"},{"category":"Attendance, Parent Communication & Community","name":"SEQTA Engage","mainUse":"Parent access to learning and school information","typicalLevel":"https://www.tes.com/en-au/for-schools/seqta","url":""},{"category":"Student Wellbeing & Pastoral Care","name":"SEQTA Wellbeing","mainUse":"Pastoral care and wellbeing records","typicalLevel":"https://www.tes.com/en-au/for-schools/seqta","url":""}]
+    sourceRecords: [{"category":"Learning Management Systems (LMS)","name":"SEQTA","mainUse":"Learning, curriculum, assessment, wellbeing and attendance","typicalLevel":"K–12","url":"https://www.tes.com/en-au/for-schools/seqta"},{"category":"Student Information & School Management Systems","name":"SEQTA","mainUse":"Learning, attendance, wellbeing and curriculum management","typicalLevel":"K–12","url":"https://www.tes.com/en-au/for-schools/seqta"},{"category":"Attendance, Parent Communication & Community","name":"SEQTA Engage","mainUse":"Parent access to learning and school information","typicalLevel":null,"url":"https://www.tes.com/en-au/for-schools/seqta"},{"category":"Student Wellbeing & Pastoral Care","name":"SEQTA Wellbeing","mainUse":"Pastoral care and wellbeing records","typicalLevel":null,"url":"https://www.tes.com/en-au/for-schools/seqta"}]
   },
   {
     id: "schoology-learning",
@@ -263,18 +263,6 @@ export const platformCatalogue = [
     sourceRecords: [{"category":"Broad Curriculum & Learning Platforms","name":"Seneca Learning","mainUse":"Adaptive revision and curriculum learning","typicalLevel":"Secondary","url":"https://senecalearning.com/"}]
   },
   {
-    id: "brainpop-brainpop-jr",
-    name: "BrainPOP / BrainPOP Jr.",
-    aliases: ["BrainPOP / BrainPOP Jr.","BrainPOP","BrainPOP Jr."],
-    entityType: "platform",
-    categories: ["Broad Curriculum & Learning Platforms"],
-    sourceNames: ["BrainPOP / BrainPOP Jr."],
-    url: "https://www.brainpop.com/",
-    typicalLevel: "Primary–Lower Secondary",
-    mainUse: "Animated curriculum lessons and activities",
-    sourceRecords: [{"category":"Broad Curriculum & Learning Platforms","name":"BrainPOP / BrainPOP Jr.","mainUse":"Animated curriculum lessons and activities","typicalLevel":"Primary–Lower Secondary","url":"https://www.brainpop.com/"}]
-  },
-  {
     id: "nearpod",
     name: "Nearpod",
     aliases: ["Nearpod"],
@@ -392,19 +380,20 @@ export const platformCatalogue = [
     url: "https://readcloud.com/",
     typicalLevel: "K–12",
     mainUse: "Digital textbooks, eBooks and school digital libraries",
-    sourceRecords: [{"category":"Digital Textbooks, eBooks & Curriculum Content","name":"ReadCloud","mainUse":"Digital textbooks, eBooks and school digital libraries","typicalLevel":"K–12","url":"https://readcloud.com/"},{"category":"Library & Digital Library Systems","name":"ReadCloud","mainUse":"eBooks, digital textbooks and school digital libraries","typicalLevel":"https://readcloud.com/","url":""}]
+    sourceRecords: [{"category":"Digital Textbooks, eBooks & Curriculum Content","name":"ReadCloud","mainUse":"Digital textbooks, eBooks and school digital libraries","typicalLevel":"K–12","url":"https://readcloud.com/"},{"category":"Library & Digital Library Systems","name":"ReadCloud","mainUse":"eBooks, digital textbooks and school digital libraries","typicalLevel":null,"url":"https://readcloud.com/"}]
   },
   {
     id: "sora",
     name: "Sora",
     aliases: ["Sora by OverDrive","Sora"],
+    guardedAliases: ["\\bsora(?=\\s+(?:(?:is|was|has|have)\\s+(?:unavailable|failing|not|down|slow|broken)|ebook|audiobook|library|reading|borrowing|app|login))"],
     entityType: "platform",
     categories: ["Digital Textbooks, eBooks & Curriculum Content","Library & Digital Library Systems"],
     sourceNames: ["Sora by OverDrive","Sora"],
     url: "https://soraapp.com/",
     typicalLevel: "K–12",
     mainUse: "School eBook and audiobook borrowing",
-    sourceRecords: [{"category":"Digital Textbooks, eBooks & Curriculum Content","name":"Sora by OverDrive","mainUse":"School eBook and audiobook borrowing","typicalLevel":"K–12","url":"https://soraapp.com/"},{"category":"Library & Digital Library Systems","name":"Sora","mainUse":"eBook and audiobook borrowing","typicalLevel":"https://soraapp.com/","url":""}]
+    sourceRecords: [{"category":"Digital Textbooks, eBooks & Curriculum Content","name":"Sora by OverDrive","mainUse":"School eBook and audiobook borrowing","typicalLevel":"K–12","url":"https://soraapp.com/"},{"category":"Library & Digital Library Systems","name":"Sora","mainUse":"eBook and audiobook borrowing","typicalLevel":null,"url":"https://soraapp.com/"}]
   },
   {
     id: "wheelers-eplatform",
@@ -416,7 +405,7 @@ export const platformCatalogue = [
     url: "https://eplatform.co/",
     typicalLevel: "K–12",
     mainUse: "School eBook and audiobook library",
-    sourceRecords: [{"category":"Digital Textbooks, eBooks & Curriculum Content","name":"Wheelers ePlatform","mainUse":"School eBook and audiobook library","typicalLevel":"K–12","url":"https://eplatform.co/"},{"category":"Library & Digital Library Systems","name":"Wheelers ePlatform","mainUse":"School eBook and audiobook library","typicalLevel":"https://eplatform.co/","url":""}]
+    sourceRecords: [{"category":"Digital Textbooks, eBooks & Curriculum Content","name":"Wheelers ePlatform","mainUse":"School eBook and audiobook library","typicalLevel":"K–12","url":"https://eplatform.co/"},{"category":"Library & Digital Library Systems","name":"Wheelers ePlatform","mainUse":"School eBook and audiobook library","typicalLevel":null,"url":"https://eplatform.co/"}]
   },
   {
     id: "britannica-school",
@@ -469,14 +458,14 @@ export const platformCatalogue = [
   {
     id: "brainpop",
     name: "BrainPOP",
-    aliases: ["BrainPOP"],
+    aliases: ["BrainPOP","BrainPOP Jr.","BrainPOP / BrainPOP Jr."],
     entityType: "platform",
-    categories: ["Educational Video"],
-    sourceNames: ["BrainPOP"],
+    categories: ["Broad Curriculum & Learning Platforms","Educational Video"],
+    sourceNames: ["BrainPOP / BrainPOP Jr.","BrainPOP"],
     url: "https://www.brainpop.com/",
     typicalLevel: "Primary–Lower Secondary",
     mainUse: "Animated instructional video",
-    sourceRecords: [{"category":"Educational Video","name":"BrainPOP","mainUse":"Animated instructional video","typicalLevel":"Primary–Lower Secondary","url":"https://www.brainpop.com/"}]
+    sourceRecords: [{"category":"Broad Curriculum & Learning Platforms","name":"BrainPOP / BrainPOP Jr.","mainUse":"Animated curriculum lessons and activities","typicalLevel":"Primary–Lower Secondary","url":"https://www.brainpop.com/"},{"category":"Educational Video","name":"BrainPOP","mainUse":"Animated instructional video","typicalLevel":"Primary–Lower Secondary","url":"https://www.brainpop.com/"}]
   },
   {
     id: "edpuzzle",
@@ -806,6 +795,7 @@ export const platformCatalogue = [
     id: "quill",
     name: "Quill",
     aliases: ["Quill"],
+    guardedAliases: ["\\bquill(?=\\s+(?:(?:is|was|has|have)\\s+(?:unavailable|failing|not|down|slow|broken)|writing|grammar|practice|assignment|activity))"],
     entityType: "platform",
     categories: ["Literacy, Reading, Phonics & English","Academic Integrity & Writing Support"],
     sourceNames: ["Quill"],
@@ -1344,7 +1334,7 @@ export const platformCatalogue = [
     url: "https://seesaw.me/",
     typicalLevel: "Pre-K–Year 6",
     mainUse: "Learning journals, portfolios, activities and family communication",
-    sourceRecords: [{"category":"Early Learning / Pre-K–Year 6","name":"Seesaw","mainUse":"Learning journals, portfolios, activities and family communication","typicalLevel":"Pre-K–Year 6","url":"https://seesaw.me/"},{"category":"Attendance, Parent Communication & Community","name":"Seesaw","mainUse":"Family engagement and student learning portfolios","typicalLevel":"https://seesaw.me/","url":""}]
+    sourceRecords: [{"category":"Early Learning / Pre-K–Year 6","name":"Seesaw","mainUse":"Learning journals, portfolios, activities and family communication","typicalLevel":"Pre-K–Year 6","url":"https://seesaw.me/"},{"category":"Attendance, Parent Communication & Community","name":"Seesaw","mainUse":"Family engagement and student learning portfolios","typicalLevel":null,"url":"https://seesaw.me/"}]
   },
   {
     id: "storypark",
@@ -1441,7 +1431,7 @@ export const platformCatalogue = [
     url: "https://www.compass.education/",
     typicalLevel: "K–12",
     mainUse: "SIS/SMS, attendance, learning, wellbeing, payments, communication and reporting",
-    sourceRecords: [{"category":"Student Information & School Management Systems","name":"Compass Education","mainUse":"SIS/SMS, attendance, learning, wellbeing, payments, communication and reporting","typicalLevel":"K–12","url":"https://www.compass.education/"},{"category":"Attendance, Parent Communication & Community","name":"Compass","mainUse":"Attendance, absences, parent portal/app and communication","typicalLevel":"https://www.compass.education/","url":""},{"category":"Excursions, Consent, Medical & Risk Management","name":"Compass Events","mainUse":"Events, parent consent and payments","typicalLevel":"https://www.compass.education/","url":""},{"category":"Canteen, Payments & Finance","name":"Compass Pay","mainUse":"School payments, events and finance workflows","typicalLevel":"https://www.compass.education/","url":""},{"category":"Timetabling & Scheduling","name":"Compass","mainUse":"Scheduling, rooms, classes and school operations","typicalLevel":"https://www.compass.education/","url":""},{"category":"Student Wellbeing & Pastoral Care","name":"Compass Wellbeing","mainUse":"Student wellbeing, behaviour and pastoral records","typicalLevel":"https://www.compass.education/","url":""}]
+    sourceRecords: [{"category":"Student Information & School Management Systems","name":"Compass Education","mainUse":"SIS/SMS, attendance, learning, wellbeing, payments, communication and reporting","typicalLevel":"K–12","url":"https://www.compass.education/"},{"category":"Attendance, Parent Communication & Community","name":"Compass","mainUse":"Attendance, absences, parent portal/app and communication","typicalLevel":null,"url":"https://www.compass.education/"},{"category":"Excursions, Consent, Medical & Risk Management","name":"Compass Events","mainUse":"Events, parent consent and payments","typicalLevel":null,"url":"https://www.compass.education/"},{"category":"Canteen, Payments & Finance","name":"Compass Pay","mainUse":"School payments, events and finance workflows","typicalLevel":null,"url":"https://www.compass.education/"},{"category":"Timetabling & Scheduling","name":"Compass","mainUse":"Scheduling, rooms, classes and school operations","typicalLevel":null,"url":"https://www.compass.education/"},{"category":"Student Wellbeing & Pastoral Care","name":"Compass Wellbeing","mainUse":"Student wellbeing, behaviour and pastoral records","typicalLevel":null,"url":"https://www.compass.education/"}]
   },
   {
     id: "sentral",
@@ -1453,7 +1443,7 @@ export const platformCatalogue = [
     url: "https://www.sentral.com.au/",
     typicalLevel: "K–12",
     mainUse: "School administration, attendance, wellbeing, reporting and parent engagement",
-    sourceRecords: [{"category":"Student Information & School Management Systems","name":"Sentral","mainUse":"School administration, attendance, wellbeing, reporting and parent engagement","typicalLevel":"K–12","url":"https://www.sentral.com.au/"},{"category":"Attendance, Parent Communication & Community","name":"Sentral","mainUse":"Attendance and parent communication","typicalLevel":"https://www.sentral.com.au/","url":""},{"category":"Student Wellbeing & Pastoral Care","name":"Sentral Wellbeing","mainUse":"Wellbeing, incidents and student support records","typicalLevel":"https://www.sentral.com.au/","url":""}]
+    sourceRecords: [{"category":"Student Information & School Management Systems","name":"Sentral","mainUse":"School administration, attendance, wellbeing, reporting and parent engagement","typicalLevel":"K–12","url":"https://www.sentral.com.au/"},{"category":"Attendance, Parent Communication & Community","name":"Sentral","mainUse":"Attendance and parent communication","typicalLevel":null,"url":"https://www.sentral.com.au/"},{"category":"Student Wellbeing & Pastoral Care","name":"Sentral Wellbeing","mainUse":"Wellbeing, incidents and student support records","typicalLevel":null,"url":"https://www.sentral.com.au/"}]
   },
   {
     id: "tass",
@@ -1465,7 +1455,7 @@ export const platformCatalogue = [
     url: "https://www.tassweb.com.au/",
     typicalLevel: "Independent K–12",
     mainUse: "SIS, administration, finance, payroll, HR and portals",
-    sourceRecords: [{"category":"Student Information & School Management Systems","name":"TASS","mainUse":"SIS, administration, finance, payroll, HR and portals","typicalLevel":"Independent K–12","url":"https://www.tassweb.com.au/"},{"category":"Canteen, Payments & Finance","name":"TASS Finance","mainUse":"General ledger, accounts, fees and school finance","typicalLevel":"https://www.tassweb.com.au/","url":""}]
+    sourceRecords: [{"category":"Student Information & School Management Systems","name":"TASS","mainUse":"SIS, administration, finance, payroll, HR and portals","typicalLevel":"Independent K–12","url":"https://www.tassweb.com.au/"},{"category":"Canteen, Payments & Finance","name":"TASS Finance","mainUse":"General ledger, accounts, fees and school finance","typicalLevel":null,"url":"https://www.tassweb.com.au/"}]
   },
   {
     id: "synergetic",
@@ -1477,7 +1467,7 @@ export const platformCatalogue = [
     url: "https://www.tes.com/en-au/for-schools/synergetic",
     typicalLevel: "Independent K–12",
     mainUse: "Student management, finance, reporting and administration",
-    sourceRecords: [{"category":"Student Information & School Management Systems","name":"Synergetic","mainUse":"Student management, finance, reporting and administration","typicalLevel":"Independent K–12","url":"https://www.tes.com/en-au/for-schools/synergetic"},{"category":"Canteen, Payments & Finance","name":"Synergetic Finance","mainUse":"Integrated school finance and administration","typicalLevel":"https://www.tes.com/en-au/for-schools/synergetic","url":""}]
+    sourceRecords: [{"category":"Student Information & School Management Systems","name":"Synergetic","mainUse":"Student management, finance, reporting and administration","typicalLevel":"Independent K–12","url":"https://www.tes.com/en-au/for-schools/synergetic"},{"category":"Canteen, Payments & Finance","name":"Synergetic Finance","mainUse":"Integrated school finance and administration","typicalLevel":null,"url":"https://www.tes.com/en-au/for-schools/synergetic"}]
   },
   {
     id: "edumate",
@@ -1489,7 +1479,7 @@ export const platformCatalogue = [
     url: "https://www.edumate.com.au/",
     typicalLevel: "K–12",
     mainUse: "SIS, attendance, enrolments, reporting, pastoral care and finance",
-    sourceRecords: [{"category":"Student Information & School Management Systems","name":"Edumate","mainUse":"SIS, attendance, enrolments, reporting, pastoral care and finance","typicalLevel":"K–12","url":"https://www.edumate.com.au/"},{"category":"Timetabling & Scheduling","name":"Edumate","mainUse":"Timetabling integrated with student management","typicalLevel":"https://www.edumate.com.au/","url":""}]
+    sourceRecords: [{"category":"Student Information & School Management Systems","name":"Edumate","mainUse":"SIS, attendance, enrolments, reporting, pastoral care and finance","typicalLevel":"K–12","url":"https://www.edumate.com.au/"},{"category":"Timetabling & Scheduling","name":"Edumate","mainUse":"Timetabling integrated with student management","typicalLevel":null,"url":"https://www.edumate.com.au/"}]
   },
   {
     id: "school-bytes",
@@ -1501,7 +1491,7 @@ export const platformCatalogue = [
     url: "https://www.schoolbytes.education/",
     typicalLevel: "K–12",
     mainUse: "Administration, attendance, finance, forms, reporting and wellbeing",
-    sourceRecords: [{"category":"Student Information & School Management Systems","name":"School Bytes","mainUse":"Administration, attendance, finance, forms, reporting and wellbeing","typicalLevel":"K–12","url":"https://www.schoolbytes.education/"},{"category":"Attendance, Parent Communication & Community","name":"School Bytes","mainUse":"Attendance, forms and parent communication","typicalLevel":"https://www.schoolbytes.education/","url":""},{"category":"Excursions, Consent, Medical & Risk Management","name":"School Bytes Forms","mainUse":"Permissions, forms and school workflows","typicalLevel":"https://www.schoolbytes.education/","url":""},{"category":"Canteen, Payments & Finance","name":"School Bytes Finance","mainUse":"Student finance, school payments and fees","typicalLevel":"https://www.schoolbytes.education/","url":""},{"category":"Student Wellbeing & Pastoral Care","name":"School Bytes Wellbeing","mainUse":"Student wellbeing and behaviour management","typicalLevel":"https://www.schoolbytes.education/","url":""}]
+    sourceRecords: [{"category":"Student Information & School Management Systems","name":"School Bytes","mainUse":"Administration, attendance, finance, forms, reporting and wellbeing","typicalLevel":"K–12","url":"https://www.schoolbytes.education/"},{"category":"Attendance, Parent Communication & Community","name":"School Bytes","mainUse":"Attendance, forms and parent communication","typicalLevel":null,"url":"https://www.schoolbytes.education/"},{"category":"Excursions, Consent, Medical & Risk Management","name":"School Bytes Forms","mainUse":"Permissions, forms and school workflows","typicalLevel":null,"url":"https://www.schoolbytes.education/"},{"category":"Canteen, Payments & Finance","name":"School Bytes Finance","mainUse":"Student finance, school payments and fees","typicalLevel":null,"url":"https://www.schoolbytes.education/"},{"category":"Student Wellbeing & Pastoral Care","name":"School Bytes Wellbeing","mainUse":"Student wellbeing and behaviour management","typicalLevel":null,"url":"https://www.schoolbytes.education/"}]
   },
   {
     id: "daymap",
@@ -1643,10 +1633,10 @@ export const platformCatalogue = [
     entityType: "platform",
     categories: ["Attendance, Parent Communication & Community"],
     sourceNames: ["SchoolStream"],
-    url: "",
-    typicalLevel: "https://www.schoolstream.com.au/",
+    url: "https://www.schoolstream.com.au/",
+    typicalLevel: null,
     mainUse: "School mobile app and communication",
-    sourceRecords: [{"category":"Attendance, Parent Communication & Community","name":"SchoolStream","mainUse":"School mobile app and communication","typicalLevel":"https://www.schoolstream.com.au/","url":""}]
+    sourceRecords: [{"category":"Attendance, Parent Communication & Community","name":"SchoolStream","mainUse":"School mobile app and communication","typicalLevel":null,"url":"https://www.schoolstream.com.au/"}]
   },
   {
     id: "audiri",
@@ -1655,10 +1645,10 @@ export const platformCatalogue = [
     entityType: "platform",
     categories: ["Attendance, Parent Communication & Community"],
     sourceNames: ["Audiri"],
-    url: "",
-    typicalLevel: "https://audiri.com/",
+    url: "https://audiri.com/",
+    typicalLevel: null,
     mainUse: "School communication and mobile app",
-    sourceRecords: [{"category":"Attendance, Parent Communication & Community","name":"Audiri","mainUse":"School communication and mobile app","typicalLevel":"https://audiri.com/","url":""}]
+    sourceRecords: [{"category":"Attendance, Parent Communication & Community","name":"Audiri","mainUse":"School communication and mobile app","typicalLevel":null,"url":"https://audiri.com/"}]
   },
   {
     id: "digistorm",
@@ -1667,10 +1657,10 @@ export const platformCatalogue = [
     entityType: "platform",
     categories: ["Attendance, Parent Communication & Community"],
     sourceNames: ["Digistorm"],
-    url: "",
-    typicalLevel: "https://www.digistorm.com/",
+    url: "https://www.digistorm.com/",
+    typicalLevel: null,
     mainUse: "Branded school apps, portals and digital experience",
-    sourceRecords: [{"category":"Attendance, Parent Communication & Community","name":"Digistorm","mainUse":"Branded school apps, portals and digital experience","typicalLevel":"https://www.digistorm.com/","url":""}]
+    sourceRecords: [{"category":"Attendance, Parent Communication & Community","name":"Digistorm","mainUse":"Branded school apps, portals and digital experience","typicalLevel":null,"url":"https://www.digistorm.com/"}]
   },
   {
     id: "operoo",
@@ -1679,10 +1669,10 @@ export const platformCatalogue = [
     entityType: "platform",
     categories: ["Attendance, Parent Communication & Community","Excursions, Consent, Medical & Risk Management"],
     sourceNames: ["Operoo"],
-    url: "",
-    typicalLevel: "https://www.operoo.com/",
+    url: "https://www.operoo.com/",
+    typicalLevel: null,
     mainUse: "Forms, parent communication, medical and consent workflows",
-    sourceRecords: [{"category":"Attendance, Parent Communication & Community","name":"Operoo","mainUse":"Forms, parent communication, medical and consent workflows","typicalLevel":"https://www.operoo.com/","url":""},{"category":"Excursions, Consent, Medical & Risk Management","name":"Operoo","mainUse":"Digital forms, medical profiles and consent","typicalLevel":"https://www.operoo.com/","url":""}]
+    sourceRecords: [{"category":"Attendance, Parent Communication & Community","name":"Operoo","mainUse":"Forms, parent communication, medical and consent workflows","typicalLevel":null,"url":"https://www.operoo.com/"},{"category":"Excursions, Consent, Medical & Risk Management","name":"Operoo","mainUse":"Digital forms, medical profiles and consent","typicalLevel":null,"url":"https://www.operoo.com/"}]
   },
   {
     id: "consent2go",
@@ -1691,10 +1681,10 @@ export const platformCatalogue = [
     entityType: "platform",
     categories: ["Attendance, Parent Communication & Community","Excursions, Consent, Medical & Risk Management","Sport, Co-curricular & Extracurricular Activities"],
     sourceNames: ["Consent2Go"],
-    url: "",
-    typicalLevel: "https://www.consent2go.com/",
+    url: "https://www.consent2go.com/",
+    typicalLevel: null,
     mainUse: "Parent consent, medical information and excursions",
-    sourceRecords: [{"category":"Attendance, Parent Communication & Community","name":"Consent2Go","mainUse":"Parent consent, medical information and excursions","typicalLevel":"https://www.consent2go.com/","url":""},{"category":"Excursions, Consent, Medical & Risk Management","name":"Consent2Go","mainUse":"Excursions, consent, medical records, risk and duty-of-care workflows","typicalLevel":"https://www.consent2go.com/","url":""},{"category":"Sport, Co-curricular & Extracurricular Activities","name":"Consent2Go","mainUse":"Events and extracurricular consent/medical management","typicalLevel":"https://www.consent2go.com/","url":""}]
+    sourceRecords: [{"category":"Attendance, Parent Communication & Community","name":"Consent2Go","mainUse":"Parent consent, medical information and excursions","typicalLevel":null,"url":"https://www.consent2go.com/"},{"category":"Excursions, Consent, Medical & Risk Management","name":"Consent2Go","mainUse":"Excursions, consent, medical records, risk and duty-of-care workflows","typicalLevel":null,"url":"https://www.consent2go.com/"},{"category":"Sport, Co-curricular & Extracurricular Activities","name":"Consent2Go","mainUse":"Events and extracurricular consent/medical management","typicalLevel":null,"url":"https://www.consent2go.com/"}]
   },
   {
     id: "classdojo",
@@ -1703,10 +1693,10 @@ export const platformCatalogue = [
     entityType: "platform",
     categories: ["Attendance, Parent Communication & Community"],
     sourceNames: ["ClassDojo"],
-    url: "",
-    typicalLevel: "https://www.classdojo.com/",
+    url: "https://www.classdojo.com/",
+    typicalLevel: null,
     mainUse: "Classroom and family communication",
-    sourceRecords: [{"category":"Attendance, Parent Communication & Community","name":"ClassDojo","mainUse":"Classroom and family communication","typicalLevel":"https://www.classdojo.com/","url":""}]
+    sourceRecords: [{"category":"Attendance, Parent Communication & Community","name":"ClassDojo","mainUse":"Classroom and family communication","typicalLevel":null,"url":"https://www.classdojo.com/"}]
   },
   {
     id: "flexischools",
@@ -1715,10 +1705,10 @@ export const platformCatalogue = [
     entityType: "platform",
     categories: ["Canteen, Payments & Finance"],
     sourceNames: ["Flexischools"],
-    url: "",
-    typicalLevel: "https://www.flexischools.com.au/",
+    url: "https://www.flexischools.com.au/",
+    typicalLevel: null,
     mainUse: "Canteen ordering, school payments and services",
-    sourceRecords: [{"category":"Canteen, Payments & Finance","name":"Flexischools","mainUse":"Canteen ordering, school payments and services","typicalLevel":"https://www.flexischools.com.au/","url":""}]
+    sourceRecords: [{"category":"Canteen, Payments & Finance","name":"Flexischools","mainUse":"Canteen ordering, school payments and services","typicalLevel":null,"url":"https://www.flexischools.com.au/"}]
   },
   {
     id: "qkr-by-mastercard",
@@ -1727,10 +1717,10 @@ export const platformCatalogue = [
     entityType: "platform",
     categories: ["Canteen, Payments & Finance"],
     sourceNames: ["Qkr! by Mastercard"],
-    url: "",
-    typicalLevel: "https://qkr.mastercard.com/",
+    url: "https://qkr.mastercard.com/",
+    typicalLevel: null,
     mainUse: "School payments, orders and fees",
-    sourceRecords: [{"category":"Canteen, Payments & Finance","name":"Qkr! by Mastercard","mainUse":"School payments, orders and fees","typicalLevel":"https://qkr.mastercard.com/","url":""}]
+    sourceRecords: [{"category":"Canteen, Payments & Finance","name":"Qkr! by Mastercard","mainUse":"School payments, orders and fees","typicalLevel":null,"url":"https://qkr.mastercard.com/"}]
   },
   {
     id: "spriggy-schools",
@@ -1739,10 +1729,10 @@ export const platformCatalogue = [
     entityType: "platform",
     categories: ["Canteen, Payments & Finance"],
     sourceNames: ["Spriggy Schools"],
-    url: "",
-    typicalLevel: "https://www.spriggyschools.com.au/",
+    url: "https://www.spriggyschools.com.au/",
+    typicalLevel: null,
     mainUse: "School canteen and payment services",
-    sourceRecords: [{"category":"Canteen, Payments & Finance","name":"Spriggy Schools","mainUse":"School canteen and payment services","typicalLevel":"https://www.spriggyschools.com.au/","url":""}]
+    sourceRecords: [{"category":"Canteen, Payments & Finance","name":"Spriggy Schools","mainUse":"School canteen and payment services","typicalLevel":null,"url":"https://www.spriggyschools.com.au/"}]
   },
   {
     id: "fatzebra",
@@ -1787,10 +1777,10 @@ export const platformCatalogue = [
     entityType: "platform",
     categories: ["Timetabling & Scheduling"],
     sourceNames: ["Edval"],
-    url: "",
-    typicalLevel: "https://www.edval.education/",
+    url: "https://www.edval.education/",
+    typicalLevel: null,
     mainUse: "School timetabling, subject selection and scheduling",
-    sourceRecords: [{"category":"Timetabling & Scheduling","name":"Edval","mainUse":"School timetabling, subject selection and scheduling","typicalLevel":"https://www.edval.education/","url":""}]
+    sourceRecords: [{"category":"Timetabling & Scheduling","name":"Edval","mainUse":"School timetabling, subject selection and scheduling","typicalLevel":null,"url":"https://www.edval.education/"}]
   },
   {
     id: "tes-timetable",
@@ -1799,10 +1789,10 @@ export const platformCatalogue = [
     entityType: "platform",
     categories: ["Timetabling & Scheduling"],
     sourceNames: ["Tes Timetable"],
-    url: "",
-    typicalLevel: "https://www.tes.com/en-au/for-schools/timetabling",
+    url: "https://www.tes.com/en-au/for-schools/timetabling",
+    typicalLevel: null,
     mainUse: "School timetable construction and scheduling",
-    sourceRecords: [{"category":"Timetabling & Scheduling","name":"Tes Timetable","mainUse":"School timetable construction and scheduling","typicalLevel":"https://www.tes.com/en-au/for-schools/timetabling","url":""}]
+    sourceRecords: [{"category":"Timetabling & Scheduling","name":"Tes Timetable","mainUse":"School timetable construction and scheduling","typicalLevel":null,"url":"https://www.tes.com/en-au/for-schools/timetabling"}]
   },
   {
     id: "untis",
@@ -1811,22 +1801,23 @@ export const platformCatalogue = [
     entityType: "platform",
     categories: ["Timetabling & Scheduling"],
     sourceNames: ["Untis"],
-    url: "",
-    typicalLevel: "https://www.untis.at/en",
+    url: "https://www.untis.at/en",
+    typicalLevel: null,
     mainUse: "Timetabling, scheduling and substitution management",
-    sourceRecords: [{"category":"Timetabling & Scheduling","name":"Untis","mainUse":"Timetabling, scheduling and substitution management","typicalLevel":"https://www.untis.at/en","url":""}]
+    sourceRecords: [{"category":"Timetabling & Scheduling","name":"Untis","mainUse":"Timetabling, scheduling and substitution management","typicalLevel":null,"url":"https://www.untis.at/en"}]
   },
   {
     id: "clipboard",
     name: "Clipboard",
     aliases: ["Clipboard"],
+    guardedAliases: ["\\bclipboard(?=\\s+(?:(?:is|was|has|have)\\s+(?:unavailable|failing|not|down|slow|broken)|activities?|sport|music|clubs?|extracurricular|management|app|login|csv|timesheets?))"],
     entityType: "platform",
     categories: ["Sport, Co-curricular & Extracurricular Activities"],
     sourceNames: ["Clipboard"],
-    url: "",
-    typicalLevel: "https://www.clipboard.app/",
+    url: "https://www.clipboard.app/",
+    typicalLevel: null,
     mainUse: "Sport, music, clubs and extracurricular management",
-    sourceRecords: [{"category":"Sport, Co-curricular & Extracurricular Activities","name":"Clipboard","mainUse":"Sport, music, clubs and extracurricular management","typicalLevel":"https://www.clipboard.app/","url":""}]
+    sourceRecords: [{"category":"Sport, Co-curricular & Extracurricular Activities","name":"Clipboard","mainUse":"Sport, music, clubs and extracurricular management","typicalLevel":null,"url":"https://www.clipboard.app/"}]
   },
   {
     id: "schoolsbuddy",
@@ -1835,10 +1826,10 @@ export const platformCatalogue = [
     entityType: "platform",
     categories: ["Sport, Co-curricular & Extracurricular Activities"],
     sourceNames: ["SchoolsBuddy"],
-    url: "",
-    typicalLevel: "https://www.schoolsbuddy.com/",
+    url: "https://www.schoolsbuddy.com/",
+    typicalLevel: null,
     mainUse: "Clubs, activities, sport, bookings and parent sign-up",
-    sourceRecords: [{"category":"Sport, Co-curricular & Extracurricular Activities","name":"SchoolsBuddy","mainUse":"Clubs, activities, sport, bookings and parent sign-up","typicalLevel":"https://www.schoolsbuddy.com/","url":""}]
+    sourceRecords: [{"category":"Sport, Co-curricular & Extracurricular Activities","name":"SchoolsBuddy","mainUse":"Clubs, activities, sport, bookings and parent sign-up","typicalLevel":null,"url":"https://www.schoolsbuddy.com/"}]
   },
   {
     id: "socs",
@@ -1847,10 +1838,10 @@ export const platformCatalogue = [
     entityType: "platform",
     categories: ["Sport, Co-curricular & Extracurricular Activities"],
     sourceNames: ["SOCS"],
-    url: "",
-    typicalLevel: "https://www.socscms.com/",
+    url: "https://www.socscms.com/",
+    typicalLevel: null,
     mainUse: "School sport and co-curricular management",
-    sourceRecords: [{"category":"Sport, Co-curricular & Extracurricular Activities","name":"SOCS","mainUse":"School sport and co-curricular management","typicalLevel":"https://www.socscms.com/","url":""}]
+    sourceRecords: [{"category":"Sport, Co-curricular & Extracurricular Activities","name":"SOCS","mainUse":"School sport and co-curricular management","typicalLevel":null,"url":"https://www.socscms.com/"}]
   },
   {
     id: "oliver",
@@ -1860,10 +1851,10 @@ export const platformCatalogue = [
     entityType: "platform",
     categories: ["Library & Digital Library Systems"],
     sourceNames: ["Oliver"],
-    url: "",
-    typicalLevel: "https://www.softlinkint.com/product/oliver/",
+    url: "https://www.softlinkint.com/product/oliver/",
+    typicalLevel: null,
     mainUse: "School library management",
-    sourceRecords: [{"category":"Library & Digital Library Systems","name":"Oliver","mainUse":"School library management","typicalLevel":"https://www.softlinkint.com/product/oliver/","url":""}]
+    sourceRecords: [{"category":"Library & Digital Library Systems","name":"Oliver","mainUse":"School library management","typicalLevel":null,"url":"https://www.softlinkint.com/product/oliver/"}]
   },
   {
     id: "accessit-library",
@@ -1872,10 +1863,10 @@ export const platformCatalogue = [
     entityType: "platform",
     categories: ["Library & Digital Library Systems"],
     sourceNames: ["Accessit Library"],
-    url: "",
-    typicalLevel: "https://accessitlibrary.com/",
+    url: "https://accessitlibrary.com/",
+    typicalLevel: null,
     mainUse: "School library management and discovery",
-    sourceRecords: [{"category":"Library & Digital Library Systems","name":"Accessit Library","mainUse":"School library management and discovery","typicalLevel":"https://accessitlibrary.com/","url":""}]
+    sourceRecords: [{"category":"Library & Digital Library Systems","name":"Accessit Library","mainUse":"School library management and discovery","typicalLevel":null,"url":"https://accessitlibrary.com/"}]
   },
   {
     id: "follett-destiny-library-manager",
@@ -1884,10 +1875,10 @@ export const platformCatalogue = [
     entityType: "platform",
     categories: ["Library & Digital Library Systems"],
     sourceNames: ["Follett Destiny Library Manager"],
-    url: "",
-    typicalLevel: "https://www.follettsoftware.com/library-suite",
+    url: "https://www.follettsoftware.com/library-suite",
+    typicalLevel: null,
     mainUse: "School library catalogue and management",
-    sourceRecords: [{"category":"Library & Digital Library Systems","name":"Follett Destiny Library Manager","mainUse":"School library catalogue and management","typicalLevel":"https://www.follettsoftware.com/library-suite","url":""}]
+    sourceRecords: [{"category":"Library & Digital Library Systems","name":"Follett Destiny Library Manager","mainUse":"School library catalogue and management","typicalLevel":null,"url":"https://www.follettsoftware.com/library-suite"}]
   },
   {
     id: "morrisby",
@@ -1896,10 +1887,10 @@ export const platformCatalogue = [
     entityType: "platform",
     categories: ["Careers, Pathways & Senior Secondary"],
     sourceNames: ["Morrisby"],
-    url: "",
-    typicalLevel: "https://www.morrisby.com/",
+    url: "https://www.morrisby.com/",
+    typicalLevel: null,
     mainUse: "Career profiling, pathways and guidance",
-    sourceRecords: [{"category":"Careers, Pathways & Senior Secondary","name":"Morrisby","mainUse":"Career profiling, pathways and guidance","typicalLevel":"https://www.morrisby.com/","url":""}]
+    sourceRecords: [{"category":"Careers, Pathways & Senior Secondary","name":"Morrisby","mainUse":"Career profiling, pathways and guidance","typicalLevel":null,"url":"https://www.morrisby.com/"}]
   },
   {
     id: "career-tools",
@@ -1908,10 +1899,10 @@ export const platformCatalogue = [
     entityType: "platform",
     categories: ["Careers, Pathways & Senior Secondary"],
     sourceNames: ["Career Tools"],
-    url: "",
-    typicalLevel: "https://www.careertools.com.au/",
+    url: "https://www.careertools.com.au/",
+    typicalLevel: null,
     mainUse: "Careers education and school careers websites",
-    sourceRecords: [{"category":"Careers, Pathways & Senior Secondary","name":"Career Tools","mainUse":"Careers education and school careers websites","typicalLevel":"https://www.careertools.com.au/","url":""}]
+    sourceRecords: [{"category":"Careers, Pathways & Senior Secondary","name":"Career Tools","mainUse":"Careers education and school careers websites","typicalLevel":null,"url":"https://www.careertools.com.au/"}]
   },
   {
     id: "myfuture",
@@ -1920,10 +1911,10 @@ export const platformCatalogue = [
     entityType: "platform",
     categories: ["Careers, Pathways & Senior Secondary"],
     sourceNames: ["myfuture"],
-    url: "",
-    typicalLevel: "https://myfuture.edu.au/",
+    url: "https://myfuture.edu.au/",
+    typicalLevel: null,
     mainUse: "Australian careers information and exploration",
-    sourceRecords: [{"category":"Careers, Pathways & Senior Secondary","name":"myfuture","mainUse":"Australian careers information and exploration","typicalLevel":"https://myfuture.edu.au/","url":""}]
+    sourceRecords: [{"category":"Careers, Pathways & Senior Secondary","name":"myfuture","mainUse":"Australian careers information and exploration","typicalLevel":null,"url":"https://myfuture.edu.au/"}]
   },
   {
     id: "study-work-grow",
@@ -1932,10 +1923,10 @@ export const platformCatalogue = [
     entityType: "platform",
     categories: ["Careers, Pathways & Senior Secondary"],
     sourceNames: ["Study Work Grow"],
-    url: "",
-    typicalLevel: "https://studyworkgrow.com/",
+    url: "https://studyworkgrow.com/",
+    typicalLevel: null,
     mainUse: "Careers, pathways, opportunities and school resources",
-    sourceRecords: [{"category":"Careers, Pathways & Senior Secondary","name":"Study Work Grow","mainUse":"Careers, pathways, opportunities and school resources","typicalLevel":"https://studyworkgrow.com/","url":""}]
+    sourceRecords: [{"category":"Careers, Pathways & Senior Secondary","name":"Study Work Grow","mainUse":"Careers, pathways, opportunities and school resources","typicalLevel":null,"url":"https://studyworkgrow.com/"}]
   },
   {
     id: "uac-schools-hub",
@@ -1944,10 +1935,10 @@ export const platformCatalogue = [
     entityType: "platform",
     categories: ["Careers, Pathways & Senior Secondary"],
     sourceNames: ["UAC Schools Hub"],
-    url: "",
-    typicalLevel: "https://www.uac.edu.au/schools",
+    url: "https://www.uac.edu.au/schools",
+    typicalLevel: null,
     mainUse: "NSW/ACT tertiary admissions information and school resources",
-    sourceRecords: [{"category":"Careers, Pathways & Senior Secondary","name":"UAC Schools Hub","mainUse":"NSW/ACT tertiary admissions information and school resources","typicalLevel":"https://www.uac.edu.au/schools","url":""}]
+    sourceRecords: [{"category":"Careers, Pathways & Senior Secondary","name":"UAC Schools Hub","mainUse":"NSW/ACT tertiary admissions information and school resources","typicalLevel":null,"url":"https://www.uac.edu.au/schools"}]
   },
   {
     id: "schooltv",
@@ -1956,10 +1947,10 @@ export const platformCatalogue = [
     entityType: "platform",
     categories: ["Student Wellbeing & Pastoral Care"],
     sourceNames: ["SchoolTV"],
-    url: "",
-    typicalLevel: "https://schooltv.me/",
+    url: "https://schooltv.me/",
+    typicalLevel: null,
     mainUse: "Wellbeing resources for schools, students and parents",
-    sourceRecords: [{"category":"Student Wellbeing & Pastoral Care","name":"SchoolTV","mainUse":"Wellbeing resources for schools, students and parents","typicalLevel":"https://schooltv.me/","url":""}]
+    sourceRecords: [{"category":"Student Wellbeing & Pastoral Care","name":"SchoolTV","mainUse":"Wellbeing resources for schools, students and parents","typicalLevel":null,"url":"https://schooltv.me/"}]
   },
 ];
 
