@@ -1,8 +1,8 @@
 # v0.7.0 — Eight-Facet NLP Robustness Hardening
 
-This is the final release-readiness report for v0.7.0. The initial audit snapshot below was captured before remediation; the current remediation and release-gate results are recorded at the end of this report. v0.7.0 is not released.
+This is the final release-readiness report for v0.7.0. The initial audit snapshot below was captured before remediation; the current remediation, release-gate, and post-release verification results are recorded below. v0.7.0 has since been released successfully.
 
-> Current gate: implementation, offline comparison, and local browser/runtime checks are clean. GitHub Actions, Pages, and release verification remain pending.
+> Historical readiness gate: implementation, offline comparison, and local browser/runtime checks were clean when this report was written. The completed post-release verification is recorded at the end.
 
 ## Initial audit snapshot: baseline and aggregate comparison
 
@@ -483,4 +483,35 @@ The browser gate was run in isolated headless Chrome against the local server be
 
 The earlier audit's v0.7.0 `40/55` priority result was a pre-remediation snapshot against the then-current fixture. The final `43/55` result is after the detector fixes and against the normalized 57-case fixture. The `34/55` v0.6.1 result is a reproducible same-corpus rerun of the tagged v0.6.1 engine against that same normalized fixture, not a replacement of the historical baseline: five matrix-inconsistent expected labels were corrected before the normalized comparison (`multi-school-attendance-block`, `lost-assessment-submissions`, `private-data-context`, `deleted-list-restorable`, and `downstream-payment-propagation`). Reviewed alternatives classify three remaining disagreements but do not alter expected labels or inflate exact accuracy. The original v0.6.1 `37/55` figure remains in the initial historical table; the `34/55` figure is explicitly comparable to final v0.7.0 `43/55` because both use the same 55 assessed cases and corrected labels.
 
-Matrix, Impact weights, Urgency weights, category neutrality, organisation criticality/config separation, dependency state, network behavior, backend/persistence/telemetry state, and absence of an LLM/AI API are unchanged. No branch, commit, PR, merge, tag, or release has been created yet; GitHub Actions and Pages verification remain pending.
+Matrix, Impact weights, Urgency weights, category neutrality, organisation criticality/config separation, dependency state, network behavior, backend/persistence/telemetry state, and absence of an LLM/AI API are unchanged. At the time this readiness gate was written, the branch, commit, PR, merge, tag, release, GitHub Actions, and Pages checks were still pending; the post-release verification below records their completed outcome.
+
+## Post-release verification
+
+v0.7.0 — Eight-Facet NLP Robustness Hardening was released successfully.
+
+- PR: [#11](https://github.com/ikelaiah/first-pass-ticket-triage/pull/11)
+- Merge commit: `3c2953bd7c54c3ebf542fa0f42949190a3d8948a`
+- Tag: `v0.7.0`
+- Release: [v0.7.0](https://github.com/ikelaiah/first-pass-ticket-triage/releases/tag/v0.7.0)
+- Tests: 775/775
+- Catalogue reconciliation: 206/206
+- Semantic facet cases: 182
+- Cross-facet cases: 12
+- Evaluation cases: 57, including 55 assessed cases
+- Priority accuracy: 43/55 (78.2%)
+- Impact accuracy: 48/55 (87.3%)
+- Urgency accuracy: 43/55 (78.2%)
+- P1 precision: 12/15 (80.0%)
+- P1 recall: 12/15 (80.0%)
+- Under-prioritisation: 4
+- Severe under-prioritisation: 0
+- Remaining reviewed mismatches: 17/17
+- Unresolved engine defects: 0
+- Unexplained regressions: 0
+- GitHub Actions: PASS on `main` and the `v0.7.0` tag
+- GitHub Pages deployment: PASS
+- Browser/runtime verification: PASS
+
+The scoring weights and authoritative 3×3 matrix remained unchanged.
+
+The application remains local-first, deterministic, dependency-free, backend-free, persistence-free, telemetry-free, and does not use an LLM/AI API.
