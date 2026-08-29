@@ -8,11 +8,18 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { analyse } from '../js/engine/analyzer.js';
+import { priorityFor } from '../js/engine/priority-matrix.js';
 
 const PRIORITIES = ['P1', 'P2', 'P3', 'P4'];
 const OUTPUT_LABELS = [...PRIORITIES, 'UNASSESSED'];
 const LEVELS = ['low', 'medium', 'high'];
 const PRIORITY_RANK = { P1: 4, P2: 3, P3: 2, P4: 1 };
+export const REVIEW_CLASSIFICATIONS = [
+  'engine defect',
+  'ground-truth defect',
+  'acceptable ambiguity',
+  'policy disagreement deferred'
+];
 const FACET_DEFINITIONS = {
   scope: ['unknown', 'individual', 'few-users', 'team', 'cohort', 'one-school',
     'multiple-schools', 'all-schools', 'corporation-wide'],
@@ -21,6 +28,21 @@ const FACET_DEFINITIONS = {
   driver: ['unknown', 'statutory', 'operational', 'preference', 'none'],
   workaround: ['unknown', 'yes', 'partial', 'no'],
   containment: ['unknown', 'contained', 'spreading']
+};
+const EIGHT_FACET_DEFINITIONS = {
+  i1: FACET_DEFINITIONS.scope,
+  i2: FACET_DEFINITIONS.consequence,
+  i3: ['unknown', 'privacy-context', 'privacy-exposure', 'incorrect-data', 'lost-data',
+    'financial-harm', 'security-compromise', 'safety', 'safeguarding', 'unavailable'],
+  i4: ['unknown', 'contained', 'spreading', 'recurring', 'unknown-extent'],
+  u5: FACET_DEFINITIONS.deadline,
+  u6: FACET_DEFINITIONS.driver,
+  u7: FACET_DEFINITIONS.workaround,
+  u8: ['unknown', 'active', 'pending']
+};
+const EIGHT_FACET_ALIASES = {
+  i1: ['i1', 'scope'], i2: ['i2', 'consequence'], i3: ['i3'], i4: ['i4', 'containment'],
+  u5: ['u5', 'deadline'], u6: ['u6', 'driver'], u7: ['u7', 'workaround'], u8: ['u8']
 };
 
 function ratio(numerator, denominator) {
@@ -56,10 +78,37 @@ export function validateCorpus(corpus) {
     if (item.expected.urgency !== undefined) {
       assert(LEVELS.includes(item.expected.urgency), at + '.expected.urgency is invalid');
     }
+    if (item.expected.priority !== undefined &&
+        item.expected.impact !== undefined &&
+        item.expected.urgency !== undefined) {
+      const matrixPriority = priorityFor(item.expected.impact, item.expected.urgency);
+      assert(item.expected.priority === matrixPriority,
+        at + '.expected.priority must match the authoritative matrix (' +
+        item.expected.impact + '/' + item.expected.urgency + ' -> ' + matrixPriority + ')');
+    }
+    if (item.review !== undefined) {
+      assert(item.review && typeof item.review === 'object',
+        at + '.review must be an object');
+      assert(REVIEW_CLASSIFICATIONS.includes(item.review.classification),
+        at + '.review.classification must be one of: ' + REVIEW_CLASSIFICATIONS.join(', '));
+      if (item.review.acceptablePriorities !== undefined) {
+        assert(Array.isArray(item.review.acceptablePriorities) &&
+          item.review.acceptablePriorities.every((priority) => PRIORITIES.includes(priority)),
+        at + '.review.acceptablePriorities must contain only P1, P2, P3, or P4');
+      }
+    }
     for (const [facet, values] of Object.entries(FACET_DEFINITIONS)) {
       if (item.expected[facet] !== undefined) {
         assert(values.includes(item.expected[facet]),
           at + '.expected.' + facet + ' is invalid');
+      }
+    }
+    for (const [facet, values] of Object.entries(EIGHT_FACET_DEFINITIONS)) {
+      for (const alias of EIGHT_FACET_ALIASES[facet]) {
+        if (item.expected[alias] !== undefined) {
+          assert(values.includes(item.expected[alias]),
+            at + '.expected.' + alias + ' is invalid');
+        }
       }
     }
   }
@@ -76,6 +125,44 @@ function actualFacet(result, facet) {
   return result[facet] || 'unknown';
 }
 
+function actualEightFacet(result, facet) {
+  if (facet === 'i1') return result.eightFacets?.i1Scope?.value || actualFacet(result, 'scope');
+  if (facet === 'i2') return result.eightFacets?.i2Blocked?.blockedProcess?.level || actualFacet(result, 'consequence');
+  if (facet === 'i3') {
+    const value = result.eightFacets?.i3Irreversibility;
+    if (!value) return 'unknown';
+    if (value.modifiers?.exposureActive && value.risks?.includes('privacy')) return 'privacy-exposure';
+    if (value.risks?.includes('safeguarding')) return 'safeguarding';
+    if (value.risks?.includes('payroll') || value.risks?.includes('financial')) return 'financial-harm';
+    if (value.risks?.includes('privacy')) return 'privacy-context';
+    if (value.risks?.includes('dataIntegrity')) return 'incorrect-data';
+    if (value.risks?.includes('security')) return 'security-compromise';
+    if (value.risks?.includes('safety')) return 'safety';
+    if (result.symptom === 'data-loss') return 'lost-data';
+    if (result.symptom === 'unavailable') return 'unavailable';
+    return 'unknown';
+  }
+  if (facet === 'i4') {
+    const containment = result.eightFacets?.i4Containment?.containment || result.containment;
+    if (!containment) return actualFacet(result, 'containment');
+    if (containment.propagating) return 'spreading';
+    if (containment.recurring) return 'recurring';
+    if (containment.undetected) return 'unknown-extent';
+    if (containment.contained) return 'contained';
+    return 'unknown';
+  }
+  if (facet === 'u5') return result.eightFacets?.u5Deadline?.value || actualFacet(result, 'deadline');
+  if (facet === 'u6') return result.eightFacets?.u6Driver?.driver?.driver || actualFacet(result, 'driver');
+  if (facet === 'u7') return result.eightFacets?.u7Workaround?.workaround || actualFacet(result, 'workaround');
+  if (facet === 'u8') return result.eightFacets?.u8HarmTiming?.harmTiming?.timing || result.harmTiming?.timing || 'unknown';
+  return 'unknown';
+}
+
+function expectedEightFacet(item, facet) {
+  return EIGHT_FACET_ALIASES[facet].map((alias) => item.expected[alias])
+    .find((value) => value !== undefined);
+}
+
 function emptyConfusion() {
   return Object.fromEntries(OUTPUT_LABELS.map((expected) => [
     expected,
@@ -88,6 +175,7 @@ export function evaluateCases(cases, analyseTicket = analyse) {
   const mismatches = [];
   let actionable = 0;
   let statusCorrect = 0;
+  let actualAssessed = 0;
   let assessedExpected = 0;
   let priorityCorrect = 0;
   let impactExpected = 0;
@@ -101,10 +189,19 @@ export function evaluateCases(cases, analyseTicket = analyse) {
   let severeUnderPrioritisation = 0;
   let dangerousUnderPrioritisation = 0;
   let abstentionsOnAssessed = 0;
+  const mismatchClassifications = Object.fromEntries(
+    REVIEW_CLASSIFICATIONS.map((classification) => [classification, 0])
+  );
+  let unreviewedMismatchCount = 0;
+  let acceptableAlternativeCount = 0;
   const facets = Object.fromEntries(Object.keys(FACET_DEFINITIONS).map((facet) => [
     facet, { labelled: 0, correct: 0, accuracy: null }
   ]));
   const facetMismatches = [];
+  const eightFacets = Object.fromEntries(Object.keys(EIGHT_FACET_DEFINITIONS).map((facet) => [
+    facet, { labelled: 0, correct: 0, accuracy: null }
+  ]));
+  const eightFacetMismatches = [];
 
   for (const item of cases) {
     const result = analyseTicket(item.text);
@@ -117,6 +214,7 @@ export function evaluateCases(cases, analyseTicket = analyse) {
 
     if (result.suggestedPriority) actionable += 1;
     if (actualStatus === expectedStatus) statusCorrect += 1;
+    if (actualStatus === 'assessed') actualAssessed += 1;
     confusion[expectedPriority][actualPriority] += 1;
 
     if (expectedStatus === 'assessed') {
@@ -151,12 +249,40 @@ export function evaluateCases(cases, analyseTicket = analyse) {
       if (actual === expected) facets[facet].correct += 1;
       else facetMismatches.push({ id: item.id, facet, expected, actual });
     }
+    for (const facet of Object.keys(EIGHT_FACET_DEFINITIONS)) {
+      const expected = expectedEightFacet(item, facet);
+      if (expected === undefined) continue;
+      const actual = actualEightFacet(result, facet);
+      eightFacets[facet].labelled += 1;
+      if (actual === expected) eightFacets[facet].correct += 1;
+      else eightFacetMismatches.push({ id: item.id, facet, expected, actual });
+    }
 
     const expectedP1 = expectedPriority === 'P1';
     const actualP1 = actualPriority === 'P1';
     if (expectedP1 && actualP1) p1TruePositive += 1;
     else if (!expectedP1 && actualP1) p1FalsePositive += 1;
     else if (expectedP1 && !actualP1) p1FalseNegative += 1;
+
+    const outcomeMismatch =
+      expectedStatus === 'assessed' &&
+      (expectedPriority !== actualPriority ||
+        (item.expected.impact !== undefined && item.expected.impact !== result.impact) ||
+        (item.expected.urgency !== undefined && item.expected.urgency !== result.urgency));
+    const review = item.review || {};
+    const acceptablePriorities = Array.isArray(review.acceptablePriorities)
+      ? review.acceptablePriorities : [];
+    const acceptableAlternative =
+      outcomeMismatch &&
+      actualPriority !== expectedPriority &&
+      acceptablePriorities.includes(actualPriority);
+    if (acceptableAlternative) acceptableAlternativeCount += 1;
+    if (outcomeMismatch) {
+      const classification = REVIEW_CLASSIFICATIONS.includes(review.classification)
+        ? review.classification : null;
+      if (classification) mismatchClassifications[classification] += 1;
+      else unreviewedMismatchCount += 1;
+    }
 
     if (expectedStatus !== actualStatus || expectedPriority !== actualPriority ||
         (item.expected.impact !== undefined && item.expected.impact !== result.impact) ||
@@ -175,7 +301,11 @@ export function evaluateCases(cases, analyseTicket = analyse) {
           impact: result.impact,
           urgency: result.urgency,
           confidence: result.confidence
-        }
+        },
+        classification: outcomeMismatch && REVIEW_CLASSIFICATIONS.includes(review.classification)
+          ? review.classification : null,
+        acceptablePriorities,
+        acceptableAlternative
       });
     }
   }
@@ -183,20 +313,46 @@ export function evaluateCases(cases, analyseTicket = analyse) {
   for (const facet of Object.values(facets)) {
     facet.accuracy = ratio(facet.correct, facet.labelled);
   }
+  for (const facet of Object.values(eightFacets)) {
+    facet.accuracy = ratio(facet.correct, facet.labelled);
+  }
 
   return {
     total: cases.length,
+    actionable,
     coverage: ratio(actionable, cases.length),
+    statusCorrect,
     assessmentStatusAccuracy: ratio(statusCorrect, cases.length),
+    assessmentCounts: {
+      expected: {
+        assessed: assessedExpected,
+        unassessed: cases.length - assessedExpected
+      },
+      actual: {
+        assessed: actualAssessed,
+        unassessed: cases.length - actualAssessed
+      }
+    },
+    assessedExpected,
+    unassessedExpected: cases.length - assessedExpected,
+    actualAssessed,
+    actualUnassessed: cases.length - actualAssessed,
+    priorityCorrect,
     exactPriorityAccuracy: ratio(priorityCorrect, assessedExpected),
+    impactCorrect,
+    impactExpected,
     impactAccuracy: ratio(impactCorrect, impactExpected),
+    urgencyCorrect,
+    urgencyExpected,
     urgencyAccuracy: ratio(urgencyCorrect, urgencyExpected),
     p1: {
       precision: ratio(p1TruePositive, p1TruePositive + p1FalsePositive),
       recall: ratio(p1TruePositive, p1TruePositive + p1FalseNegative),
       truePositive: p1TruePositive,
       falsePositive: p1FalsePositive,
-      falseNegative: p1FalseNegative
+      falseNegative: p1FalseNegative,
+      precisionDenominator: p1TruePositive + p1FalsePositive,
+      recallDenominator: p1TruePositive + p1FalseNegative
     },
     underPrioritisation,
     severeUnderPrioritisation,
@@ -205,6 +361,11 @@ export function evaluateCases(cases, analyseTicket = analyse) {
     abstentionsOnAssessed,
     facets,
     facetMismatches,
+    eightFacets,
+    eightFacetMismatches,
+    mismatchClassifications,
+    unreviewedMismatchCount,
+    acceptableAlternativeCount,
     confusion,
     mismatches
   };
@@ -214,14 +375,24 @@ function percent(value) {
   return value === null ? 'n/a' : (value * 100).toFixed(1) + '%';
 }
 
+function metric(correct, denominator) {
+  return correct + '/' + denominator + ' (' + percent(ratio(correct, denominator)) + ')';
+}
+
 export function printReport(report, write = console.log) {
   write('Accuracy corpus: ' + report.total + ' cases');
-  write('Coverage: ' + percent(report.coverage));
-  write('Assessment status accuracy: ' + percent(report.assessmentStatusAccuracy));
-  write('Exact priority accuracy: ' + percent(report.exactPriorityAccuracy));
-  write('Impact accuracy: ' + percent(report.impactAccuracy));
-  write('Urgency accuracy: ' + percent(report.urgencyAccuracy));
-  write('P1 precision / recall: ' + percent(report.p1.precision) + ' / ' + percent(report.p1.recall));
+  write('Coverage: ' + metric(report.actionable, report.total));
+  write('Assessment status counts: expected assessed ' + report.assessmentCounts.expected.assessed +
+    ', unassessed ' + report.assessmentCounts.expected.unassessed +
+    '; actual assessed ' + report.assessmentCounts.actual.assessed +
+    ', unassessed ' + report.assessmentCounts.actual.unassessed);
+  write('Assessment status accuracy: ' + metric(report.statusCorrect, report.total));
+  write('Exact priority accuracy: ' + metric(report.priorityCorrect, report.assessedExpected));
+  write('Impact accuracy: ' + metric(report.impactCorrect, report.impactExpected));
+  write('Urgency accuracy: ' + metric(report.urgencyCorrect, report.urgencyExpected));
+  write('P1 precision / recall: ' +
+    metric(report.p1.truePositive, report.p1.precisionDenominator) + ' / ' +
+    metric(report.p1.truePositive, report.p1.recallDenominator));
   write('Under-prioritisation (any): ' + report.underPrioritisation);
   write('Severe under-prioritisation (two or more levels): ' + report.severeUnderPrioritisation);
   write('P1 misses (false negatives): ' + report.p1.falseNegative);
@@ -231,6 +402,17 @@ export function printReport(report, write = console.log) {
     write(name[0].toUpperCase() + name.slice(1) + ' accuracy: ' + percent(facet.accuracy) +
       ' (' + facet.labelled + ' labelled)');
   }
+  write('Eight-facet labelled metrics (correct / denominator)');
+  for (const [name, facet] of Object.entries(report.eightFacets || {})) {
+    write(name.toUpperCase() + ': ' + facet.correct + '/' + facet.labelled +
+      ' (' + percent(facet.accuracy) + ')');
+  }
+  write('Mismatch classifications');
+  for (const classification of REVIEW_CLASSIFICATIONS) {
+    write('- ' + classification + ': ' + report.mismatchClassifications[classification]);
+  }
+  write('Acceptable alternative priorities: ' + report.acceptableAlternativeCount);
+  write('Unreviewed outcome mismatches: ' + report.unreviewedMismatchCount);
   write('Mismatches: ' + report.mismatches.length);
   write('Confusion matrix (expected rows, actual columns)');
   write(['expected', ...OUTPUT_LABELS].join('\t'));
@@ -238,10 +420,21 @@ export function printReport(report, write = console.log) {
     write([expected, ...OUTPUT_LABELS.map((actual) => report.confusion[expected][actual])].join('\t'));
   }
   for (const mismatch of report.mismatches) {
-    write('- ' + mismatch.id + ': expected ' + mismatch.expected.priority +
-      ', got ' + mismatch.actual.priority);
+    const fields = Object.keys(mismatch.expected)
+      .filter((field) => mismatch.expected[field] !== undefined &&
+        mismatch.expected[field] !== mismatch.actual[field]);
+    const classification = mismatch.classification ? ' [' + mismatch.classification + ']' : '';
+    const alternatives = mismatch.acceptablePriorities.length
+      ? ' (acceptable alternatives: ' + mismatch.acceptablePriorities.join(', ') + ')' : '';
+    write('- ' + mismatch.id + classification + alternatives + ': ' +
+      fields.map((field) => field + ' expected ' +
+        mismatch.expected[field] + ', got ' + mismatch.actual[field]).join('; '));
   }
   for (const mismatch of report.facetMismatches || []) {
+    write('- ' + mismatch.id + ' / ' + mismatch.facet + ': expected ' +
+      mismatch.expected + ', got ' + mismatch.actual);
+  }
+  for (const mismatch of report.eightFacetMismatches || []) {
     write('- ' + mismatch.id + ' / ' + mismatch.facet + ': expected ' +
       mismatch.expected + ', got ' + mismatch.actual);
   }
@@ -256,7 +449,12 @@ if (invokedPath === import.meta.url) {
   } else {
     try {
       const corpus = validateCorpus(JSON.parse(readFileSync(resolve(corpusPath), 'utf8')));
-      printReport(evaluateCases(corpus.cases));
+      const report = evaluateCases(corpus.cases);
+      if (report.unreviewedMismatchCount) {
+        throw new Error('Invalid accuracy corpus: ' + report.unreviewedMismatchCount +
+          ' outcome mismatch(es) lack an explicit review classification');
+      }
+      printReport(report);
     } catch (error) {
       console.error(error.message);
       process.exitCode = 1;

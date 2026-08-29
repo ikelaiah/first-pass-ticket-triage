@@ -5,7 +5,7 @@
  * reported?". Asserted urgency ("URGENT!!!") contributes very little on its
  * own and is reported separately so the user can see it was discounted.
  */
-import { scanPositive } from './negation.js';
+import { isCurrentStateNegated, scanPositive } from './negation.js';
 import {
   LOW_URGENCY_PHRASES,
   BLOCKED_PHRASES,
@@ -146,7 +146,8 @@ export function assessUrgency(doc, ctx) {
   }
 
   let activeBonus = 0;
-  for (const hit of scanPositive(doc, ACTIVE_NOW_PHRASES)) {
+  for (const hit of scanPositive(doc, ACTIVE_NOW_PHRASES)
+    .filter((candidate) => !isCurrentStateNegated(doc, candidate.start))) {
     if (activeBonus >= 0.5) break;
     activeBonus += hit.entry.w;
     add(hit.entry.w, hit.entry.label, hit.quote);

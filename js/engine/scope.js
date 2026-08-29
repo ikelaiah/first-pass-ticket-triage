@@ -67,10 +67,13 @@ const DESCRIPTOR_CONTEXT =
 const BARE_YEAR = /^year \d{1,2}$/;
 const MOVEMENT_NEARBY =
   /\b(?:from|between|to|into|enrolled in|placed in|moved in|ended up in|made it into)\b[^.;!?]{0,40}$/;
+const NON_POPULATION_SUFFIX =
+  /^\s+(?:report|reports|folder|folders|document|documents|file|files|roll|rolls|class list|class lists)\b/;
 
-function isValueNotPopulation(doc, quote, start) {
+function isValueNotPopulation(doc, quote, start, end) {
   if (!BARE_YEAR.test(quote)) return false;
-  return MOVEMENT_NEARBY.test(doc.text.slice(Math.max(0, start - 60), start));
+  return MOVEMENT_NEARBY.test(doc.text.slice(Math.max(0, start - 60), start)) ||
+    NON_POPULATION_SUFFIX.test(doc.text.slice(end, end + 40));
 }
 
 /**
@@ -86,11 +89,12 @@ const ROLE_SUFFIX =
  * only person reported as affected.
  */
 const UNAFFECTED_COMPARISON_SUFFIX =
-  /^\s+else\b[^.;!?]{0,48}\b(?:(?:is|are|was|were)\s+(?:still\s+)?(?:working|fine|ok|okay|healthy|normal|unaffected|unimpacted)|can\s+(?:still\s+)?(?:work|use|access|log in|sign in|proceed))\b/;
+  /^\s+else(?:['’]s)?\b[^.;!?]{0,48}\b(?:(?:is|are|was|were)\s+(?:still\s+)?(?:working|fine|ok|okay|healthy|normal|unaffected|unimpacted)|works?|can\s+(?:still\s+)?(?:work|use|access|log in|sign in|proceed))\b/;
 
 function isComparison(doc, start, end) {
   const before = doc.text.slice(Math.max(0, start - 48), start);
   if (COMPARISON_CONTEXT.test(before) || DESCRIPTOR_CONTEXT.test(before)) return true;
+  if (/^\s+(?:and|but|while)\b/i.test(doc.text.slice(end, end + 24))) return false;
   return ROLE_SUFFIX.test(doc.text.slice(end, end + 40));
 }
 
@@ -109,7 +113,7 @@ export function detectScope(doc) {
 
   for (const hit of scanPositive(doc, SCOPE_PHRASES)) {
     if (isComparison(doc, hit.start, hit.end)) continue;
-    if (isValueNotPopulation(doc, hit.quote, hit.start)) continue;
+    if (isValueNotPopulation(doc, hit.quote, hit.start, hit.end)) continue;
 
     if (isUnaffectedComparison(doc, hit.end)) {
       candidates.push({

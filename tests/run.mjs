@@ -10,6 +10,7 @@ import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { runTests } from './tests.js';
+import { buildFacetCoverageReport, formatFacetCoverage } from './facet-report.js';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 
@@ -24,6 +25,9 @@ for (const result of results) {
   const status = result.pass ? 'PASS' : 'FAIL';
   console.log(status + ' - ' + result.name + '  [' + result.message + ']');
 }
+
+console.log('\n== v0.7.0 semantic corpus coverage ' + '='.repeat(23));
+for (const line of formatFacetCoverage(buildFacetCoverageReport())) console.log(line);
 
 /* --- static privacy check: the app must contain no network calls --------- */
 

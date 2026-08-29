@@ -45,6 +45,12 @@ const FORWARD_CANCEL = new RegExp(
   ')\\b'
 );
 
+// Subject-level negatives are not ordinary one-word cues: "no one" and
+// "no evidence" must cancel a later current-state phrase without treating
+// "one" or "evidence" as generic linker words everywhere else.
+const SUBJECT_NEGATION = /\b(?:no one|nobody|not anyone|no users?)\b[^.;!?]{0,42}$/i;
+const EVIDENCE_NEGATION = /\bno (?:evidence|indication)\b[^.;!?]{0,42}$/i;
+
 /** Contractions expanded so dictionaries only need one spelling. */
 const CONTRACTIONS = [
   [/\bcannot\b/g, 'can not'],
@@ -232,6 +238,13 @@ export function isNegated(doc, start, end) {
 
   // Forward: "<phrase> ... is not affected".
   return FORWARD_CANCEL.test(after);
+}
+
+/** Negation specific to current-state evidence such as "no one currently...". */
+export function isCurrentStateNegated(doc, start) {
+  const { clause } = clauseAt(doc, start);
+  const before = doc.text.slice(clause.start, start);
+  return SUBJECT_NEGATION.test(before) || EVIDENCE_NEGATION.test(before);
 }
 
 /**

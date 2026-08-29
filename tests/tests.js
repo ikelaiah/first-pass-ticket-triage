@@ -13,6 +13,7 @@ import { priorityFor, matrixCells } from '../js/engine/priority-matrix.js';
 import { EXAMPLES } from '../js/data/examples.js';
 import { buildReply, buildMarkdown } from '../js/ui/reply.js';
 import { statusSentence } from '../js/ui/render-result.js';
+import { registerFacetTests } from './facet-tests.js';
 import {
   encodeTicket, decodeTicket, tooLongForShare, readTicketFromLocation,
   writeTicketToLocation
@@ -239,6 +240,87 @@ test('Negation', 'contractions are expanded before matching', () =>
      'it is not working and we can not continue',
      normalise("It isn't working and we can't continue")));
 
+/* ------------------------------------------- current decision context -- */
+
+const ACCESS_CONTEXT_CASES = [
+  ['Unauthorised access is happening now.', true, 'active'],
+  ['The account is still compromised.', true, 'active'],
+  ['The attacker still has access.', true, 'active'],
+  ['Access has not been revoked.', true, 'active'],
+  ['The suspicious access was revoked.', false, 'unknown'],
+  ['The account was compromised yesterday but has been secured.', false, 'unknown'],
+  ['There is no evidence anyone currently has access.', false, 'unknown'],
+  ['The change could allow unauthorised access if deployed.', false, 'pending']
+];
+
+for (const [text, exposureActive, harmTiming] of ACCESS_CONTEXT_CASES) {
+  test('Current access context', text, () => {
+    const result = analyse(text);
+    return ok(result.riskModifiers.exposureActive === exposureActive &&
+      result.harmTiming.timing === harmTiming,
+    JSON.stringify({
+      exposureActive: result.riskModifiers.exposureActive,
+      harmTiming: result.harmTiming.timing,
+      decisionContext: result.decisionContext.status
+    }));
+  });
+}
+
+const RESOLVED_CONTEXT_CASES = [
+  'The Canvas outage was previously resolved; no action required.',
+  'The privacy breach has been resolved.',
+  'The outage was resolved yesterday.',
+  'The issue is fixed.',
+  'The suspicious access was removed.',
+  'The suspicious access was revoked.',
+  'This is for historical context only.'
+];
+
+for (const text of RESOLVED_CONTEXT_CASES) {
+  test('Resolved context', text, () => {
+    const result = analyse(text);
+    return ok(result.decisionContext.status === 'resolved' &&
+      result.priority === 'P4' &&
+      result.harmTiming.timing === 'unknown',
+    JSON.stringify({
+      priority: result.priority,
+      decisionContext: result.decisionContext.status,
+      harmTiming: result.harmTiming.timing
+    }));
+  });
+}
+
+test('Resolved context', 'a resolved outage is active again when the update says it is still failing', () => {
+  const result = analyse('The outage was resolved yesterday but is still failing.');
+  return ok(result.decisionContext.status === 'active-or-unspecified' &&
+    result.priority !== 'P4',
+  JSON.stringify({
+    decisionContext: result.decisionContext.status,
+    priority: result.priority
+  }));
+});
+
+const EXPOSURE_NOW_CASES = [
+  ['No one is currently exposed.', false, 'unknown'],
+  ['Nobody currently has access.', false, 'unknown'],
+  ['The issue is not currently occurring.', false, 'unknown'],
+  ['Users are currently exposed.', true, 'active'],
+  ['Unauthorised access is currently happening.', true, 'active']
+];
+
+for (const [text, exposureActive, harmTiming] of EXPOSURE_NOW_CASES) {
+  test('Current exposure negation', text, () => {
+    const result = analyse(text);
+    return ok(result.riskModifiers.exposureActive === exposureActive &&
+      result.harmTiming.timing === harmTiming,
+    JSON.stringify({
+      exposureActive: result.riskModifiers.exposureActive,
+      harmTiming: result.harmTiming.timing,
+      urgency: result.urgency
+    }));
+  });
+}
+
 /* ----------------------------------------------------------- 6. urgency -- */
 
 test('Urgency', '"FYI, no rush" is low urgency', () =>
@@ -298,6 +380,56 @@ test('Payroll', '"payroll" alone does not force P1', () => {
   const result = analyse('Please add a new payroll report to the documentation library.');
   return ok(result.priority !== 'P1', result.priority);
 });
+
+const PAYROLL_HARM_CONTEXT_CASES = [
+  ['Staff are paid correctly.', false, 'payroll-finance'],
+  ['No payments are affected.', false, 'payroll-finance'],
+  ['Payroll completed successfully.', false, 'payroll-finance'],
+  ['Payroll completed successfully, but some staff have not been paid.', true, 'payroll-finance'],
+  ['Staff have not been paid.', true, 'payroll-finance'],
+  ['Payroll failed.', true, 'payroll-finance'],
+  ['The pay file was not produced.', true, 'payroll-finance']
+];
+
+for (const [text, activeHarm, domain] of PAYROLL_HARM_CONTEXT_CASES) {
+  test('Payroll harm context', text, () => {
+    const result = analyse(text);
+    return ok(Boolean(result.risks.payroll || result.risks.financial) === activeHarm &&
+      result.technicalDomain === domain,
+      JSON.stringify({
+        domain: result.technicalDomain,
+        payroll: result.risks.payroll,
+        financial: result.risks.financial,
+        unpaidRisk: result.riskModifiers.unpaidRisk
+      }));
+  });
+}
+
+test('Payroll', 'correct payment remains a payroll topic without active harm', () => {
+  const result = analyse("Staff are still paid correctly; this is a question about next month's pay date.");
+  return ok(result.priority === 'P4' &&
+    result.technicalDomain === 'payroll-finance' &&
+    !result.risks.payroll && !result.risks.financial &&
+    !result.riskModifiers.unpaidRisk,
+  JSON.stringify({
+    priority: result.priority,
+    domain: result.technicalDomain,
+    risks: result.risks,
+    modifiers: result.riskModifiers
+  }));
+});
+
+test('Symptom', 'read-only records are not missing data', () => {
+  const result = analyse('A read-only report can wait until next month; no records are being changed.');
+  return ok(result.symptom !== 'missing-data', JSON.stringify({
+    symptom: result.symptom,
+    domain: result.technicalDomain,
+    urgency: result.urgency
+  }));
+});
+
+test('Symptom', 'a report with no records remains a missing-data symptom', () =>
+  field('The report contains no records.', 'symptom', 'missing-data'));
 
 /* --------------------------------------------------- 9. privacy and WWCC -- */
 
@@ -1798,6 +1930,17 @@ test('Handoff', 'confidence output is labelled as heuristic evidence completenes
 });
 
 test('Handoff', 'new share links put the encoded ticket in the fragment', () => {
+  if (typeof window !== 'undefined' && window.history?.replaceState) {
+    const previousUrl = window.location.href;
+    try {
+      writeTicketToLocation('Canvas is down for all schools.');
+      const currentUrl = new URL(window.location.href);
+      return ok(currentUrl.hash.startsWith('#t=') && !currentUrl.searchParams.has('t'), currentUrl.href);
+    } finally {
+      window.history.replaceState(null, '', previousUrl);
+    }
+  }
+
   const previousWindow = globalThis.window;
   let written = null;
   globalThis.window = {
@@ -1820,6 +1963,20 @@ test('Handoff', 'a ticket can be decoded from the share fragment', () => {
 });
 
 test('Handoff', 'legacy query links still load and remove the ticket parameter', () => {
+  if (typeof window !== 'undefined' && window.history?.replaceState) {
+    const previousUrl = window.location.href;
+    try {
+      const text = 'Canvas is down for one school.';
+      const actual = readTicketFromLocation({
+        pathname: '/triage/', search: '?mode=shared&t=' + encodeTicket(text), hash: ''
+      });
+      return ok(actual === text && window.location.pathname + window.location.search === '/triage/?mode=shared',
+        window.location.pathname + window.location.search);
+    } finally {
+      window.history.replaceState(null, '', previousUrl);
+    }
+  }
+
   const previousWindow = globalThis.window;
   let cleaned = null;
   globalThis.window = {
@@ -1838,6 +1995,20 @@ test('Handoff', 'legacy query links still load and remove the ticket parameter',
 });
 
 test('Handoff', 'sharing and reading never touch web storage', () => {
+  if (typeof window !== 'undefined' && window.history?.replaceState) {
+    const previousUrl = window.location.href;
+    try {
+      const text = 'Private ticket text.';
+      writeTicketToLocation(text);
+      return ok(readTicketFromLocation({ search: '', hash: '#t=' + encodeTicket(text) }) === text,
+        'share round trip completed without storage access');
+    } catch (error) {
+      return ok(false, error.message);
+    } finally {
+      window.history.replaceState(null, '', previousUrl);
+    }
+  }
+
   const previousWindow = globalThis.window;
   const previousLocal = globalThis.localStorage;
   const previousSession = globalThis.sessionStorage;
@@ -2095,6 +2266,8 @@ for (const example of EXAMPLES) {
   test('Examples', example.title + ' -> ' + example.expected.join('/'), () =>
     priority(example.text, example.expected));
 }
+
+registerFacetTests(test, ok);
 
 /* --------------------------------------------------------------- run -- */
 

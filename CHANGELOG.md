@@ -1,5 +1,38 @@
 # Changelog
 
+## [0.7.0] - 2026-08-29 — Eight-Facet NLP Robustness Hardening
+
+### Added
+
+- Added an independently authored, dependency-free semantic corpus for all eight
+  triage facets: I1 scope, I2 blocked process, I3 irreversibility/risk, I4
+  containment, U5 deadline, U6 driver, U7 workaround, and U8 harm timing.
+- Added positive, contrast, negation, noise, history, comparator, contradiction,
+  metamorphic, orthogonality, and composition coverage with supported-state
+  invariants and a compact Node/browser coverage report.
+- Expanded the labelled offline evaluation fixture to 57 realistic-style examples
+  and added eight-facet accuracy denominators and mismatch reporting while keeping
+  the existing priority safety metrics.
+- Added corpus validation for the authoritative Impact/Urgency/Priority matrix and
+  explicit review classifications for remaining outcome mismatches, including
+  acceptable alternative priorities and deferred policy disagreements.
+
+### Improved
+
+- Hardened deterministic recognition for passive blocked-process wording, scope
+  comparisons and descriptor phrases, privacy/access negation, risk-family overlap,
+  recurrence, pending harm, data loss, and manual-workaround variants.
+- Corrected active-access, resolved-context, current-exposure-negation, payroll
+  success, and read-only-report evidence handling without changing scoring policy.
+- Preserved evidence provenance and conservative Unknown answers for historical,
+  hypothetical, and evidence-limited wording.
+
+### Unchanged
+
+- No AI, network call, backend, dependency, framework, persistence, or build step
+  was added. Impact/Urgency scoring and the authoritative 3×3 P1–P4 matrix remain
+  the only priority path; platform catalogue membership remains scoring-neutral.
+
 ## [0.6.1] - 2026-08-29
 
 ### Fixed
