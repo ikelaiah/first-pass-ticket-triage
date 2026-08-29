@@ -1,5 +1,31 @@
 # Changelog
 
+## [0.6.0] - 2026-08-29
+
+### Added
+
+- Complete Pre-K–12 platform catalogue coverage for all 206 category assignments
+  across reference sections 1–22, with 162 canonical entities and multi-category
+  membership preserved.
+- Category-aware result metadata for platform context, including accurate standard
+  and provisioning-method entity types.
+- Automated Markdown-to-catalogue reconciliation, representative recognition tests,
+  and negative tests for ambiguous product names.
+
+### Changed
+
+- Generic platform identity is separated from organisation-specific systems,
+  critical flags, schedules, source-of-truth relationships and status consequences.
+- Platform families and modules are normalised visibly while retaining every source
+  name and category assignment.
+- Alias handling is conservative for ordinary words such as Clever, Compass,
+  Formative, Flat, Oliver, Scratch, Teams, Classroom, Forms, Moodle and Canva.
+
+### Unchanged
+
+- Platform category membership has no scoring weight. Priority remains
+  Evidence → Impact + Urgency → the authoritative 3×3 matrix → P1–P4.
+
 ## [0.5.1] - 2026-08-29
 
 ### Fixed

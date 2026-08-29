@@ -112,3 +112,94 @@ record-specific investigation, but it cannot erase stated breadth.
 - [x] `npm test` passes with all new adversarial cases.
 - [x] No new dependencies, network APIs, remote assets, storage, build steps, or
   persistence are introduced.
+
+## v0.6.0 complete Pre-K–12 platform catalogue
+
+### Overview
+
+Expand platform recognition from the organisation-specific system list to the
+authoritative sections 1–22 of the checked-in Pre-K–12 catalogue. Generic
+platform identity, source categories, safe aliases and entity types will live
+in a dedicated catalogue module; organisation-specific criticality, schedules,
+source-of-truth relationships and status consequences will remain in
+`js/config.js`. The result model will expose category context without feeding
+category membership into impact, urgency or the priority matrix.
+
+### Architecture decisions
+
+- Keep `js/config.js` as the organisation profile and add
+  `js/data/platform-catalogue.js` for generic catalogue entities.
+- Use one canonical entity for repeated products and explicit module/family
+  mappings for branded variants; retain every source row and category in the
+  reconciliation mapping.
+- Use guarded aliases or catalogue-only entries for ambiguous names such as
+  Clever, Compass, Formative, Flat, Oliver, Scratch, Teams, Classroom, Forms,
+  Moodle, Canva and similar ordinary words.
+- Reconcile the Markdown source in a Node test that reports source assignments,
+  unique source names, canonical coverage, missing entities and missing
+  category memberships.
+- Keep technical domains and business categories as separate result fields.
+
+### Task list
+
+#### Phase 1: Source inventory and red tests
+
+- [x] Parse sections 1–22 programmatically and record the 206 source category
+  assignments and 184 unique source names.
+- [x] Add failing catalogue reconciliation, representative recognition,
+  ambiguous-name, multi-category and category-neutral-priority tests.
+- [x] Add the supplied Markdown under `docs/` without rewriting it.
+
+#### Phase 2: Catalogue foundation
+
+- [x] Add the generic catalogue data with stable IDs, canonical names, safe
+  aliases, entity types, source categories and source-name mappings.
+- [x] Merge generic entries into system detection without changing existing
+  organisation IDs, critical flags, scheduled jobs or data-flow lookups.
+- [x] Expose categories and entity types on detected system details and the
+  result model; render concise category context in the classification panel.
+
+#### Phase 3: Coverage and safety
+
+- [x] Make every source assignment reconcile to a canonical entity and category.
+- [x] Verify representative detection across all 22 source categories,
+  historical names explicitly supplied by the source, and product modules.
+- [x] Verify ordinary ambiguous wording does not create false platform hits and
+  category membership contributes zero to impact, urgency and P1–P4.
+- [x] Verify existing organisation-specific flows, schedules and critical flags
+  remain intact.
+
+#### Phase 4: Documentation and release
+
+- [x] Document the catalogue architecture, safe alias policy, category/domain
+  separation and reconciliation test in README/architecture documentation.
+- [x] Bump package/changelog from 0.5.1 to 0.6.0.
+- [x] Run the full suite, syntax/privacy/static checks, and code review.
+- [x] Commit, push, merge through the existing PR workflow, tag `v0.6.0`, and
+  publish the GitHub release only after all reconciliation and CI gates pass.
+
+### Acceptance criteria
+
+- [x] Source category assignments: 206; unique source names: 184.
+- [x] Missing canonical entities: 0; missing category assignments: 0.
+- [x] All existing tests pass with no unjustified priority expectation changes.
+- [x] Platform categories appear as context only and have no scoring weight.
+- [x] No new dependencies, network calls, backend, build framework, or invented
+  organisation data flows are introduced.
+
+### Verification
+
+- [x] `npm test`
+- [x] JavaScript syntax checks and `git diff --check`
+- [x] Automated Markdown-to-catalogue reconciliation report
+- [x] Existing scheduled-job, source-of-truth and critical-flag tests
+- [x] GitHub Actions green on the release PR
+
+### Risks and mitigations
+
+| Risk | Impact | Mitigation |
+|---|---|---|
+| 206 rows are manually transcribed incorrectly | High | Parse the checked-in Markdown in a failing automated reconciliation test. |
+| Short product names create ordinary-language false positives | High | Use exact branded phrases, contextual regexes and negative tests. |
+| Generic metadata changes organisation behaviour | High | Preserve config IDs/flags and keep catalogue categories out of scoring. |
+| Family/module normalisation hides a source row | Medium | Store every source name and category mapping and report normalisations. |

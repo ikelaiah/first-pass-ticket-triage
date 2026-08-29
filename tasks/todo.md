@@ -18,3 +18,14 @@
 - [x] Update focused changelog/version metadata only.
 - [x] Run `npm test`, syntax/privacy checks, and final review.
 - [x] Commit, merge, tag, and publish the `v0.5.1` release.
+
+## v0.6.0 complete Pre-K–12 platform catalogue
+
+- [x] Programmatically reconcile sections 1–22 of the reference document.
+- [x] Add red catalogue coverage, recognition, ambiguity, and priority-neutrality tests.
+- [x] Add the generic platform catalogue and preserve organisation-specific config.
+- [x] Expose platform categories/entity types without scoring category membership.
+- [x] Add representative coverage across all 22 source categories and module mappings.
+- [x] Update README/architecture docs, changelog, and version to 0.6.0.
+- [x] Run full verification and code review.
+- [x] Commit, merge, tag, and publish the `v0.6.0` release.

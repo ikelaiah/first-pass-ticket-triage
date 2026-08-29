@@ -73,6 +73,9 @@ function factChips(result) {
   const chips = [
     ['Scope', result.scopeLabel],
     ['System', result.system || 'Not identified'],
+    ['Platform category', result.platformCategories?.length
+      ? result.platformCategories.join('; ')
+      : 'Not identified'],
     ['Domain', result.technicalDomainLabel],
     ['Symptom', result.symptomLabel],
     ['Work type', result.workTypeLabel],

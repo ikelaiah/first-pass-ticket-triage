@@ -1900,6 +1900,97 @@ test('v0.3.1 coverage', 'UniFi and Meraki are recognised network vendors', () =>
   return ok(unifi.system === 'UniFi', unifi.system);
 });
 
+/* ------------------------------------------- v0.6.0 catalogue contracts -- */
+
+test('v0.6.0 catalogue', 'Stile exposes every source category and keeps technical domain separate', () => {
+  const result = analyse('A teacher cannot access Stile and the science lesson is unavailable.');
+  const stile = result.systemDetails.find((system) => system.name === 'Stile');
+  return ok(Boolean(stile) &&
+    stile.categories.includes('Broad Curriculum & Learning Platforms') &&
+    stile.categories.includes('Science, STEM, Coding & Robotics') &&
+    result.technicalDomain === 'application-availability',
+  JSON.stringify({ system: stile, domain: result.technicalDomain }));
+});
+
+test('v0.6.0 catalogue', 'Compass Pay remains one canonical family with finance context', () => {
+  const result = analyse('Compass Pay is unavailable for school fee payments.');
+  const matches = result.systemDetails.filter((system) => system.id === 'compass');
+  return ok(matches.length === 1 && matches[0].name === 'Compass' &&
+    matches[0].categories.includes('Canteen, Payments & Finance') &&
+    matches[0].sourceNames.includes('Compass Pay'), JSON.stringify(matches));
+});
+
+test('v0.6.0 catalogue', 'provisioning standards and methods expose non-platform entity types', () => {
+  const standard = analyse('1EdTech OneRoster provisioning is failing for new classes.');
+  const method = analyse('CSV / File Import did not create the new student records.');
+  const standardDetail = standard.systemDetails.find((system) => system.name === '1EdTech OneRoster');
+  const methodDetail = method.systemDetails.find((system) => system.name === 'CSV / File Import');
+  return ok(standardDetail?.entityType === 'standard' &&
+    methodDetail?.entityType === 'provisioning-method', JSON.stringify({ standardDetail, methodDetail }));
+});
+
+test('v0.6.0 catalogue', 'categories do not contribute to impact, urgency, or priority', () => {
+  const stile = analyse('Stile is unavailable for one teacher.');
+  const moodle = analyse('Moodle is unavailable for one teacher.');
+  return ok(stile.impact === moodle.impact && stile.urgency === moodle.urgency &&
+    stile.priority === moodle.priority, JSON.stringify({
+      stile: [stile.impact, stile.urgency, stile.priority],
+      moodle: [moodle.impact, moodle.urgency, moodle.priority]
+    }));
+});
+
+const catalogueRecognitionCases = [
+  ['Canvas', 'Canvas LMS sign-in is failing for a teacher.'],
+  ['Education Perfect', 'Education Perfect lessons are unavailable.'],
+  ['ReadCloud', 'ReadCloud textbooks will not open.'],
+  ['ClickView', 'ClickView videos are not loading.'],
+  ['Mathletics', 'Mathletics practice is unavailable.'],
+  ['NoRedInk', 'NoRedInk writing activities are failing.'],
+  ['Grok Academy', 'Grok Academy coding classes cannot load.'],
+  ['Kahoot!', 'Kahoot! quizzes are unavailable.'],
+  ['Canva', 'Canva for Education cannot save presentations.'],
+  ['MakeMusic Cloud', 'MakeMusic Cloud practice is unavailable.'],
+  ['Storypark', 'Storypark family updates are not loading.'],
+  ['Turnitin', 'Turnitin submissions are failing.'],
+  ['Compass', 'Compass student records are unavailable.'],
+  ['Wonde', 'Wonde provisioning is failing.'],
+  ['Operoo', 'Operoo consent forms cannot be submitted.'],
+  ['Flexischools', 'Flexischools lunch orders are unavailable.'],
+  ['Edval', 'Edval timetable exports are failing.'],
+  ['Clipboard', 'Clipboard activities cannot be opened.'],
+  ['Oliver', 'Oliver library search is unavailable.'],
+  ['Morrisby', 'Morrisby pathway profiles will not load.'],
+  ['SchoolTV', 'SchoolTV wellbeing content is unavailable.']
+];
+
+for (const [name, text] of catalogueRecognitionCases) {
+  test('v0.6.0 catalogue', name + ' is recognised from its source family', () => {
+    const result = analyse(text);
+    return ok(result.systems.includes(name), result.systems.join(', '));
+  });
+}
+
+const ambiguousCatalogueCases = [
+  ['Both teams completed the task.', 'Microsoft Teams'],
+  ['Use a clever workaround.', 'Clever'],
+  ['The compass points north.', 'Compass'],
+  ['The assessment was formative.', 'Formative'],
+  ['The document is flat.', 'Flat for Education'],
+  ['Oliver completed his homework.', 'Oliver'],
+  ['Scratch that change.', 'Scratch'],
+  ['The reader finished the story.', 'ReadSpeaker'],
+  ['The classroom was cleaned after lunch.', 'Google Classroom'],
+  ['Please send the forms to reception.', 'Microsoft Forms'],
+  ['Canva is a useful word in this sentence.', 'Canva']
+];
+
+for (const [text, forbidden] of ambiguousCatalogueCases) {
+  test('v0.6.0 catalogue', 'ordinary wording does not detect ' + forbidden, () => {
+    const result = analyse(text);
+    return ok(!result.systems.includes(forbidden), result.systems.join(', ') || 'no systems');
+  });
+}
+
 /* ------------------------------------------------------- 29. examples -- */
 
 for (const example of EXAMPLES) {

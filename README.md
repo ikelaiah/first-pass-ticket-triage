@@ -258,7 +258,7 @@ Open <http://localhost:8000/tests/tests.html> — the suite runs in the page and
 PASS/FAIL line for every assertion.
 
 With Node available, the same suite runs in a terminal; `npm test` runs the complete
-v0.5.0 gate:
+v0.6.0 gate:
 
 ```bash
 node tests/run.mjs      # behavioural suite + privacy scan
@@ -321,7 +321,8 @@ first-pass-triage/
 │   │   └── priority-matrix.js  the authoritative Impact × Urgency table
 │   ├── data/
 │   │   ├── phrases.js          every phrase dictionary
-│   │   ├── systems.js          system detection from config
+│   │   ├── platform-catalogue.js generic Pre-K–12 platform catalogue and categories
+│   │   ├── systems.js          configured + catalogue system detection
 │   │   └── examples.js         the example tickets
 │   └── ui/
 │       ├── dom.js              small createElement helpers
@@ -336,6 +337,7 @@ first-pass-triage/
 │   ├── run.mjs                 Node runner + privacy source scan
 │   ├── evaluate.mjs            offline labelled-corpus accuracy metrics
 │   ├── evaluate.test.mjs       evaluator metric self-test
+│   ├── catalogue-coverage.test.mjs source-to-catalogue reconciliation report
 │   └── fixtures/               corpus schema examples (not production accuracy data)
 ├── serve.bat                   double-click launcher for the dev server
 ├── serve.ps1                   local dev server for Windows (not deployed)
@@ -354,7 +356,9 @@ Organisation-specific values live in one replaceable, public configuration file:
 [`js/config.js`](js/config.js). This release keeps the working school count, systems,
 data flows and scheduled jobs together because splitting deployment settings from the
 static application would be more invasive; a future configuration split should retain
-the same no-secrets boundary.
+the same no-secrets boundary. The generic platform landscape is kept separately in
+[`js/data/platform-catalogue.js`](js/data/platform-catalogue.js), so catalogue knowledge
+does not become organisation-specific operational knowledge.
 
 ```javascript
 export const organisationConfig = {
@@ -371,6 +375,40 @@ export const organisationConfig = {
 ```
 
 Adding a system, an alias or a scheduled job needs no engine changes.
+
+### Platform catalogue
+
+The catalogue is derived from the checked-in reference document
+[`docs/pre-k12-teaching-learning-school-operations-platforms-complete.md`](docs/pre-k12-teaching-learning-school-operations-platforms-complete.md).
+It contains one canonical entity per platform family, all source categories, source
+names for repeated/module entries, URLs, and accurate entity types for platforms,
+standards, and provisioning methods. A detected result keeps the existing `systems`
+name list for compatibility and also exposes `systemDetails` plus
+`platformCategories` for support context.
+
+Platform categories answer “what part of school operations does this product serve?”
+They are not technical domains: `Learning Management Systems (LMS)` can coexist with
+the `Integration / API` technical domain when a Canvas sync is failing. Categories
+never contribute to Impact, Urgency, criticality, or the authoritative P1–P4 matrix;
+the ticket’s evidence still determines those values.
+
+Repeated products retain every category. Obvious families such as Compass modules,
+School Bytes modules, SEQTA variants, IXL Maths, Sora by OverDrive, and Reading Eggs
+are represented by one canonical entity with source-name/module mappings, not as
+unrelated vendors. The reconciliation test reports these normalisations and fails if
+a source row or category assignment disappears.
+
+### Adding a platform or alias safely
+
+Add generic identity, source categories, and source metadata to
+`js/data/platform-catalogue.js`. Keep criticality, scheduled jobs, source-of-truth
+flows, and status consequences in `js/config.js` only when they are facts about this
+organisation. Prefer an exact branded alias (`Google Classroom`, `Microsoft Forms`,
+or `Teams for Education`) over a short ordinary word. For ambiguous brands such as
+Clever, Compass, Formative, Flat, Oliver, Scratch, Teams, Classroom, Forms, Moodle,
+or Canva, use a contextual/guarded pattern or omit the bare alias and add a negative
+test. Run `npm test`; the Markdown reconciliation reports the source count and names
+any missing entity or category assignment.
 
 ## 🧩 Extending the rules
 
