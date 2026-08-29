@@ -1193,23 +1193,27 @@ export const CONTEXT_ELSEWHERE_PHRASES = [
 /**
  * "Georgia's docs synced correctly, Lauryn's didn't."
  *
- * When one comparable record works and another does not, a system-wide failure
- * is unlikely - the difference is in the data or in the individual record. This
- * is the single most useful fact a requester can give you, and it changes what
- * you investigate first.
+ * When one comparable record works and another does not, the difference changes
+ * what to investigate first. It is diagnostic context, not proof that a broad
+ * or conditional failure is impossible.
  */
 export const WORKING_COMPARATOR_PHRASES = [
   { m: ['synced correctly', 'synced fine', 'synced ok', 'worked correctly', 'works correctly',
         'worked fine', 'works fine', 'came through correctly', 'came through fine',
         'no problem with', 'no issue with', 'successfully synced', 'one worked',
-        'that one is fine', 'is fine for', 'works for one', 'the first one worked'],
+        'that one is fine', 'is fine for', 'works for one', 'the first one worked',
+        /\b(?:one|a|the first)\s+(?:\w+\s+){0,2}(?:(?:enrolment|test)\s+)?(?:record|student|account|file)\s+(?:works?|worked|synced|processed|completed)(?:\s+(?:correctly|successfully|fine|ok))?\b/,
+        /\b(?:one|the first)\s+(?:has\s+)?(?:synced|worked|processed|completed)\b/,
+        /\b(?:records?|students?|enrolment records?|accounts?|files?)\s+(?:still\s+)?(?:process|processed|sync|synced)\s+successfully\b/],
     label: 'another comparable record is working' }
 ];
 
 export const CONTRAST_PHRASES = [
   { m: [/\bbut not\b/, /\bthe other (?:one|student|record|user|account|file|child)\b/,
         /\bonly one of\b/, /\bwhereas\b/, /\bwhile the other\b/, /\bone of (?:the )?two\b/,
-        /\bthe second (?:one|student|record)\b/, /\bthe first (?:one|student|record)\b/],
+        /\bthe second (?:one|student|record)\b/, /\bthe first (?:one|student|record)\b/,
+        /\b(?:but|while|whereas)\b[^.;!?\n]{0,24}\b(?:record|student|enrolment|user|account|file)\b[^.;!?\n]{0,30}\b(?:did not|does not|failed|fails|not synced|not synchronised|is missing)\b/,
+        /\b(?:the other|another|remaining)(?:\s+(?:record|student|enrolment record|user|account|file))?[^.;!?\n]{0,40}\b(?:did not|does not|failed|fails|not synced|not synchronised|is missing)\b/],
     label: 'the request contrasts a working case with a failing one' }
 ];
 

@@ -1373,14 +1373,28 @@ test('Real tickets', 'documents get their own domain', () =>
 test('Real tickets', 'one working and one failing is a problem investigation', () =>
   field(DOC_SYNC_CHAT, 'workType', 'problem-investigation'));
 
-test('Real tickets', 'one working record among 19 failures keeps the differential visible', () => {
+test('Real tickets', 'a small comparator stays diagnostic without inventing broad scope', () => {
+  const result = analyse('Student A synced correctly, but Student B did not.');
+  return ok(
+    result.differential !== null &&
+      result.followUpQuestions.some((question) => /What is different about the record/.test(question)) &&
+      result.scope === 'unknown',
+    JSON.stringify({ scope: result.scope, differential: result.differential,
+      questions: result.followUpQuestions })
+  );
+});
+
+test('Real tickets', 'broad failure with one success keeps scope and urgency authoritative', () => {
   const result = analyse(
-    'One student synced correctly, but the remaining 19 students are failing.'
+    'One student synced correctly, but students across all 19 schools are failing.'
   );
   return ok(
-    result.differential !== null && result.priority !== 'P1' &&
-      result.reasoning.some((line) => /system-wide failure is unlikely/.test(line)),
-    JSON.stringify({ priority: result.priority, differential: result.differential })
+    result.differential !== null && result.scope === 'all-schools' &&
+      result.detail.urgencyResult.contributions.some((item) => /many schools/.test(item.label)) &&
+      result.reasoning.some((line) => /conditional|broad scope remains valid/.test(line)) &&
+      !result.reasoning.some((line) => /system-wide failure is unlikely/.test(line)),
+    JSON.stringify({ scope: result.scope, priority: result.priority,
+      differential: result.differential, urgency: result.detail.urgencyResult })
   );
 });
 
@@ -1388,8 +1402,51 @@ test('Real tickets', 'the differential is detected and explained', () => {
   const result = analyse(DOC_SYNC_CHAT);
   return ok(
     result.differential !== null &&
-    result.reasoning.some((r) => /system-wide failure is unlikely/.test(r)),
+    result.reasoning.some((r) => /conditional|record-specific/.test(r)) &&
+    !result.reasoning.some((r) => /system-wide failure is unlikely/.test(r)),
     JSON.stringify(result.differential)
+  );
+});
+
+test('Real tickets', 'explicit school breadth survives a successful test record', () => {
+  const result = analyse(
+    'The sync is failing at every school except one test record completed successfully.'
+  );
+  return ok(result.scope === 'all-schools' && result.differential !== null,
+    JSON.stringify({ scope: result.scope, differential: result.differential }));
+});
+
+test('Real tickets', 'a large majority failure is not treated as isolated', () => {
+  const result = analyse('One record worked, but 99 other records across all schools failed.');
+  return ok(
+    result.scope === 'all-schools' && result.differential !== null &&
+      !result.reasoning.some((line) => /system-wide failure is unlikely/.test(line)),
+    JSON.stringify({ scope: result.scope, differential: result.differential,
+      reasoning: result.reasoning })
+  );
+});
+
+test('Real tickets', 'a two-record enrolment comparison stays narrow', () => {
+  const result = analyse(
+    'Two enrolment records were processed. One synced and the other did not.'
+  );
+  return ok(
+    result.differential !== null && result.scope === 'unknown' &&
+      !result.detail.urgencyResult.contributions.some((item) => /many schools/.test(item.label)),
+    JSON.stringify({ scope: result.scope, differential: result.differential,
+      urgency: result.detail.urgencyResult })
+  );
+});
+
+test('Real tickets', 'broad partial success does not erase incident breadth', () => {
+  const result = analyse(
+    'Canvas enrolment sync is failing across all schools, although a small number of records still process successfully.'
+  );
+  return ok(
+    result.scope === 'all-schools' && result.differential !== null &&
+      result.detail.urgencyResult.contributions.some((item) => /many schools/.test(item.label)),
+    JSON.stringify({ scope: result.scope, differential: result.differential,
+      urgency: result.detail.urgencyResult })
   );
 });
 
@@ -1399,11 +1456,13 @@ test('Real tickets', 'the first question asks what is different', () => {
     result.followUpQuestions[0]);
 });
 
-test('Real tickets', 'a differential suppresses the broad-outage urgency bump', () => {
-  const outage = analyse('Document sync has failed for all schools.');
-  const differential = analyse('Document sync has failed for all schools, but the first one worked correctly.');
-  return ok(differential.detail.urgencyResult.score < outage.detail.urgencyResult.score,
-    outage.detail.urgencyResult.score + ' -> ' + differential.detail.urgencyResult.score);
+test('Real tickets', 'a differential does not suppress the broad-failure urgency contribution', () => {
+  const result = analyse('Document sync has failed for all schools, but the first one worked correctly.');
+  return ok(
+    result.scope === 'all-schools' &&
+      result.detail.urgencyResult.contributions.some((item) => /many schools/.test(item.label)),
+    JSON.stringify(result.detail.urgencyResult)
+  );
 });
 
 test('Real tickets', 'no differential means no false diagnosis line', () => {

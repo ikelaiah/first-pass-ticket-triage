@@ -123,8 +123,9 @@ export function assessUrgency(doc, ctx) {
   // outage in progress, and the deadline decides how soon they matter.
   const broad =
     scopeDefinition(scopeResult.scope).rank >= scopeDefinition('multiple-schools').rank;
-  // If a comparable record is working, this is not a broad outage.
-  if (broad && symptom.severity >= SEVERITY.FAILURE && !ctx.differential) {
+  // A differential changes where to investigate, not how broadly the failure
+  // is reported. Explicit broad scope remains authoritative.
+  if (broad && symptom.severity >= SEVERITY.FAILURE) {
     add(1, 'A failure is affecting many schools at once');
   }
   if (scopeResult.allUsers && !scopeResult.explicit) {

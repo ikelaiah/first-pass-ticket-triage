@@ -75,3 +75,40 @@ suggested priority and explainable follow-up information.
 
 - No queue workflow engine, ticket ageing, reminders, SLA state, or `nextAction`.
 - No AI/LLM, server, telemetry, external dependency, build step, or ticket store.
+
+## v0.5.1 patch plan: differential scope safety
+
+### Context
+
+The differential detector is useful for diagnosis, but its current wording and
+urgency interaction treat one working comparator as evidence against a broad fault.
+This patch keeps diagnosis separate from explicit scope: a differential may suggest
+record-specific investigation, but it cannot erase stated breadth.
+
+### Ordered tasks
+
+1. **Add red regressions** for small comparators, broad partial failures, explicit
+   all-school scope, large majorities failing, and broad partial success. Assert the
+   diagnostic question, retained scope, retained broad-failure contribution, and
+   absence of the old unconditional wording.
+2. **Update differential evidence** with deterministic comparator patterns and a
+   scope-aware explanation: conditional/record-specific for narrow or unknown scope;
+   conditional-but-broad for explicit multiple-school/all-school scope.
+3. **Fix urgency interaction** so the broad-failure contribution depends on explicit
+   broad scope plus failure severity, not on the absence of a differential.
+4. **Update only release metadata/docs required for v0.5.1**, then run the complete
+   test, syntax, privacy, and diff review gates.
+
+### Acceptance criteria
+
+- [x] Explicit broad scope remains broad when a comparator succeeds.
+- [x] Small two-record comparators remain diagnostic and do not invent broad scope.
+- [x] Broad failures retain the existing breadth urgency contribution.
+- [x] No reasoning says “system-wide failure is unlikely” for broad-scope cases.
+- [x] The matrix, local-first boundary, and no-queue architecture remain unchanged.
+
+### Verification checkpoint
+
+- [x] `npm test` passes with all new adversarial cases.
+- [x] No new dependencies, network APIs, remote assets, storage, build steps, or
+  persistence are introduced.

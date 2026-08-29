@@ -13,7 +13,7 @@
 import { createDocument, has, scanPositive } from './negation.js';
 import { organisationConfig } from '../config.js';
 import { detectSystems, describeSystems } from '../data/systems.js';
-import { detectScope, scopeLabel } from './scope.js';
+import { detectScope, scopeDefinition, scopeLabel } from './scope.js';
 import { detectWorkaround, workaroundLabel } from './workaround.js';
 import { detectDeadline, deadlineLabel } from './deadline.js';
 import { detectSymptom, SEVERITY } from './symptom.js';
@@ -196,20 +196,27 @@ export function findSourceOfTruth(systemResult, symptom, config = organisationCo
 }
 
 /**
- * One record works, a comparable one does not. That rules out most system-wide
- * causes and points the investigation at the data instead.
+ * One record works, a comparable one does not. This changes the diagnostic
+ * question, but it must not overrule explicit evidence about breadth.
  */
-export function detectDifferential(doc, symptom) {
-  if (symptom.severity < SEVERITY.DATA) return null;
+export function detectDifferential(doc, symptom, scopeResult = null) {
   const working = scanPositive(doc, WORKING_COMPARATOR_PHRASES);
   const contrast = scanPositive(doc, CONTRAST_PHRASES);
+  const hasComparatorPair = working.length > 0 && contrast.length > 0;
+  if (symptom.severity < SEVERITY.DATA && !hasComparatorPair) return null;
   if (!working.length && !contrast.length) return null;
+  const effectiveScope = scopeResult || detectScope(doc);
+  const broad = scopeDefinition(effectiveScope.scope).rank >=
+    scopeDefinition('multiple-schools').rank;
   return {
     quote: (working[0] || contrast[0]).quote,
-    reason:
-      'One comparable record is working and another is not, so a system-wide ' +
-      'failure is unlikely. The difference is most likely in the data or in the ' +
-      'individual record rather than in the integration itself.'
+    reason: broad
+      ? 'At least one comparable record is working, so the failure may be conditional ' +
+        'rather than total. The reported broad scope remains valid and must still drive ' +
+        'impact and urgency.'
+      : 'A comparable record is working while another is failing, suggesting the fault ' +
+        'may depend on record-specific or conditional factors. Compare the successful ' +
+        'and failing records before assuming the wider cause.'
   };
 }
 
@@ -981,7 +988,7 @@ export function analyse(rawText, overrides = {}) {
     risks,
     modifiers,
     expectedBehaviour: Boolean(expectedBehaviour),
-    differential: Boolean(detectDifferential(doc, symptom)) || recurring
+    differential: Boolean(detectDifferential(doc, symptom, scopeResult)) || recurring
   });
 
   // A question with no failure behind it is a different kind of ticket: the
@@ -991,7 +998,7 @@ export function analyse(rawText, overrides = {}) {
     !symptom.hasFailure;
   const knownAnswer = findKnownAnswer(doc, isQuestion);
   const sourceOfTruth = findSourceOfTruth(systemResult, symptom, organisationConfig, doc);
-  const differential = detectDifferential(doc, symptom);
+  const differential = detectDifferential(doc, symptom, scopeResult);
   const activeIncident = has(doc, ACTIVE_INCIDENT_PHRASES);
   const escalated = has(doc, ESCALATION_PHRASES);
   const slaBreached = has(doc, SLA_BREACH_PHRASES);
