@@ -61,7 +61,7 @@ export function detectWorkType(doc, context = {}) {
   } else if (score('compliance-safeguarding') > 0 && (risks.safeguarding || risks.compliance)) {
     workType = 'compliance-safeguarding';
     reason = 'a compliance or safeguarding obligation is involved';
-  } else if (context.differential && score('problem-investigation') > 0) {
+  } else if (context.differential) {
     // One record fails while a comparable one works: that is a diagnosis job,
     // not a service-restoration job.
     workType = 'problem-investigation';

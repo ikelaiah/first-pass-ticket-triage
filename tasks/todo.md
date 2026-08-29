@@ -9,3 +9,12 @@
 - [x] Clarify evidence-completeness terminology in UI and docs.
 - [x] Add CI, config boundary note, queue-separation note, version bump, and release docs.
 - [x] Run full tests, privacy scan, syntax checks, static-site review, and final code review.
+
+## v0.5.1 differential scope safety
+
+- [x] Add red regressions for narrow and broad differential cases.
+- [x] Make differential reasoning conditional without erasing explicit breadth.
+- [x] Retain broad-failure urgency contribution for broad partial failures.
+- [x] Update focused changelog/version metadata only.
+- [x] Run `npm test`, syntax/privacy checks, and final review.
+- [x] Commit, merge, tag, and publish the `v0.5.1` release.

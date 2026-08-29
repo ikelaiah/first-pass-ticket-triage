@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.5.1] - 2026-08-29
+
+### Fixed
+
+- Differential evidence now distinguishes partial or conditional failures from
+  isolated comparisons without erasing explicitly broad scope.
+- A working comparator no longer suppresses the broad-failure urgency contribution
+  when many schools or records are reported as affected.
+
 ## [0.5.0] - 2026-08-29
 
 ### Added
