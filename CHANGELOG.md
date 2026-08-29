@@ -14,6 +14,9 @@
   `screen reader`/`reader` inference for ReadSpeaker.
 - Guarded the reviewed bare Clipboard, Sora, and Quill aliases against ordinary
   language false positives.
+- Recognised explicit attendance-blocking wording such as `cannot mark roll`,
+  including optional articles, equivalent action verbs, and normalised
+  `can't`/`unable to` forms, without inferring a consequence from a login symptom.
 
 ### Unchanged
 
