@@ -30,6 +30,7 @@ function severityBlocks(priority) {
  * keeps the point visible: the priority came from two values, not a hunch.
  */
 function miniMatrix(result) {
+  const actionable = result.assessmentStatus === 'assessed' && Boolean(result.suggestedPriority);
   const cells = [];
   for (const urgency of URGENCY_ORDER) {
     for (const impact of IMPACT_ORDER) {
@@ -44,7 +45,8 @@ function miniMatrix(result) {
     class: 'mini-matrix',
     role: 'img',
     'aria-label': result.impactLabel + ' impact with ' + result.urgencyLabel.toLowerCase() +
-      ' urgency gives ' + result.priority
+      ' urgency gives internal matrix result ' + result.priority +
+      (actionable ? '' : '; no actionable priority')
   }, [
     el('span', { class: 'mini-grid', 'aria-hidden': 'true' }, cells),
     el('span', { class: 'mini-caption', 'aria-hidden': 'true' }, 'urgency ↓ / impact →')
@@ -56,7 +58,7 @@ function heroLevels(result) {
   const items = [
     ['Impact', result.impactLabel, 'level-' + result.impact],
     ['Urgency', result.urgencyLabel, 'level-' + result.urgency],
-    ['Confidence', result.confidence + '%', 'level-conf band-' + result.confidenceBand]
+    ['Assessment confidence', result.confidenceLabel, 'level-conf band-' + result.confidenceBand]
   ];
   return el('ul', { class: 'hero-levels' }, items.map(([key, value, cls]) =>
     el('li', { class: cls }, [
@@ -120,6 +122,10 @@ function driverList(drivers) {
 
 function chainSection(result) {
   const chain = result.chain;
+  const actionable = result.assessmentStatus === 'assessed' && Boolean(result.suggestedPriority);
+  const matrixResult = actionable
+    ? result.priority
+    : 'Internal matrix result ' + result.priority + ' (not actionable)';
   return el('div', { class: 'chain' }, [
     el('div', { class: 'chain-step' }, [
       el('h4', {}, 'Evidence'),
@@ -157,7 +163,11 @@ function chainSection(result) {
         ' + ',
         el('strong', {}, chain.urgency.label.toUpperCase() + ' urgency'),
         ' → ',
-        el('strong', { class: 'priority-inline priority-' + result.priority }, result.priority)
+        el('strong', {
+          class: 'priority-inline ' + (actionable
+            ? 'priority-' + result.priority
+            : 'priority-unassessed')
+        }, matrixResult)
       ])
     ])
   ]);
@@ -214,13 +224,15 @@ function missingSection(result) {
 function confidenceSection(result) {
   const nodes = [
     el('p', { class: 'confidence-line' }, [
-      el('strong', {}, result.confidenceLabel + ' confidence'),
-      ' — ' + result.confidence + '%'
+      el('strong', {}, 'Assessment confidence: ' + result.confidenceLabel)
+    ]),
+    el('p', { class: 'muted' }, [
+      'Evidence completeness: ' + result.confidence + '% (heuristic; not a probability)'
     ]),
     el('div', {
       class: 'meter',
       role: 'img',
-      'aria-label': 'Confidence ' + result.confidence + ' percent'
+      'aria-label': 'Evidence completeness ' + result.confidence + ' percent; heuristic score, not a probability'
     }, el('span', { class: 'meter-fill', style: 'width:' + result.confidence + '%' }))
   ];
   if (result.conflicts.length) {
@@ -331,7 +343,9 @@ function replySection(result) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'triage-' + result.priority + '.md';
+    a.download = 'triage-' + (result.assessmentStatus === 'assessed' && result.suggestedPriority
+      ? result.suggestedPriority
+      : 'unassessed') + '.md';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -374,10 +388,20 @@ function refinedLine(result) {
 /** Short sentence announced to assistive technology. */
 export function statusSentence(result) {
   if (!result || result.empty) return 'No ticket text to analyse.';
-  const def = priorityDefinition(result.priority);
-  return 'Suggested priority ' + result.priority + ', ' + def.name + '. ' +
+  const actionable = result.assessmentStatus === 'assessed' && Boolean(result.suggestedPriority);
+  if (!actionable) {
+    return 'Assessment is unassessed; no actionable priority is suggested. Internal matrix result ' +
+      result.priority + '. Assessment confidence: ' + result.confidenceLabel +
+      '. Evidence completeness: ' + result.confidence + '% (heuristic).' +
+      (result.followUpQuestions.length
+        ? ' ' + result.followUpQuestions.length + ' follow-up questions suggested.'
+        : '');
+  }
+  const def = priorityDefinition(result.suggestedPriority);
+  return 'Suggested priority ' + result.suggestedPriority + ', ' + def.name + '. ' +
     result.impactLabel + ' impact, ' + result.urgencyLabel + ' urgency. ' +
-    result.confidenceLabel + ' confidence. ' +
+    'Assessment confidence: ' + result.confidenceLabel + '. Evidence completeness: ' +
+    result.confidence + '% (heuristic). ' +
     (result.followUpQuestions.length
       ? result.followUpQuestions.length + ' follow-up questions suggested.'
       : '');
@@ -415,24 +439,28 @@ export function renderResult(container, result, options = {}) {
     return;
   }
 
-  const def = priorityDefinition(result.priority);
+  const assessed = result.assessmentStatus === 'assessed' && Boolean(result.suggestedPriority);
+  const displayPriority = assessed ? result.suggestedPriority : null;
+  const def = displayPriority
+    ? priorityDefinition(displayPriority)
+    : { name: 'Unassessed', headline: 'More information needed before assigning a priority' };
 
-  const banner = el('div', { class: 'banner priority-' + result.priority }, [
+  const banner = el('div', { class: 'banner ' + (displayPriority ? 'priority-' + displayPriority : 'priority-unassessed') }, [
     el('div', { class: 'banner-main' }, [
       el('p', { class: 'banner-eyebrow' }, [
-        'Suggested priority',
+        displayPriority ? 'Suggested priority' : 'Assessment status',
         el('span', { class: 'refined-tag' },
           options.refined ? 'manually refined' : 'automatic')
       ]),
       el('p', { class: 'banner-priority' }, [
-        el('span', { class: 'banner-code' }, result.priority),
+        el('span', { class: 'banner-code' }, displayPriority || '—'),
         el('span', { class: 'banner-sep', 'aria-hidden': 'true' }, ' — '),
         el('span', { class: 'banner-name' }, def.name)
       ]),
       el('p', { class: 'banner-headline' }, def.headline),
       heroLevels(result),
       refinedLine(result),
-      severityBlocks(result.priority)
+      displayPriority ? severityBlocks(displayPriority) : null
     ]),
     el('div', { class: 'banner-side' }, miniMatrix(result))
   ]);
@@ -471,9 +499,8 @@ export function renderResult(container, result, options = {}) {
     result.insufficientInformation
       ? el('section', { class: 'unassessed' }, [
           el('h3', {}, 'Not enough detail to assess'),
-          el('p', {}, 'Almost nothing in this request could be recognised. Treat the ' +
-            'suggestion below as unassessed rather than as low priority - a request ' +
-            'this thin can still turn out to be serious.'),
+          el('p', {}, 'Almost nothing in this request could be recognised. No actionable ' +
+            'priority is suggested yet - a request this thin can still turn out to be serious.'),
           el('p', { class: 'muted' }, 'The questions below are the ones worth asking first.')
         ])
       : null,
@@ -487,11 +514,11 @@ export function renderResult(container, result, options = {}) {
     panel('Suggested reply (draft)', replySection(result), 'panel-reply'),
     // The reasoning chain is the point of the tool, and it holds a two-column
     // split of its own, so it gets the full width rather than half of it.
-    panel('Why ' + result.priority + '?', chainSection(result), 'panel-chain'),
+    panel(displayPriority ? 'Why ' + displayPriority + '?' : 'How the matrix assessed this request', chainSection(result), 'panel-chain'),
     el('div', { class: 'result-grid' }, [
       el('div', { class: 'result-col' }, [
         panel('Classification', factChips(result), 'panel-facts'),
-        panel('Confidence', confidenceSection(result)),
+        panel('Assessment confidence', confidenceSection(result)),
         panel('Risk flags', riskSection(result))
       ]),
       el('div', { class: 'result-col' }, [

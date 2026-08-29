@@ -1,9 +1,10 @@
 /**
- * Confidence scoring.
+ * Assessment confidence and evidence completeness.
  *
- * Confidence describes how much of the *decision-relevant* information the
- * ticket actually contained. A tool that is confidently wrong is worse than a
- * tool that says "I need three more facts".
+ * The score is a heuristic for how much of the *decision-relevant* information
+ * the ticket actually contained. It is not a probability or a correctness
+ * guarantee. A tool that is confidently wrong is worse than a tool that says
+ * "I need three more facts".
  */
 import { scanPositive } from './negation.js';
 import { CONTEXT_ELSEWHERE_PHRASES } from '../data/phrases.js';

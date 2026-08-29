@@ -37,12 +37,15 @@ The application only writes the theme preference (`localStorage` key `theme` = `
 
 ### The one thing that does carry ticket text: the share link
 
-**Share Link** puts the ticket (first 2000 characters) into the page URL as `?t=` so a
-colleague can open the same analysis. The link is never sent anywhere by the
-application — but anyone you give the link to can read the ticket, and it will appear
-in browser history and server access logs like any URL. **Do not use Share Link for
-sensitive tickets.** Clearing the box removes the parameter from the address bar.
-Downloading the `.md` slip keeps everything on your device.
+**Share Link** puts the ticket (first 2000 characters) into the page URL fragment as
+`#t=` so a colleague can open the same analysis. Fragments are not sent in the HTTP
+request, so the ticket is not written to server access logs by this link. However,
+anyone you give the link to can read it, and it may remain in browser history or copied
+messages. **Do not use Share Link for sensitive tickets.** Clearing the box removes the
+fragment from the address bar. Legacy `?t=` links are accepted once and cleaned from
+the address bar after reading, but their ticket text was already part of the initial
+HTTP request and may therefore be in server logs; cleanup cannot undo that exposure.
+Prefer the fragment format. Downloading the `.md` slip keeps everything on your device.
 
 ---
 

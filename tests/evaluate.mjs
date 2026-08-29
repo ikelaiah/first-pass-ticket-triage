@@ -97,6 +97,8 @@ export function evaluateCases(cases, analyseTicket = analyse) {
   let p1TruePositive = 0;
   let p1FalsePositive = 0;
   let p1FalseNegative = 0;
+  let underPrioritisation = 0;
+  let severeUnderPrioritisation = 0;
   let dangerousUnderPrioritisation = 0;
   let abstentionsOnAssessed = 0;
   const facets = Object.fromEntries(Object.keys(FACET_DEFINITIONS).map((facet) => [
@@ -121,8 +123,13 @@ export function evaluateCases(cases, analyseTicket = analyse) {
       assessedExpected += 1;
       if (result.suggestedPriority === item.expected.priority) priorityCorrect += 1;
       if (!result.suggestedPriority) abstentionsOnAssessed += 1;
-      if (result.suggestedPriority &&
-          PRIORITY_RANK[item.expected.priority] - PRIORITY_RANK[result.suggestedPriority] >= 2) {
+      // Treat abstention on an assessed expected case as below P4. This keeps
+      // safety reporting conservative: no actionable priority is still a miss.
+      const priorityGap = PRIORITY_RANK[item.expected.priority] -
+        (PRIORITY_RANK[actualPriority] || 0);
+      if (priorityGap > 0) underPrioritisation += 1;
+      if (priorityGap >= 2) severeUnderPrioritisation += 1;
+      if (priorityGap >= 2) {
         dangerousUnderPrioritisation += 1;
       }
     }
@@ -191,6 +198,9 @@ export function evaluateCases(cases, analyseTicket = analyse) {
       falsePositive: p1FalsePositive,
       falseNegative: p1FalseNegative
     },
+    underPrioritisation,
+    severeUnderPrioritisation,
+    // Backwards-compatible alias retained for consumers of the old report.
     dangerousUnderPrioritisation,
     abstentionsOnAssessed,
     facets,
@@ -212,7 +222,10 @@ export function printReport(report, write = console.log) {
   write('Impact accuracy: ' + percent(report.impactAccuracy));
   write('Urgency accuracy: ' + percent(report.urgencyAccuracy));
   write('P1 precision / recall: ' + percent(report.p1.precision) + ' / ' + percent(report.p1.recall));
-  write('Dangerous under-prioritisations: ' + report.dangerousUnderPrioritisation);
+  write('Under-prioritisation (any): ' + report.underPrioritisation);
+  write('Severe under-prioritisation (two or more levels): ' + report.severeUnderPrioritisation);
+  write('P1 misses (false negatives): ' + report.p1.falseNegative);
+  write('P1 false positives: ' + report.p1.falsePositive);
   write('Abstentions on assessed tickets: ' + report.abstentionsOnAssessed);
   for (const [name, facet] of Object.entries(report.facets || {})) {
     write(name[0].toUpperCase() + name.slice(1) + ' accuracy: ' + percent(facet.accuracy) +

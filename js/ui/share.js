@@ -2,8 +2,9 @@
  * Share link — the URL carries the ticket, nothing is stored.
  *
  * base64url of the UTF-8 ticket text, capped at 2000 characters so the link
- * stays inside practical URL limits. The link IS the ticket: do not share
- * sensitive tickets this way (documented in PRIVACY.md).
+ * stays inside practical URL limits. New links use a fragment so the ticket is
+ * not sent in the HTTP request. The link IS the ticket: do not share sensitive
+ * tickets this way (documented in PRIVACY.md).
  */
 
 export const SHARE_LIMIT = 2000;
@@ -28,11 +29,40 @@ export function decodeTicket(encoded) {
   }
 }
 
+function queryWithoutTicket(search) {
+  const params = new URLSearchParams(search || '');
+  params.delete('t');
+  const query = params.toString();
+  return query ? '?' + query : '';
+}
+
+function locationBase(loc) {
+  return (loc.pathname || '') + queryWithoutTicket(loc.search);
+}
+
+function readFragmentTicket(hash) {
+  const value = String(hash || '').replace(/^#/, '');
+  const params = new URLSearchParams(value);
+  const encoded = params.get('t');
+  return encoded ? decodeTicket(encoded) : null;
+}
+
+function removeLegacyTicket(loc) {
+  if (typeof window === 'undefined' || !window.history?.replaceState) return;
+  window.history.replaceState(null, '', locationBase(loc) + (loc.hash || ''));
+}
+
 export function readTicketFromLocation(loc) {
   try {
+    const fragmentTicket = readFragmentTicket(loc.hash);
+    if (fragmentTicket !== null) return fragmentTicket;
+
     const params = new URLSearchParams(loc.search);
-    const t = params.get('t');
-    return t ? decodeTicket(t) : null;
+    const encoded = params.get('t');
+    if (!encoded) return null;
+    const ticket = decodeTicket(encoded);
+    if (ticket !== null) removeLegacyTicket(loc);
+    return ticket;
   } catch {
     return null;
   }
@@ -40,9 +70,8 @@ export function readTicketFromLocation(loc) {
 
 export function writeTicketToLocation(text) {
   try {
-    const url = text
-      ? '?t=' + encodeTicket(text)
-      : window.location.pathname;
+    const base = locationBase(window.location);
+    const url = text ? base + '#t=' + encodeTicket(text) : base;
     window.history.replaceState(null, '', url);
   } catch {
     // history may be unavailable (file://, sandboxed iframe) — sharing then

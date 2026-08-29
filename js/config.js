@@ -2,7 +2,10 @@
  * Organisation-specific configuration.
  *
  * Everything that is specific to *this* organisation lives here so the rules
- * engine itself stays generic. Change these values, not the engine.
+ * engine itself stays generic. This file is intentionally public: change or
+ * replace these deployment values when reusing the static site, and never put
+ * credentials, tokens or other secrets here. A future split of generic defaults
+ * from the organisation profile should preserve the same no-secrets boundary.
  */
 export const organisationConfig = {
   /** Number of schools serviced. Used for labels and "all N schools" detection. */
@@ -134,7 +137,10 @@ export const organisationConfig = {
       name: 'Casual Staff Canvas Sync',
       scheduledTime: '09:30',
       keywords: ['casual', 'canvas', 'staff'],
-      minKeywords: 3,
+      // Once a creation event is explicitly associated with a staff record,
+      // staff + Canvas is enough to identify this configured sync. The event
+      // grammar in analyzer.js remains the conservative gate.
+      minKeywords: 2,
       note: 'Casual staff are synchronised to Canvas at 09:30 each day.'
     },
     {

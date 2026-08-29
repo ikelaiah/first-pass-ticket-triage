@@ -1,5 +1,34 @@
 # Changelog
 
+## [0.5.0] - 2026-08-29
+
+### Added
+
+- Fragment-based share links (`#t=`), with a 2000-character cap and one-time cleanup
+  for legacy `?t=` links.
+- Reliability regressions for conservative schedule detection, adversarial context,
+  assessment abstention, matrix validation, share privacy and heuristic confidence
+  wording.
+- GitHub Actions coverage for `npm test` on pushes and pull requests.
+
+### Changed
+
+- Assessment confidence and evidence completeness are labelled as heuristic signals,
+  never as probabilities.
+- Unassessed results no longer present the internal P4 matrix cell as an actionable
+  suggestion; the raw matrix result remains available for explanation.
+- Evaluation reports any and severe under-prioritisation, P1 false negatives and
+  false positives, while keeping mismatch reports privacy-safe.
+- Organisation-specific configuration remains public and replaceable; secrets do not
+  belong in the static application.
+
+### Fixed
+
+- Clock times only de-escalate when grammatically associated with a supported record
+  creation/update event, not an unrelated meeting, access window or report timestamp.
+- Invalid impact or urgency values now fail with a useful error instead of producing an
+  undefined matrix result.
+
 ## [0.4.1] - 2026-08-29
 
 ### Added

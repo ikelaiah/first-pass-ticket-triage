@@ -1,6 +1,6 @@
 {
   "metadata": {
-    "name": "v0.4.1 evaluator schema examples",
+    "name": "v0.5.0 evaluator schema examples",
     "kind": "schema-example",
     "note": "Synthetic schema examples only. Replace or supplement them with independently labelled, anonymised tickets. Do not treat this file or its metrics as a production accuracy claim."
   },
