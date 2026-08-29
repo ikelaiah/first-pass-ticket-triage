@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.6.1] - 2026-08-29
+
+### Fixed
+
+- Corrected the Markdown catalogue reconciliation parser for three-column tables;
+  all 47 affected source rows now retain their URL without inventing a typical level.
+- Reconciled all 206 source assignments against source-provided metadata, including
+  main use, level/environment/role where present, and URL.
+- Merged BrainPOP and BrainPOP Jr. into one canonical family while retaining both
+  source rows and categories.
+- Added catalogue-wide duplicate literal-alias validation and removed generic
+  `screen reader`/`reader` inference for ReadSpeaker.
+- Guarded the reviewed bare Clipboard, Sora, and Quill aliases against ordinary
+  language false positives.
+
+### Unchanged
+
+- Impact, Urgency, the authoritative P1–P4 matrix, organisation criticality,
+  scheduled jobs, source-of-truth flows, and result-model compatibility.
+
 ## [0.6.0] - 2026-08-29
 
 ### Added

@@ -29,3 +29,18 @@
 - [x] Update README/architecture docs, changelog, and version to 0.6.0.
 - [x] Run full verification and code review.
 - [x] Commit, merge, tag, and publish the `v0.6.0` release.
+
+## v0.6.1 catalogue-correctness patch
+
+- [ ] Confirm the untouched v0.6.0 suite and audit the source table shapes.
+- [ ] Add red parser, metadata reconciliation, BrainPOP, alias-integrity, and
+  ReadSpeaker regressions.
+- [ ] Correct all 47 malformed three-column source rows without inventing levels.
+- [ ] Merge BrainPOP / BrainPOP Jr. into one canonical family while retaining
+  both source rows and categories.
+- [ ] Remove generic `screen reader` and `reader` ReadSpeaker aliases.
+- [ ] Prove category metadata remains scoring-neutral and priority expectations do
+  not change.
+- [ ] Update release documentation/version and run the full verification suite.
+- [ ] Review the focused diff before the existing PR, merge, tag, and release
+  workflow.

@@ -1978,6 +1978,9 @@ const ambiguousCatalogueCases = [
   ['The document is flat.', 'Flat for Education'],
   ['Oliver completed his homework.', 'Oliver'],
   ['Scratch that change.', 'Scratch'],
+  ['Put the clipboard on the desk.', 'Clipboard'],
+  ['Sora was mentioned in the story.', 'Sora'],
+  ['The quill is on the desk.', 'Quill'],
   ['The reader finished the story.', 'ReadSpeaker'],
   ['The classroom was cleaned after lunch.', 'Google Classroom'],
   ['Please send the forms to reception.', 'Microsoft Forms'],
@@ -1990,6 +1993,34 @@ for (const [text, forbidden] of ambiguousCatalogueCases) {
     return ok(!result.systems.includes(forbidden), result.systems.join(', ') || 'no systems');
   });
 }
+
+/* ------------------------------------------- v0.6.1 catalogue correctness -- */
+
+test('v0.6.1 catalogue', 'BrainPOP resolves to one canonical family with both source categories', () => {
+  const result = analyse('BrainPOP videos are not loading.');
+  const matches = result.systemDetails.filter((system) => system.id === 'brainpop');
+  return ok(matches.length === 1 &&
+    matches[0].categories.includes('Broad Curriculum & Learning Platforms') &&
+    matches[0].categories.includes('Educational Video') &&
+    result.systemDetails.length === 1, JSON.stringify(result.systemDetails));
+});
+
+test('v0.6.1 catalogue', 'BrainPOP Jr. maps to the BrainPOP canonical family', () => {
+  const result = analyse('BrainPOP Jr. is unavailable.');
+  return ok(result.systems.length === 1 && result.systemDetails[0]?.id === 'brainpop',
+    JSON.stringify(result.systemDetails));
+});
+
+test('v0.6.1 catalogue', 'generic screen reader wording does not infer ReadSpeaker', () => {
+  const result = analyse('The screen reader is not working with the enrolment form.');
+  return ok(result.technicalDomain === 'accessibility' && !result.systems.includes('ReadSpeaker'),
+    JSON.stringify({ systems: result.systems, domain: result.technicalDomain }));
+});
+
+test('v0.6.1 catalogue', 'explicit ReadSpeaker wording still identifies the product', () => {
+  const result = analyse('ReadSpeaker is not working with the enrolment form.');
+  return ok(result.systems.includes('ReadSpeaker'), result.systems.join(', ') || 'no systems');
+});
 
 /* ------------------------------------------------------- 29. examples -- */
 
