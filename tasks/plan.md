@@ -451,3 +451,106 @@ mismatch. Leave documented scoring-policy disagreements unchanged.
 | Correct labels are changed to fit current implementation | High | Validate expected priorities against the authoritative matrix before scoring. |
 | Reporting disguises policy disagreements as regressions | Medium | Require one explicit classification for every mismatch and defer policy items. |
 | Existing dirty v0.7.0 work is overwritten | High | Preserve unrelated changes and modify only the scoped modules, fixtures, and evaluator. |
+
+## v0.7.1 NLP Evaluation Integrity & Regression Hardening
+
+### Overview
+
+Harden the labelled evaluation corpus as release-gating data, add an
+independently authored realistic-ticket pack, protect fixture independence, and
+make only the smallest deterministic NLP fixes demonstrated by a pre-fix
+baseline. Preserve the v0.7.0 scoring, priority matrix, policy semantics,
+catalogue neutrality, and dependency-free Node/browser architecture.
+
+### Architecture decisions
+
+- Keep corpus validation in the existing offline evaluator and make it reject
+  duplicate IDs, duplicate normalised ticket text, invalid controlled values,
+  matrix-inconsistent labels, malformed alternatives, and unknown review
+  classifications.
+- Keep quality statistics separate from accuracy metrics, with explicit labelled
+  denominators for each facet and review category.
+- Store the new realistic tickets as hand-authored fixture data; do not derive
+  wording from production phrase dictionaries or mechanically paraphrase old
+  cases.
+- Use the existing analyser as the v0.7.0 baseline before any production edit;
+  classify each new-case mismatch as engine defect, expected-label defect,
+  acceptable ambiguity, or existing policy disagreement.
+- Treat a detector change as release-worthy only when a failing regression proves
+  an evidence/context defect and paired negative or contrast coverage guards the
+  neighbouring semantics.
+
+### Ordered tasks
+
+#### Phase 1: Baseline and red contracts
+
+- [x] Confirm clean `main`, package version `0.7.0`, the 775-test baseline,
+  catalogue 206/206 reconciliation, and the 57-case evaluation metrics.
+- [x] Add failing evaluator tests for duplicate IDs/text, all controlled enums,
+  matrix consistency, reviewed alternatives, unknown classifications, and
+  missing mismatch classifications.
+- [x] Add failing/reporting expectations for corpus-quality denominators and
+  reviewed/unreviewed mismatch counts.
+
+#### Phase 2: Corpus and regression coverage
+
+- [x] Add 15–25 independently authored realistic evaluation tickets spanning
+  scope/context, I2, I3, I4, U5/U6, U7, and U8 composition challenges.
+- [x] Run those new tickets against the untouched v0.7.0 analyser and record
+  the required fully-correct/facet-mismatch/Impact/Urgency/Priority counts plus
+  a classification for every mismatch.
+- [x] Add lightweight checks that semantic fixtures do not import production
+  phrase dictionaries and that exact normalised copy/paste duplicates across
+  semantic, evaluation, and legacy regression corpora fail clearly.
+- [x] Add targeted cross-facet and v0.7.0 major-fix regressions without
+  duplicating existing exact wording.
+
+#### Checkpoint: integrity and baseline classification
+
+- [x] Integrity tests fail for each invalid corpus mutation and pass for the
+  reviewed corpus.
+- [x] The new-ticket baseline is captured before any production detector edit.
+- [x] Every mismatch is classified; no policy disagreement is silently changed.
+
+#### Phase 3: Minimal detector fixes
+
+- [x] For each confirmed engine defect, add a semantic positive family and
+  negative/history/negation/comparator guard as appropriate.
+- [x] Implement only the smallest production evidence-extraction/context fix;
+  do not change weights, matrix cells, future-deadline, workaround,
+  containment, privacy, financial, safeguarding, criticality, or category rules.
+- [x] Re-run focused regressions and compare v0.7.0/v0.7.1 behaviour across the
+  complete evaluation corpus, classifying every changed facet/result.
+
+#### Phase 4: Release documentation and final gate
+
+- [x] Extend the Node report with all requested corpus-quality statistics and
+  keep browser reporting aligned.
+- [x] Update README/CHANGELOG and version metadata to 0.7.1 only after
+  meaningful patch improvements are complete; document unchanged policy and
+  scoring architecture without overstating accuracy.
+- [x] Run full tests, catalogue reconciliation, syntax/privacy checks, browser
+  verification, integrity validation, and the behavioural-difference gate.
+- [x] Confirm unresolved engine defects and unexplained regressions are zero,
+  severe under-prioritisation does not regress, and no dependencies/network/
+  backend/telemetry were introduced.
+
+### Verification commands
+
+- `npm test`
+- `node tests/evaluate.mjs tests/fixtures/accuracy-corpus.json`
+- `node --check` for changed JavaScript modules
+- `git diff --check`
+- Browser runner `tests/tests.html` with a clean console/runtime
+- Catalogue reconciliation output: 206/206, zero metadata mismatches, zero
+  duplicate literal aliases
+
+### Risks and mitigations
+
+| Risk | Impact | Mitigation |
+| --- | --- | --- |
+| Corpus validation rejects legacy data unexpectedly | High | Add mutation tests first and preserve the checked-in corpus classifications. |
+| Realistic tickets encode policy opinions as engine defects | High | Capture v0.7.0 output and classify before production edits; defer policy cases. |
+| New wording copies production or old fixtures | Medium | Add exact normalised cross-corpus duplicate checks and review provenance. |
+| A context fix changes unrelated facets | High | Record complete facet/Impact/Urgency/Priority diffs and require zero unexplained regressions. |
+| Browser and Node reports drift | Medium | Reuse shared fixtures/helpers and run both release gates. |

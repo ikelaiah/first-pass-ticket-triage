@@ -108,7 +108,7 @@
       "id": "casual-payroll-cutoff",
       "text": "The casual staff payroll file was not produced for 42 employees and the payroll cutoff is this afternoon.",
       "expected": { "assessmentStatus": "assessed", "priority": "P1", "impact": "high", "urgency": "high", "scope": "team", "i3": "financial-harm", "deadline": "today", "u5": "today", "u6": "operational" },
-      "review": { "classification": "acceptable ambiguity", "acceptablePriorities": ["P1", "P2"], "note": "Payroll failure is implied by the missing file but unpaid harm is not explicit." }
+      "review": { "classification": "acceptable ambiguity", "acceptablePriorities": ["P2"], "note": "Payroll failure is implied by the missing file but unpaid harm is not explicit." }
     },
     {
       "id": "isolated-canvas-can-wait",
@@ -168,7 +168,7 @@
       "id": "team-pay-run-today",
       "text": "The payment service is down for the finance team, there is no workaround, and the pay run is due today.",
       "expected": { "assessmentStatus": "assessed", "priority": "P2", "impact": "medium", "urgency": "high", "scope": "team", "u7": "no", "deadline": "today", "u5": "today", "u6": "operational" },
-      "review": { "classification": "acceptable ambiguity", "acceptablePriorities": ["P1", "P2"], "note": "The payment failure consequence is plausible but not explicit." }
+      "review": { "classification": "acceptable ambiguity", "acceptablePriorities": ["P1"], "note": "The payment failure consequence is plausible but not explicit." }
     },
     {
       "id": "compass-timetable-howto",
@@ -262,7 +262,7 @@
       "id": "wrong-guardian-court-order",
       "text": "Wrong guardian details are being sent to all schools and could affect court orders.",
       "expected": { "assessmentStatus": "assessed", "priority": "P1", "impact": "high", "urgency": "high", "scope": "all-schools", "i3": "safeguarding", "i4": "unknown" },
-      "review": { "classification": "acceptable ambiguity", "acceptablePriorities": ["P1", "P2"], "note": "Potential court-order harm is serious, but the wording does not state an active consequence or deadline." }
+      "review": { "classification": "acceptable ambiguity", "acceptablePriorities": ["P2"], "note": "Potential court-order harm is serious, but the wording does not state an active consequence or deadline." }
     },
     {
       "id": "backup-fails-five-nights",
@@ -355,6 +355,134 @@
       "text": "Chrome can be used for Canvas while Edge remains unavailable for two staff.",
       "expected": { "assessmentStatus": "assessed", "priority": "P3", "impact": "low", "urgency": "medium", "scope": "few-users", "u7": "yes" },
       "review": { "classification": "policy disagreement deferred", "note": "The impact and urgency effect of a browser stopgap remains deferred." }
+    },
+    {
+      "id": "realistic-current-narrow-after-broad-history",
+      "text": "Hi team, yesterday every campus saw the enrolment page time out. This morning the other offices are processing applications; only one registrar still cannot submit.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P3", "impact": "low", "urgency": "medium", "scope": "individual" },
+      "review": { "classification": "acceptable ambiguity", "note": "The current-morning wording can be read as a timestamp or a same-day need; both interpretations remain P3." }
+    },
+    {
+      "id": "realistic-narrow-with-broad-unaffected",
+      "text": "One teacher at North campus cannot open Seesaw. The other 26 teachers and every other campus are working normally.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P3", "impact": "low", "urgency": "medium", "scope": "individual", "i2": "unknown" }
+    },
+    {
+      "id": "realistic-multiple-schools-no-spread",
+      "text": "Three schools report the same timetable export error. No other sites are seeing it and nothing suggests the issue is reaching more schools.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P2", "impact": "high", "urgency": "medium", "scope": "multiple-schools", "i4": "unknown" }
+    },
+    {
+      "id": "realistic-login-paper-attendance",
+      "text": "Morning, Seesaw login is failing for two teachers at North campus. They are still taking attendance on paper and classes are running.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P3", "impact": "medium", "urgency": "medium", "scope": "few-users", "i2": "unknown", "u7": "yes" },
+      "review": { "classification": "acceptable ambiguity", "note": "A working paper attendance process supports low urgency, while the live login failure supports medium urgency; both remain P3." }
+    },
+    {
+      "id": "realistic-attendance-blocked-different-symptom",
+      "text": "The Seesaw page opens, but teachers cannot enter attendance for Year 4. There is no paper roll or other process available this morning.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P2", "impact": "medium", "urgency": "high", "scope": "cohort", "i2": "blocked", "u7": "no" }
+    },
+    {
+      "id": "realistic-private-report-no-exposure",
+      "text": "Please check the student wellbeing report. It contains confidential contact details, but nobody has been shown another student's information.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P3", "impact": "medium", "urgency": "medium", "i3": "privacy-context", "u8": "unknown" },
+      "review": { "classification": "acceptable ambiguity", "note": "The privacy context is real but current exposure is explicitly ruled out; medium versus low urgency does not change P3." }
+    },
+    {
+      "id": "realistic-live-family-balance-exposure",
+      "text": "Parents are emailing that the fee portal is showing another family's balance on screen right now; access has not been removed.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P1", "impact": "high", "urgency": "high", "scope": "unknown", "i3": "privacy-exposure", "u8": "active" }
+    },
+    {
+      "id": "realistic-payroll-success-confirmation-delay",
+      "text": "Payroll completed successfully this morning; finance are only asking whether the casual staff file will be ready before next month's processing cycle.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P4", "impact": "low", "urgency": "low", "i3": "unknown", "u8": "unknown" },
+      "review": { "classification": "policy disagreement deferred", "note": "Payroll succeeded, but the stated next-cycle readiness date still triggers the unchanged future-deadline floor." }
+    },
+    {
+      "id": "realistic-wrong-year-level-live-register",
+      "text": "Morning report: twelve students have the wrong year level in the live register, although staff can open it and classes are continuing.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P3", "impact": "medium", "urgency": "medium", "scope": "team", "i3": "incorrect-data", "i4": "unknown" }
+    },
+    {
+      "id": "realistic-hypothetical-address-export",
+      "text": "The proposed export could reveal student addresses in next quarter's release if the permission check is missed; no data is exposed in this version.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P3", "impact": "medium", "urgency": "medium", "i3": "privacy-context", "u8": "pending" }
+    },
+    {
+      "id": "realistic-recurring-sync-no-propagation",
+      "text": "The overnight sync has failed on three consecutive runs. We have not seen records appear in the wrong system or move beyond the affected batch.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P3", "impact": "medium", "urgency": "medium", "i4": "recurring" }
+    },
+    {
+      "id": "realistic-four-records-propagating",
+      "text": "Four new enrolments received duplicate IDs and the same bad IDs are now flowing into the class list and reports. We have not checked the rest of the intake.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P2", "impact": "high", "urgency": "medium", "scope": "few-users", "i3": "incorrect-data", "i4": "spreading" },
+      "review": { "classification": "policy disagreement deferred", "note": "Four records are explicitly spreading and the remaining intake is unchecked; the corpus label keeps the escalation at P2 pending policy review." }
+    },
+    {
+      "id": "realistic-contained-import-batch",
+      "text": "Only the six records from Tuesday's import are wrong; the batch has been isolated and no newer records are affected.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P3", "impact": "medium", "urgency": "medium", "scope": "few-users", "i3": "incorrect-data", "i4": "contained" }
+    },
+    {
+      "id": "realistic-unknown-attendance-extent",
+      "text": "We've found missing attendance entries in the dashboard, but we cannot tell yet how many classes are involved.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P3", "impact": "medium", "urgency": "medium", "i4": "unknown-extent" }
+    },
+    {
+      "id": "realistic-reported-time-no-deadline",
+      "text": "Logged at 8:30 this morning. The coordinator is investigating a slow report, and no meeting or submission depends on it today.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P4", "impact": "low", "urgency": "low", "deadline": "none", "u5": "none" }
+    },
+    {
+      "id": "realistic-timetable-preference-friday",
+      "text": "Could we have the timetable export by Friday if possible? It would save a bit of admin time, but nothing is blocked.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P4", "impact": "low", "urgency": "low", "deadline": "days-2-5", "u5": "days-2-5", "u6": "preference" }
+    },
+    {
+      "id": "realistic-casual-import-payroll-cutoff",
+      "text": "The new casual-staff import must be ready before next month's payroll cutoff; this is a required change, not a suggestion.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P3", "impact": "low", "urgency": "medium", "deadline": "weeks-1-2", "u5": "weeks-1-2", "u6": "operational" },
+      "review": { "classification": "policy disagreement deferred", "note": "A future payroll dependency adds medium impact in the unchanged scoring model even without an active failure." }
+    },
+    {
+      "id": "realistic-browser-workaround-admins",
+      "text": "Edge is unavailable for two administrators, but Chrome lets them complete the enrolment checks for now.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P3", "impact": "low", "urgency": "medium", "scope": "few-users", "u7": "yes" },
+      "review": { "classification": "acceptable ambiguity", "note": "The browser fallback supports low urgency, while the active access failure supports medium urgency; both remain P3." }
+    },
+    {
+      "id": "realistic-historical-spreadsheet-fallback",
+      "text": "The outage was resolved last week. We used the spreadsheet fallback during it; that workaround is no longer available because the file was retired.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P4", "impact": "low", "urgency": "low", "u7": "unknown", "u8": "unknown" }
+    },
+    {
+      "id": "realistic-partial-paper-approval",
+      "text": "The enrolment portal fails for six staff. The paper process works for some enrolments but not for the remaining cases; the six staff cannot complete the remaining enrolments.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P2", "impact": "medium", "urgency": "high", "scope": "few-users", "i2": "blocked", "u7": "partial" }
+    },
+    {
+      "id": "realistic-active-payment-harm",
+      "text": "The expired certificate is rejecting payments now; families are being turned away at the counter.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P1", "impact": "high", "urgency": "high", "i3": "financial-harm", "u8": "active" }
+    },
+    {
+      "id": "realistic-pending-payment-harm",
+      "text": "The certificate will expire before Friday's payroll cutoff and could stop payments then; it is valid today.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P3", "impact": "low", "urgency": "medium", "deadline": "days-2-5", "u5": "days-2-5", "u6": "operational", "u8": "pending" },
+      "review": { "classification": "policy disagreement deferred", "note": "The credential is valid today, but payroll and payment risk still add medium impact under the unchanged scoring model." }
+    },
+    {
+      "id": "realistic-resolved-privacy-audit",
+      "text": "Yesterday's privacy incident was closed after access was removed. This note is for the audit file only.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P4", "impact": "low", "urgency": "low", "i3": "privacy-context", "u8": "unknown" }
+    },
+    {
+      "id": "realistic-negated-current-exposure",
+      "text": "No one is currently seeing another student's details; the old report was corrected last night.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P4", "impact": "low", "urgency": "low", "i3": "unknown", "u8": "unknown" }
     }
   ]
 }

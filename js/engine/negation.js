@@ -31,7 +31,7 @@ const NEGATION_LINKERS = new Set([
   'currently', 'actually', 'really', 'yet', 'to', 'that', 'this', 'these',
   'those', 'our', 'their', 'its', 'his', 'her', 'my', 'your', 'other',
   'apparent', 'known', 'evidence', 'sign', 'signs', 'indication', 'indications',
-  'report', 'reports', 'further', 'more', 'real', 'actual', 'in',
+  'report', 'reports', 'further', 'more', 'real', 'actual', 'data', 'information', 'records', 'in',
   'have', 'has', 'had', 'got', 'get'
 ]);
 

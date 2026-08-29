@@ -53,24 +53,39 @@ function assert(condition, message) {
   if (!condition) throw new Error('Invalid accuracy corpus: ' + message);
 }
 
+export function normaliseEvaluationText(text) {
+  return text.trim().toLowerCase().replace(/\s+/g, ' ');
+}
+
 export function validateCorpus(corpus) {
   assert(corpus && Array.isArray(corpus.cases), 'top-level `cases` must be an array');
   assert(corpus.cases.length > 0, '`cases` must not be empty');
   const ids = new Set();
+  const ticketTexts = new Set();
 
   for (const [index, item] of corpus.cases.entries()) {
     const at = 'cases[' + index + ']';
     assert(item && typeof item === 'object', at + ' must be an object');
     assert(typeof item.id === 'string' && item.id.trim(), at + '.id must be a non-empty string');
-    assert(!ids.has(item.id), at + '.id must be unique (' + item.id + ')');
-    ids.add(item.id);
+    const normalisedId = item.id.trim().toLowerCase();
+    assert(!ids.has(normalisedId), at + '.id must be unique (' + item.id + ')');
+    ids.add(normalisedId);
     assert(typeof item.text === 'string' && item.text.trim(), at + '.text must be a non-empty string');
+    const normalisedText = normaliseEvaluationText(item.text);
+    assert(!ticketTexts.has(normalisedText), at + '.text must be unique after normalisation');
+    ticketTexts.add(normalisedText);
     assert(item.expected && typeof item.expected === 'object', at + '.expected must be an object');
     assert(['assessed', 'unassessed'].includes(item.expected.assessmentStatus),
       at + '.expected.assessmentStatus must be assessed or unassessed');
+    if (item.expected.priority !== undefined) {
+      assert(PRIORITIES.includes(item.expected.priority), at + '.expected.priority is invalid');
+    }
     if (item.expected.assessmentStatus === 'assessed') {
       assert(PRIORITIES.includes(item.expected.priority),
-        at + '.expected.priority must be P1, P2, P3, or P4');
+        at + '.expected.priority must be P1, P2, P3, or P4 for assessed cases');
+    } else {
+      assert(item.expected.priority === undefined,
+        at + '.expected.priority is only allowed for assessed cases');
     }
     if (item.expected.impact !== undefined) {
       assert(LEVELS.includes(item.expected.impact), at + '.expected.impact is invalid');
@@ -91,10 +106,19 @@ export function validateCorpus(corpus) {
         at + '.review must be an object');
       assert(REVIEW_CLASSIFICATIONS.includes(item.review.classification),
         at + '.review.classification must be one of: ' + REVIEW_CLASSIFICATIONS.join(', '));
+      assert(typeof item.review.note === 'string' && item.review.note.trim(),
+        at + '.review.note must be a non-empty review reason');
       if (item.review.acceptablePriorities !== undefined) {
         assert(Array.isArray(item.review.acceptablePriorities) &&
+          item.review.acceptablePriorities.length > 0 &&
           item.review.acceptablePriorities.every((priority) => PRIORITIES.includes(priority)),
         at + '.review.acceptablePriorities must contain only P1, P2, P3, or P4');
+        assert(item.expected.assessmentStatus === 'assessed',
+          at + '.review.acceptablePriorities requires an assessed case');
+        assert(item.review.acceptablePriorities.every((priority) => priority !== item.expected.priority),
+          at + '.review acceptable alternatives must differ from the expected priority');
+        assert(new Set(item.review.acceptablePriorities).size === item.review.acceptablePriorities.length,
+          at + '.review.acceptablePriorities must not contain duplicates');
       }
     }
     for (const [facet, values] of Object.entries(FACET_DEFINITIONS)) {
@@ -173,6 +197,27 @@ function emptyConfusion() {
 export function evaluateCases(cases, analyseTicket = analyse) {
   const confusion = emptyConfusion();
   const mismatches = [];
+  const textCounts = new Map();
+  for (const item of cases) {
+    const text = normaliseEvaluationText(item.text);
+    textCounts.set(text, (textCounts.get(text) || 0) + 1);
+  }
+  const duplicateTicketTexts = [...textCounts.values()].filter((count) => count > 1).length;
+  const labelCount = (aliases) => cases.filter((item) =>
+    aliases.some((alias) => item.expected[alias] !== undefined)).length;
+  const labels = {
+    i1: labelCount(EIGHT_FACET_ALIASES.i1),
+    i2: labelCount(EIGHT_FACET_ALIASES.i2),
+    i3: labelCount(EIGHT_FACET_ALIASES.i3),
+    i4: labelCount(EIGHT_FACET_ALIASES.i4),
+    u5: labelCount(EIGHT_FACET_ALIASES.u5),
+    u6: labelCount(EIGHT_FACET_ALIASES.u6),
+    u7: labelCount(EIGHT_FACET_ALIASES.u7),
+    u8: labelCount(EIGHT_FACET_ALIASES.u8),
+    impact: cases.filter((item) => item.expected.impact !== undefined).length,
+    urgency: cases.filter((item) => item.expected.urgency !== undefined).length,
+    priority: cases.filter((item) => item.expected.priority !== undefined).length
+  };
   let actionable = 0;
   let statusCorrect = 0;
   let actualAssessed = 0;
@@ -241,6 +286,7 @@ export function evaluateCases(cases, analyseTicket = analyse) {
       if (result.urgency === item.expected.urgency) urgencyCorrect += 1;
     }
 
+    const facetMismatchStart = facetMismatches.length;
     for (const facet of Object.keys(FACET_DEFINITIONS)) {
       if (item.expected[facet] === undefined) continue;
       const expected = item.expected[facet];
@@ -249,6 +295,7 @@ export function evaluateCases(cases, analyseTicket = analyse) {
       if (actual === expected) facets[facet].correct += 1;
       else facetMismatches.push({ id: item.id, facet, expected, actual });
     }
+    const eightFacetMismatchStart = eightFacetMismatches.length;
     for (const facet of Object.keys(EIGHT_FACET_DEFINITIONS)) {
       const expected = expectedEightFacet(item, facet);
       if (expected === undefined) continue;
@@ -257,6 +304,8 @@ export function evaluateCases(cases, analyseTicket = analyse) {
       if (actual === expected) eightFacets[facet].correct += 1;
       else eightFacetMismatches.push({ id: item.id, facet, expected, actual });
     }
+    const caseFacetMismatches = facetMismatches.slice(facetMismatchStart);
+    const caseEightFacetMismatches = eightFacetMismatches.slice(eightFacetMismatchStart);
 
     const expectedP1 = expectedPriority === 'P1';
     const actualP1 = actualPriority === 'P1';
@@ -277,11 +326,16 @@ export function evaluateCases(cases, analyseTicket = analyse) {
       actualPriority !== expectedPriority &&
       acceptablePriorities.includes(actualPriority);
     if (acceptableAlternative) acceptableAlternativeCount += 1;
-    if (outcomeMismatch) {
-      const classification = REVIEW_CLASSIFICATIONS.includes(review.classification)
-        ? review.classification : null;
+    const anyMismatch = outcomeMismatch || caseFacetMismatches.length > 0 ||
+      caseEightFacetMismatches.length > 0;
+    const classification = REVIEW_CLASSIFICATIONS.includes(review.classification)
+      ? review.classification : null;
+    if (anyMismatch) {
       if (classification) mismatchClassifications[classification] += 1;
       else unreviewedMismatchCount += 1;
+      for (const mismatch of [...caseFacetMismatches, ...caseEightFacetMismatches]) {
+        mismatch.classification = classification;
+      }
     }
 
     if (expectedStatus !== actualStatus || expectedPriority !== actualPriority ||
@@ -302,8 +356,7 @@ export function evaluateCases(cases, analyseTicket = analyse) {
           urgency: result.urgency,
           confidence: result.confidence
         },
-        classification: outcomeMismatch && REVIEW_CLASSIFICATIONS.includes(review.classification)
-          ? review.classification : null,
+        classification: outcomeMismatch ? classification : null,
         acceptablePriorities,
         acceptableAlternative
       });
@@ -316,6 +369,25 @@ export function evaluateCases(cases, analyseTicket = analyse) {
   for (const facet of Object.values(eightFacets)) {
     facet.accuracy = ratio(facet.correct, facet.labelled);
   }
+
+  const quality = {
+    evaluationCases: cases.length,
+    assessed: assessedExpected,
+    unassessed: cases.length - assessedExpected,
+    uniqueTicketTexts: textCounts.size,
+    duplicateTicketTexts,
+    labels,
+    reviewedAlternatives: cases.filter((item) =>
+      Array.isArray(item.review?.acceptablePriorities) && item.review.acceptablePriorities.length > 0).length,
+    reviewedAlternativesDenominator: cases.length,
+    reviewedMismatchCases: REVIEW_CLASSIFICATIONS.reduce((sum, classification) =>
+      sum + mismatchClassifications[classification], 0) + unreviewedMismatchCount,
+    acceptableAmbiguities: mismatchClassifications['acceptable ambiguity'],
+    policyDisagreements: mismatchClassifications['policy disagreement deferred'],
+    engineDefects: mismatchClassifications['engine defect'],
+    groundTruthDefects: mismatchClassifications['ground-truth defect'],
+    unreviewedMismatches: unreviewedMismatchCount
+  };
 
   return {
     total: cases.length,
@@ -366,6 +438,7 @@ export function evaluateCases(cases, analyseTicket = analyse) {
     mismatchClassifications,
     unreviewedMismatchCount,
     acceptableAlternativeCount,
+    quality,
     confusion,
     mismatches
   };
@@ -380,6 +453,23 @@ function metric(correct, denominator) {
 }
 
 export function printReport(report, write = console.log) {
+  const quality = report.quality;
+  write('Evaluation cases: ' + quality.evaluationCases);
+  write('Assessed / unassessed: ' + quality.assessed + ' / ' + quality.unassessed);
+  write('Unique ticket texts: ' + quality.uniqueTicketTexts + '/' + quality.evaluationCases);
+  write('Duplicate normalised ticket texts: ' + quality.duplicateTicketTexts);
+  for (const facet of ['i1', 'i2', 'i3', 'i4', 'u5', 'u6', 'u7', 'u8']) {
+    write('Cases with ' + facet.toUpperCase() + ' labels: ' + quality.labels[facet] + '/' + quality.evaluationCases);
+  }
+  write('Impact-labelled cases: ' + quality.labels.impact + '/' + quality.evaluationCases);
+  write('Urgency-labelled cases: ' + quality.labels.urgency + '/' + quality.evaluationCases);
+  write('Priority-labelled cases: ' + quality.labels.priority + '/' + quality.evaluationCases);
+  write('Reviewed alternatives: ' + quality.reviewedAlternatives + '/' + quality.reviewedAlternativesDenominator);
+  write('Acceptable ambiguities: ' + quality.acceptableAmbiguities + '/' + quality.reviewedMismatchCases + ' mismatches');
+  write('Policy disagreements: ' + quality.policyDisagreements + '/' + quality.reviewedMismatchCases + ' mismatches');
+  write('Engine defects: ' + quality.engineDefects + '/' + quality.reviewedMismatchCases + ' mismatches');
+  write('Ground-truth defects: ' + quality.groundTruthDefects + '/' + quality.reviewedMismatchCases + ' mismatches');
+  write('Unreviewed mismatches: ' + quality.unreviewedMismatches + '/' + quality.reviewedMismatchCases + ' mismatches');
   write('Accuracy corpus: ' + report.total + ' cases');
   write('Coverage: ' + metric(report.actionable, report.total));
   write('Assessment status counts: expected assessed ' + report.assessmentCounts.expected.assessed +
@@ -412,7 +502,7 @@ export function printReport(report, write = console.log) {
     write('- ' + classification + ': ' + report.mismatchClassifications[classification]);
   }
   write('Acceptable alternative priorities: ' + report.acceptableAlternativeCount);
-  write('Unreviewed outcome mismatches: ' + report.unreviewedMismatchCount);
+  write('Unreviewed mismatch gate: ' + report.unreviewedMismatchCount);
   write('Mismatches: ' + report.mismatches.length);
   write('Confusion matrix (expected rows, actual columns)');
   write(['expected', ...OUTPUT_LABELS].join('\t'));
@@ -431,11 +521,13 @@ export function printReport(report, write = console.log) {
         mismatch.expected[field] + ', got ' + mismatch.actual[field]).join('; '));
   }
   for (const mismatch of report.facetMismatches || []) {
-    write('- ' + mismatch.id + ' / ' + mismatch.facet + ': expected ' +
+    const classification = mismatch.classification ? ' [' + mismatch.classification + ']' : '';
+    write('- ' + mismatch.id + ' / ' + mismatch.facet + classification + ': expected ' +
       mismatch.expected + ', got ' + mismatch.actual);
   }
   for (const mismatch of report.eightFacetMismatches || []) {
-    write('- ' + mismatch.id + ' / ' + mismatch.facet + ': expected ' +
+    const classification = mismatch.classification ? ' [' + mismatch.classification + ']' : '';
+    write('- ' + mismatch.id + ' / ' + mismatch.facet + classification + ': expected ' +
       mismatch.expected + ', got ' + mismatch.actual);
   }
 }
@@ -452,7 +544,7 @@ if (invokedPath === import.meta.url) {
       const report = evaluateCases(corpus.cases);
       if (report.unreviewedMismatchCount) {
         throw new Error('Invalid accuracy corpus: ' + report.unreviewedMismatchCount +
-          ' outcome mismatch(es) lack an explicit review classification');
+          ' mismatch(es) lack an explicit review classification');
       }
       printReport(report);
     } catch (error) {

@@ -28,4 +28,7 @@ export const cases = [
   caseWith('i4-success-no-propagation', 'A successful test record does not show that the bad data is spreading.', 'unknown', 'comparison', 'negation'),
   caseWith('i4-no-spread-explicit', 'The incident is isolated and has not spread further.', 'contained', 'contained', 'negation'),
   caseWith('i4-unknown-boundary', 'The investigation has not yet confirmed whether other records are affected.', 'unknown', 'negation', 'boundary'),
+  caseWith('i4-contained-import-batch', "Only six records from Tuesday's import are wrong; the batch has been isolated.", 'contained', 'contained', 'count'),
+  caseWith('i4-spreading-bad-identifiers', 'Four incorrect records with bad IDs are now flowing into downstream reports.', 'spreading', 'propagation', 'count'),
+  caseWith('i4-unknown-class-extent', 'We cannot tell how many classes are involved in the missing entries.', 'unknown-extent', 'unknown-extent'),
 ];
