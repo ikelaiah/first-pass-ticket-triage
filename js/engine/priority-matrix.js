@@ -55,7 +55,7 @@ export const PRIORITY_DEFINITIONS = {
       'A critical business operation is currently blocked',
       'Serious security or privacy exposure',
       'Payroll or payment failure with an immediate deadline',
-      'Data corruption actively propagating'
+      'Data corruption actively propagating with an independent immediate consequence'
     ],
     examples: [
       'All-school Canvas synchronisation has stopped and classes are affected now',

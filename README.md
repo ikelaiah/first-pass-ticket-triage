@@ -2,7 +2,7 @@
 
 > Local-first, explainable P1–P4 suggestions for IT and application support.
 
-v0.7.1: **NLP Evaluation Integrity & Regression Hardening**.
+v0.8.0: **Triage Policy Calibration**.
 
 Paste a messy ticket, email or work request. Get a suggested priority, the evidence
 behind it, the facts that are missing, and the questions worth asking next.
@@ -142,7 +142,10 @@ and only then does the matrix decide.
 
 The full framework — impact and urgency definitions, wording cues, payroll, privacy,
 safeguarding, data-integrity and expected-behaviour rules — is documented in
-[PRIORITY-FRAMEWORK.md](PRIORITY-FRAMEWORK.md).
+[PRIORITY-FRAMEWORK.md](PRIORITY-FRAMEWORK.md). The v0.8.0 normative policy table,
+structured rule IDs, and calibration decisions are in
+[docs/triage-policy.md](docs/triage-policy.md) and the
+[calibration audit](docs/260830-triage-policy-calibration-audit.md).
 
 ### 🔍 Worked example
 
@@ -260,7 +263,7 @@ Open <http://localhost:8000/tests/tests.html> — the suite runs in the page and
 PASS/FAIL line for every assertion.
 
 With Node available, the same suite runs in a terminal; `npm test` runs the complete
-v0.7.1 gate:
+v0.8.0 gate:
 
 ```bash
 node tests/run.mjs      # behavioural suite + privacy scan
@@ -428,13 +431,15 @@ entities or category assignments.
 ## 🧩 Extending the rules
 
 - **New wording** → add a phrase to the relevant list in `js/data/phrases.js`.
-- **New risk** → add an entry to `RISK_DEFINITIONS`, then decide its weight in
-  `js/engine/impact.js` and, if it can escalate, in `applyRiskModifiers()`.
+- **New risk** → add an entry to `RISK_DEFINITIONS`, then decide its base evidence
+  contribution in `js/engine/impact.js` and any structured calibration in
+  `js/engine/policy.js`.
 - **New scenario** → add it to `js/data/examples.js` with the priorities you consider
   defensible; the test suite asserts every example automatically.
 
-Weights are deliberately in two small files (`impact.js`, `urgency.js`) so tuning is a
-readable diff rather than a hunt.
+Base weights are deliberately in two small files (`impact.js`, `urgency.js`), with
+structured policy calibration isolated in `policy.js`, so tuning is a readable diff
+rather than a hunt.
 
 ### Measuring accuracy offline
 

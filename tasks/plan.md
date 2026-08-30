@@ -554,3 +554,113 @@ catalogue neutrality, and dependency-free Node/browser architecture.
 | New wording copies production or old fixtures | Medium | Add exact normalised cross-corpus duplicate checks and review provenance. |
 | A context fix changes unrelated facets | High | Record complete facet/Impact/Urgency/Priority diffs and require zero unexplained regressions. |
 | Browser and Node reports drift | Medium | Reuse shared fixtures/helpers and run both release gates. |
+
+## v0.8.0 Triage Policy Calibration
+
+### Overview
+
+Make Impact and Urgency a documented, testable policy decision over the
+structured evidence already extracted by v0.7.1. Keep the 3x3 matrix as the
+only Priority authority, keep semantic extraction separate from policy, and
+judge the evaluation corpus against the written policy rather than tuning the
+policy to its labels.
+
+### Architecture decisions
+
+- Add `js/engine/policy.js` as a pure policy layer over structured evidence and
+  base Impact/Urgency levels. It owns calibration rules, policy rule IDs, and a
+  machine-readable decision table; it does not parse ticket text.
+- Keep `impact.js`, `urgency.js`, and the existing detectors responsible for
+  evidence-weighted base scores. Policy adjustments occur before
+  `priorityFor()` and are visible in reasoning.
+- Treat passive privacy/security/payroll/financial vocabulary as context. Only
+  active exposure, confirmed harm, blocked processing, or a documented
+  consequence can produce the corresponding escalation.
+- Treat hard statutory/operational deadlines as time-sensitive; soft targets,
+  preferences, explicit `can wait` wording, unresolved future questions, and
+  historical timestamps do not receive the future-deadline floor.
+- Preserve harm already occurred when containment or recoverability is present;
+  containment can reduce urgency but does not erase impact. Propagation raises
+  impact and urgency to a bounded Medium floor unless independent evidence makes
+  High urgency appropriate.
+- Use direct policy tests with structured evidence, plus separate end-to-end
+  corpus and semantic tests. No new dependency, network call, framework,
+  backend, persistence, or LLM is allowed.
+
+### Ordered tasks
+
+#### Phase 1: Baseline and policy audit
+
+- [x] Record the clean v0.7.1 baseline, catalogue reconciliation, complete
+  evaluation metrics, and all 18 deferred plus 7 acceptable-ambiguity cases.
+- [x] Add `docs/triage-policy.md` with the definitions, policy table, and
+  explicit decisions for workaround, deadline, harm timing, privacy/security,
+  payroll/finance, recoverability, containment/propagation/recurrence,
+  criticality, safeguarding, safety, and compliance.
+- [x] Add `docs/260830-triage-policy-calibration-audit.md` with one structured
+  audit record per reviewed corpus disagreement and ambiguity boundary.
+- [x] Add this plan and the task checklist before production scoring changes.
+
+#### Phase 2: Red policy contracts
+
+- [x] Add direct structured-input policy tests for every documented rule and
+  monotonicity/invariance that follows from the policy.
+- [x] Add regression tests for explicit `can wait`, hard versus soft future
+  deadlines, passive versus pending/active harm, recoverable versus
+  unrecoverable loss, payment/payroll consequence gating, and bounded
+  propagation urgency.
+- [x] Confirm the new tests fail against the v0.7.1 implementation before
+  changing scoring/composition code.
+
+#### Checkpoint: policy contract
+
+- [x] Policy prose, machine-readable decisions, and red tests agree.
+- [x] Matrix cells and semantic detector expectations remain unchanged at this
+  checkpoint.
+
+#### Phase 3: Incremental policy implementation
+
+- [x] Implement the pure policy layer and integrate it into normal analysis and
+  hypothetical follow-up simulation.
+- [x] Calibrate deadline/workaround composition and the explicit low-urgency
+  signal without inventing calendar arithmetic.
+- [x] Calibrate passive/active risk, payroll/financial harm, recoverability,
+  containment/propagation, accessibility, and critical-system composition.
+- [x] Run focused policy tests, existing behavioral tests, syntax checks, and
+  the evaluator after each slice; record every changed case.
+
+#### Phase 4: Corpus and release evidence
+
+- [x] Re-evaluate all 18 deferred disagreements and 7 ambiguity cases against
+  named policy rules; update only labels that the policy justifies.
+- [x] Compare v0.7.1 and v0.8.0 outputs for all 81 cases, including semantic
+  facets, and classify every change with zero unexplained behavior.
+- [x] Add the release report, update README/PRIORITY-FRAMEWORK/CHANGELOG,
+  package version, and relevant ADR documentation.
+- [x] Audit every final P1 for independently justified High Impact and High
+  Urgency; check inflation/suppression risks.
+
+#### Phase 5: Release gate
+
+- [x] All tests, browser runtime, catalogue, metadata, privacy/static scan,
+  policy, semantic, evaluation-integrity, and matrix gates pass.
+- [x] Unreviewed mismatches, unresolved engine defects, and unexplained
+  behavioral changes are zero; severe under-prioritisation does not regress
+  without an explicit policy rationale.
+- [x] Confirm matrix unchanged, no dependencies/network/backend/telemetry/LLM,
+  and no NLP feature creep.
+- [x] Create the local release branch and commit only after the gate; external
+  PR/merge/tag/Pages verification requires the repository's normal GitHub
+  permissions and must occur after merge.
+
+### Risks and mitigations
+
+| Risk | Impact | Mitigation |
+| --- | --- | --- |
+| Policy layer becomes a second hidden priority engine | High | It returns only Impact/Urgency; every P value still comes from `priorityFor()`. |
+| Corpus labels drive calibration | High | Complete the audit and red structured policy tests before changing labels or scoring. |
+| Workarounds suppress genuine urgency | High | Distinguish full/partial/high-cost/temporary workarounds and preserve floors for broad or costly work. |
+| Passive risk vocabulary inflates P1 | High | Gate escalation on active/confirmed consequence evidence and audit every final P1. |
+| Future dates are mistaken for hard deadlines | High | Require committed statutory/operational evidence; explicit soft/wait wording overrides the floor. |
+| Propagation creates unjustified P1s | High | Preserve scope, raise impact independently, and cap propagation-only urgency at Medium. |
+| Recoverability is confused with data loss | Medium | Add explicit recoverability evidence and direct tests for recoverable/unrecoverable states. |

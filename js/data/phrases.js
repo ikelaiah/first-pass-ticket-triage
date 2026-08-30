@@ -111,7 +111,8 @@ export const LOW_URGENCY_PHRASES = [
         'not blocking us', 'not blocking', 'sometime this week', 'not needed immediately',
         'in due course', 'nice to have', 'would be nice', 'future request', 'when someone has time',
         'no immediate need', 'for the backlog', 'add to the backlog', 'no particular rush',
-        'take your time', 'happy to wait', 'whenever suits'],
+        'take your time', 'happy to wait', 'whenever suits', 'can wait', 'can wait until',
+        'can wait for'],
     w: -1.75, label: 'requester signalled it can wait' },
   { m: ['for now', 'for the moment', 'at this stage'], w: -0.6, label: 'situation is tolerable for now' }
 ];

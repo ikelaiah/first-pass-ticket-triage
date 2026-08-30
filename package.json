@@ -1,6 +1,6 @@
 {
   "name": "first-pass-triage",
-  "version": "0.7.1",
+  "version": "0.8.0",
   "private": true,
   "type": "module",
   "description": "Local-first IT task triage and priority decision support. Static site - no dependencies, no build step.",

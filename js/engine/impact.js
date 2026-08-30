@@ -128,15 +128,15 @@ export function assessImpact(doc, ctx) {
   }
 
   // --- critical business risks ----------------------------------------
-  // Payroll and payments are correlated: "pay run" trips both dictionaries.
-  // Counting them at full weight twice turns every payroll correction into a
-  // High impact ticket, which the framework explicitly says it is not. The
-  // escalation for payroll comes from the modifiers below, not from the noun.
-  if (risks.payroll) add(0.75, 'Payroll is involved');
+  // Payroll and payment words are domain/risk context, not consequence. The
+  // policy layer escalates only confirmed harm or blocked processing.
   if (modifiers.unpaidRisk) add(1, 'People may not be paid');
-  if (risks.financial) add(risks.payroll ? 0.35 : 0.5, 'Payments or financial processing are involved');
-  if (risks.privacy) add(0.75, 'Personal information is involved');
-  if (risks.security) add(0.75, 'A security concern was raised');
+  if (risks.privacy && ctx.harmTiming?.timing === 'pending') {
+    add(0.75, 'A potential privacy consequence is being reviewed');
+  }
+  if (risks.security && ctx.harmTiming?.timing === 'pending') {
+    add(0.75, 'A potential security consequence is being reviewed');
+  }
   if (modifiers.exposureActive) add(1.5, 'Information appears to be actively exposed');
   if (risks.safety) add(1, 'The safety of students or staff is involved');
   if (risks.safeguarding) add(1, 'A safeguarding obligation is involved');

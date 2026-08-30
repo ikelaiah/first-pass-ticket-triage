@@ -35,9 +35,6 @@ const SEVERITY_URGENCY = new Map([
   [SEVERITY.NONE, 0]
 ]);
 
-/** Deadlines that create an approaching, but not immediate, consequence. */
-const APPROACHING = ['tomorrow', 'days-2-5', 'weeks-1-2'];
-
 export function urgencyLevelFromScore(score) {
   if (score >= URGENCY_THRESHOLDS.high) return 'high';
   if (score >= URGENCY_THRESHOLDS.medium) return 'medium';
@@ -186,14 +183,7 @@ export function assessUrgency(doc, ctx) {
   const raw = contributions.reduce((sum, c) => sum + c.value, 0);
   let score = Math.max(URGENCY_RANGE.min, Math.min(URGENCY_RANGE.max, raw));
   let urgency = urgencyLevelFromScore(score);
-
-  // A stated future deadline means a consequence is approaching, even when
-  // a workaround is holding things together in the meantime.
-  let floorApplied = false;
-  if (urgency === 'low' && APPROACHING.includes(deadlineResult.deadline) && !preferenceOnly) {
-    urgency = 'medium';
-    floorApplied = true;
-  }
+  const lowUrgencySignal = lowTotal < 0 || preferenceOnly;
 
   // Urgency claimed, but nothing corroborates it.
   const corroborated =
@@ -207,7 +197,8 @@ export function assessUrgency(doc, ctx) {
     score: Math.round(score * 100) / 100,
     rawScore: Math.round(raw * 100) / 100,
     contributions,
-    floorApplied,
+    floorApplied: false,
+    lowUrgencySignal,
     claimed: claimed.length > 0,
     claimedOnly: claimed.length > 0 && !corroborated,
     blocked: blocked.length > 0
