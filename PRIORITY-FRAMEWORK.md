@@ -5,6 +5,12 @@ The canonical description of how First Pass decides what it suggests.
 This document is written for humans first. The implementation in `js/engine/` follows
 it, and the test suite in `tests/` asserts it.
 
+For the v0.8.0 normative calibration decisions and machine-readable rule IDs,
+see [`docs/triage-policy.md`](docs/triage-policy.md) and
+[ADR-004](docs/decisions/004-calibrate-triage-policy-after-evidence-extraction.md).
+This framework remains the broader explanatory guide; the matrix below is
+unchanged.
+
 ---
 
 ## 1. The core principle
@@ -96,12 +102,12 @@ Priority is not judged from a symptom alone. It is judged from eight evidence qu
 |---|---|---|---|---|
 | **I1** | Who and how many are affected — one person, a team, a cohort, one school, several, or all 19? | Scope breadth. The largest single impact contributor, and the one most often left out. | `js/engine/scope.js` + `js/data/phrases.js:SCOPE_PHRASES` (`SCOPE_DEFINITIONS` rank 0–8, `impactWeight` 0–4.25). Numbers parsed (`35 casual staff` → team `scope.js:30`, `4 schools` → multiple `scope.js:37`) and broadest credible scope wins. Unknown lowers confidence `js/engine/confidence.js:61`. | Impact weight `js/engine/impact.js:61` +1.75 for `allUsers`. `Unknown → Low confidence` and first follow-up. |
 | **I2** | What can they not do right now that they could do yesterday? | The blocked business process, not the symptom. "Canvas is slow" and "teachers cannot mark the roll" are different tickets. | `js/data/phrases.js:BLOCKED_PROCESS_PHRASES` identifies a small process vocabulary and `js/engine/analyzer.js:detectBlockedProcess` returns a sourced consequence fact. Configured system-status consequences in `js/config.js:statusConsequences` remain visibly inferred — for example, an Edumate `public contact` is excluded from class rolls and downstream education-system sync. | An **explicit** or **manual** blocked process adds +0.75 Impact and up to +1.75 Urgency through `impact.js` and `urgency.js`; an impaired process adds +0.25 Impact only. An **inferred** consequence remains explanatory and asks for confirmation, so a potential billing effect is not silently scored as a financial incident. |
-| **I3** | Is anything wrong, exposed, lost, or unsafe — as opposed to merely unavailable? | The irreversibility test: bad data, money, privacy, safeguarding, safety. Wrong information is more dangerous than absent information, and this is the question that legitimately makes one affected student a P1. | `js/engine/risks.js` `RISK_DEFINITIONS` (`payroll`, `financial`, `privacy`, `safety`, `safeguarding`, `compliance`, `dataIntegrity`) + risk modifiers (`exposureActive`, `propagating`, `unpaidRisk`) `js/data/phrases.js:RISK_MODIFIERS`. Gated so "contains PII" alone ≠ incident `js/engine/risks.js:111`. | `js/engine/impact.js:121` payroll +0.75, `privacy` +0.75, `exposureActive` +1.5, `safety` +1, etc. `analyzer.js:applyRiskModifiers` may raise Impact and Urgency to High (e.g. active exposure `analyzer.js:256`, safety today `analyzer.js:273`). |
-| **I4** | Is it contained, or is it spreading, recurring, or of unknown extent? | One bad record is remediation; a trigger writing bad records across every school is an emergency. Note this raises impact, not urgency — a recurring fault whose known instances are all corrected is high impact and low urgency. | `js/engine/containment.js` + `js/data/phrases.js:CONTAINED_PHRASES` (`contained to one family`, `not spreading`), `RISK_MODIFIERS.propagating` (`propagat`, `spreading` `phrases.js:989`), `RECURRENCE_PHRASES` (`keeps scrambling` `phrases.js:1059`), `UNDETECTED_PHRASES` (`we do not pick up` `phrases.js:1074`). | `js/engine/impact.js:93` recurrence +1, undetected +1.25, propagating +1.5 (impact, not urgency). Contained is informational — panel shows `appears contained`; no numeric discount. A contained recurring fault is P2 latent, not P1 `PRIORITY-FRAMEWORK.md:189`. |
+| **I3** | Is anything wrong, exposed, lost, or unsafe — as opposed to merely unavailable? | The irreversibility test: bad data, money, privacy, safeguarding, safety. Evidence of a consequence, not a risk noun, determines escalation. | `js/engine/risks.js` `RISK_DEFINITIONS` (`payroll`, `financial`, `privacy`, `safety`, `safeguarding`, `compliance`, `dataIntegrity`) + risk modifiers (`exposureActive`, `propagating`, `unpaidRisk`) `js/data/phrases.js:RISK_MODIFIERS`. Gated so "contains PII" alone ≠ incident `js/engine/risks.js:111`. | Base scoring records structured evidence; `js/engine/policy.js` calibrates passive context versus confirmed harm. Active exposure, confirmed same-day processing failure, or other named consequences can raise Impact/Urgency to High. |
+| **I4** | Is it contained, or is it spreading, recurring, or of unknown extent? | One bad record is remediation; a trigger writing bad records across every school is high impact. Urgency still depends on a cutoff, active harm, or another time-sensitive consequence. | `js/engine/containment.js` + `js/data/phrases.js:CONTAINED_PHRASES` (`contained to one family`, `not spreading`), `RISK_MODIFIERS.propagating` (`propagat`, `spreading` `phrases.js:989`), `RECURRENCE_PHRASES` (`keeps scrambling` `phrases.js:1059`), `UNDETECTED_PHRASES` (`we do not pick up` `phrases.js:1074`). | `js/engine/impact.js` records recurrence, undetected extent, and propagation. `js/engine/policy.js` gives active propagation a Medium urgency floor, while containment preserves existing Impact. |
 | **U5** | When do you need this by? | The anchor. Everything else calibrates it. | `js/engine/deadline.js` `DEADLINE_BUCKETS` now(6,3.5) › today(5,3) › tomorrow(4,1.75) › 2–5d(3,1.25) › 1–2w(2,0.25) › none › unknown. `COMMITMENT_MARKERS` + `isObservationOnly` `deadline.js:52` separates "Today we discover…" (timestamp) from "must be rerun today" (commitment). | Urgency weight `js/engine/urgency.js:68` (`today` +3, `days-2-5` +1.25). `unknown` lowers confidence `confidence.js:65` and becomes first urgency question. |
 | **U6** | What creates the deadline — a requirement or a preference? | What actually happens if missed, and whose rule is it? Statutory (census, NAPLAN), operational (payroll cutoff, class starts, report cards out) is a deadline. "We'd like it by Friday" is a preference with a calendar attached, and scores as one. | `js/engine/driver.js` + `js/data/phrases.js:DRIVER_PHRASES` (`statutory`: census/NAPLAN/nesa, `operational`: payroll cutoff/class starts, `preference`: would like/whenever suits) + `DRIVER_ACTOR_RE` for actor. Refine `index.html:refine-driver`. | Preference reduces urgency −0.5 `js/engine/urgency.js:135`; statutory/operational with timing keeps urgency. Requester seniority scores zero `impact.js:171` — who asked does not decide priority, the event does. |
 | **U7** | Can work continue meanwhile — and what does the workaround cost per day? | Existence and sustainability. A workaround that three registrars feed all day is not relief; it is slower failure. | `js/engine/workaround.js` `WORKAROUND_PHRASES` yes/partial/no `phrases.js:212` + `WORKAROUND_COST_PATTERNS` (`three registrars`, `2 hours per day`, `feeding manually` `phrases.js`) → `costPerDay`/`sustainability`. Refine `index.html:refine-workaround`. | `js/engine/urgency.js:25` `yes −1.25 / partial −0.25 / no +1.75` on **urgency only** — impact untouched `PRIORITY-FRAMEWORK.md:275`. Cost displayed in panel/reasoning `analyzer.js:buildReasoning`; not separately weighted beyond existence (avoids FTE math on vague tickets). |
-| **U8** | Is the harm happening now, or waiting to happen? | Expired versus expiring. Actively exposed versus wrongly linked but unseen. The line between "attend now" and "schedule properly." | `js/engine/harm-timing.js` generalises `expired-credential` vs `expiring-soon` `phrases.js:282` beyond certificates to any data: `HARM_TIMING_PHRASES` (`currently exposed` → active, `expires in 3 days` → pending) + `ACTIVE_NOW_PHRASES` `phrases.js:135`. Refine `index.html:refine-harm`. | Active exposure / expired credential raises urgency (via symptom severity `urgency.js:82` + modifier `analyzer.js:256`); pending/expiring with future deadline floors urgency to Medium `urgency.js:152` and asks `Is issue still occurring, or has it stopped?`. |
+| **U8** | Is the harm happening now, or waiting to happen? | Expired versus expiring. Actively exposed versus wrongly linked but unseen. The line between "attend now" and "schedule properly." | `js/engine/harm-timing.js` generalises `expired-credential` vs `expiring-soon` `phrases.js:282` beyond certificates to any data: `HARM_TIMING_PHRASES` (`currently exposed` → active, `expires in 3 days` → pending) + `ACTIVE_NOW_PHRASES` `phrases.js:135`. Refine `index.html:refine-harm`. | Active exposure or active safety/security harm is calibrated by `js/engine/policy.js`; committed statutory/operational future deadlines receive a Medium floor, while pending harm does not become active merely because a date is present. |
 
 Each row shows a state in the UI: **✓ Answered** (explicit phrase found), **○ Inferred** (derived from symptom/domain/risk), **? Unknown** (no evidence — the follow-up question that would change the priority). Unknown lowers confidence and appears in `Missing information` `js/engine/analyzer.js:buildMissingInformation` capped to six questions.
 
@@ -161,7 +167,7 @@ Urgency answers: **what happens if we wait?**
 
 Wording: "just reporting", "FYI", "please investigate when you get a chance", "no rush",
 "we can work without it", "there is a workaround", "not blocking us", "future request",
-"enhancement", "documentation", "sometime this week", "not needed immediately".
+"enhancement", "documentation", "sometime this week", "not needed immediately", "can wait".
 
 ### Medium urgency
 
@@ -171,8 +177,10 @@ Wording: "need this in 2–5 days", "before Friday", "before next payroll", "bef
 enrolments close", "manual workaround available", "can continue for now", "becoming
 difficult", "accumulating manual work", "this week".
 
-A stated future deadline sets a floor of Medium urgency, even when a workaround is
-holding things together — that is exactly the situation Medium describes.
+A committed statutory or operational future deadline in the 2–5 day or 1–2 week
+bucket sets a Medium urgency floor. Preferences, explicit "can wait" wording,
+and uncommitted dates do not. An active broad failure can still retain a Medium
+floor even when the requester says recovery can wait.
 
 ### High urgency
 
@@ -180,8 +188,9 @@ holding things together — that is exactly the situation Medium describes.
 
 Wording: "need this now", "today", "this morning", "by 2pm", "no workaround", "users
 cannot work", "completely blocked", "production stopped", "payroll today", "assessment
-today", "class starting", "currently exposed", "active breach", "cutoff today", "data
-continuing to propagate".
+today", "class starting", "currently exposed", "active breach", "cutoff today".
+Continuing propagation normally supplies a Medium floor; it becomes High only
+with an independent immediate consequence such as a cutoff or active exposure.
 
 ### Forwarded email chains
 
@@ -411,15 +420,14 @@ manual recovery is possible, and downstream bank processing.
 | 35 casual staff unpaid unless fixed before today's cutoff | P1 |
 | ANZ has not received the ABA file, corporation-wide payroll processes today | P1 |
 
-**Rule:** payroll or payment processing + a same-day deadline + an actual failure →
-Impact High and Urgency High.
+**Rule:** payroll or payment processing + a same-day deadline + an actual processing
+failure or confirmed unpaid/financial consequence → Impact High and Urgency High.
 
-"Payroll" on its own never means P1. It is deliberately given a modest base weight,
-because payroll wording trips both the payroll and the payments dictionaries and
-double counting would make every payroll correction a High impact ticket. The
-escalation comes from the modifiers — people unpaid, a same-day cutoff — not from
-the noun. So "two staff members were paid twice in the last pay run" is P3, while
-"35 casual staff will not be paid unless this is fixed before today's cutoff" is P1.
+"Payroll" on its own never means P1 and no longer contributes a standalone Impact
+weight. The escalation comes from explicit consequence evidence — people unpaid,
+a failed processing path, or a same-day cutoff — not from the noun. So "two staff
+members were paid twice in the last pay run" remains below High Impact, while
+"35 casual staff timesheets failed before today's cutoff" is P1.
 
 School fee handling runs through the same logic: advance payments, fee balances,
 receipts and refunds are payment risks, and a fee payment recorded against the
@@ -530,11 +538,12 @@ mismatched records, corruption, incorrect data, stale downstream data.
 The framework distinguishes **one bad record** from **incorrect data actively
 propagating across systems**.
 
-**Rule:** data-integrity risk + propagation (across all schools, spreading, silently
-writing) + more than one person affected → Impact and Urgency High.
+**Rule:** data-integrity risk + active propagation raises Impact and supplies a
+Medium urgency floor. It does not make Urgency High by itself; a same-day cutoff,
+active exposure, or another independent immediate consequence is required for P1.
 
 > "SQL trigger failed for one student record." → P3
-> "SQL trigger is silently writing incorrect payment records across all schools." → P1
+> "SQL trigger is silently writing incorrect payment records across all schools." → P2
 
 ### Decisions made on wrong data
 

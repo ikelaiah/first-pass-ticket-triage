@@ -14,6 +14,7 @@ import { EXAMPLES } from '../js/data/examples.js';
 import { buildReply, buildMarkdown } from '../js/ui/reply.js';
 import { statusSentence } from '../js/ui/render-result.js';
 import { registerFacetTests } from './facet-tests.js';
+import { registerPolicyTests } from './policy-tests.js';
 import { legacyRegressionCases } from './fixtures/legacy-regressions.js';
 import {
   encodeTicket, decodeTicket, tooLongForShare, readTicketFromLocation,
@@ -457,14 +458,28 @@ test('Safeguarding', 'historical WWCC audit is not a P1', () => {
 test('Data integrity', 'one bad record is P3', () =>
   priority('One parent profile has been merged incorrectly and needs fixing.', ['P3', 'P4']));
 
-test('Data integrity', 'incorrect payment records across all schools -> P1', () =>
-  priority('SQL trigger is silently writing incorrect payment records across all schools.', 'P1'));
+test('Data integrity', 'incorrect payment records across all schools -> P2 under propagation policy', () =>
+  priority('SQL trigger is silently writing incorrect payment records across all schools.', 'P2'));
 
 test('Data integrity', 'propagation is detected', () => {
   const result = analyse('SQL trigger is silently writing incorrect payment records across all schools.');
   return ok(result.riskModifiers.propagating === true,
     'propagating = ' + result.riskModifiers.propagating);
 });
+
+/* ------------------------------------------------------ 10a. recoverability -- */
+
+test('Recoverability', 'a stated backup path is recoverable evidence', () =>
+  field('The deleted class list can be restored from last night\'s backup.',
+    'recoverability', 'recoverable'));
+
+test('Recoverability', 'explicit irretrievable loss is unrecoverable evidence', () =>
+  field('The assessment submissions were permanently deleted and cannot be recovered.',
+    'recoverability', 'unrecoverable'));
+
+test('Recoverability', 'temporary unavailability is not inferred to be lost', () =>
+  field('The assessment folder is temporarily unavailable while the server is restarted.',
+    'recoverability', 'unknown'));
 
 /* ------------------------------------------------- 11. auth and windows -- */
 
@@ -660,7 +675,7 @@ test('Refinement', 'confirming that incorrect data is spreading affects scoring'
     contained: 'spreading'
   });
   return ok(
-    result.riskModifiers.propagating === true && result.priority === 'P1',
+    result.riskModifiers.propagating === true && result.priority === 'P2',
     'propagating=' + result.riskModifiers.propagating + ' ' + result.priority
   );
 });
@@ -1698,7 +1713,7 @@ const GUIDE_EXAMPLES = [
   [['P3'], 'Parent profiles need routine merging.'],
   [['P1'], "A parent can see another family's confidential information."],
   [['P3'], 'Sibling profiles are swapped but contained to one family.'],
-  [['P1'], 'Incorrect profile data is propagating to downstream systems.'],
+  [['P2'], 'Incorrect profile data is propagating to downstream systems.'],
   [['P4'], 'Custom SQL report with no deadline.'],
   [['P3'], 'An important SQL report is required within 3 days.'],
   [['P2', 'P1'], 'A report is required today for a critical compliance response.'],
@@ -2269,6 +2284,7 @@ for (const example of EXAMPLES) {
 }
 
 registerFacetTests(test, ok);
+registerPolicyTests(test, ok);
 
 function legacyFacetState(result, facet) {
   if (facet === 'i1') return result.eightFacets.i1Scope.value;

@@ -114,7 +114,7 @@
       "id": "isolated-canvas-can-wait",
       "text": "Canvas is unavailable for one teacher; classes are not affected and it can wait until next week.",
       "expected": { "assessmentStatus": "assessed", "priority": "P4", "impact": "low", "urgency": "low", "scope": "individual", "i3": "unavailable", "deadline": "weeks-1-2", "u5": "weeks-1-2" },
-      "review": { "classification": "policy disagreement deferred", "note": "The expected low urgency conflicts with the existing future-deadline floor." }
+      "review": { "classification": "policy disagreement deferred", "note": "v0.8.0 resolves the baseline disagreement: explicit can-wait wording overrides the future-deadline floor when no independent broad active failure remains." }
     },
     {
       "id": "multi-school-attendance-block",
@@ -150,8 +150,8 @@
     {
       "id": "few-students-paper-copy",
       "text": "Only two students cannot open the assessment folder; a paper copy is available.",
-      "expected": { "assessmentStatus": "assessed", "priority": "P3", "impact": "low", "urgency": "medium", "scope": "few-users", "u7": "yes" },
-      "review": { "classification": "policy disagreement deferred", "note": "The effect of a functioning workaround on impact and urgency is deferred." }
+      "expected": { "assessmentStatus": "assessed", "priority": "P3", "impact": "medium", "urgency": "low", "scope": "few-users", "u7": "yes" },
+      "review": { "classification": "policy disagreement deferred", "note": "v0.8.0 keeps the underlying access consequence at Medium Impact while the full paper workaround makes Urgency Low." }
     },
     {
       "id": "enrolment-spreadsheet-fallback",
@@ -178,8 +178,8 @@
     {
       "id": "all-school-dashboard-request",
       "text": "Could you add a dashboard button for all schools before the next term, if possible?",
-      "expected": { "assessmentStatus": "assessed", "priority": "P2", "impact": "high", "urgency": "medium", "scope": "all-schools", "deadline": "weeks-1-2", "u5": "weeks-1-2", "u6": "preference" },
-      "review": { "classification": "policy disagreement deferred", "note": "Preference wording and a future deadline are intentionally left to the current policy." }
+      "expected": { "assessmentStatus": "assessed", "priority": "P2", "impact": "high", "urgency": "low", "scope": "all-schools", "deadline": "weeks-1-2", "u5": "weeks-1-2", "u6": "preference" },
+      "review": { "classification": "policy disagreement deferred", "note": "v0.8.0 treats the explicit preference as soft timing; the future date does not set a Medium floor." }
     },
     {
       "id": "unnamed-investigation",
@@ -209,8 +209,8 @@
     {
       "id": "deleted-list-restorable",
       "text": "The class list has already been deleted, but it can be restored from last night's backup; teaching resumes tomorrow.",
-      "expected": { "assessmentStatus": "assessed", "priority": "P1", "impact": "high", "urgency": "high", "i3": "lost-data", "deadline": "tomorrow", "u5": "tomorrow", "u8": "active" },
-      "review": { "classification": "policy disagreement deferred", "note": "Recoverable deletion severity remains a calibration question." }
+      "expected": { "assessmentStatus": "assessed", "priority": "P2", "impact": "medium", "urgency": "high", "i3": "lost-data", "deadline": "tomorrow", "u5": "tomorrow", "u8": "active" },
+      "review": { "classification": "policy disagreement deferred", "note": "v0.8.0 treats a restorable class list as contextual/Medium Impact; the teaching deadline keeps Urgency High." }
     },
     {
       "id": "audit-whenever-convenient",
@@ -231,7 +231,7 @@
       "id": "six-duplicate-payments",
       "text": "Fee payments are duplicated for five families and finance will process the corrections manually today with the issue contained to these families.",
       "expected": { "assessmentStatus": "assessed", "priority": "P2", "impact": "medium", "urgency": "high", "scope": "few-users", "i3": "financial-harm", "i4": "contained", "deadline": "today", "u5": "today", "u7": "yes" },
-      "review": { "classification": "policy disagreement deferred", "note": "Whether financial/data-integrity impact should be reduced by containment and manual correction is deferred." }
+      "review": { "classification": "policy disagreement deferred", "note": "v0.8.0 treats contained duplicate charges as Medium Impact; same-day manual correction keeps Urgency High." }
     },
     {
       "id": "report-lock-no-deadline",
@@ -322,7 +322,7 @@
     {
       "id": "pending-privacy-approval",
       "text": "No one is currently exposed to the data; the planned change could expose personal information if approved.",
-      "expected": { "assessmentStatus": "assessed", "priority": "P3", "impact": "medium", "urgency": "medium", "i3": "privacy-context", "u8": "pending" },
+      "expected": { "assessmentStatus": "assessed", "priority": "P3", "impact": "medium", "urgency": "low", "i3": "privacy-context", "u8": "pending" },
       "review": { "classification": "policy disagreement deferred", "note": "Pending privacy harm does not currently add urgency under the established policy." }
     },
     {
@@ -338,7 +338,8 @@
     {
       "id": "lost-assessment-submissions",
       "text": "A student account was deleted and cannot be recovered; all assessment submissions are lost.",
-      "expected": { "assessmentStatus": "assessed", "priority": "P3", "impact": "medium", "urgency": "medium", "scope": "individual", "i3": "lost-data", "u8": "active" }
+      "expected": { "assessmentStatus": "assessed", "priority": "P2", "impact": "high", "urgency": "medium", "scope": "individual", "i3": "lost-data", "u8": "active" },
+      "review": { "classification": "policy disagreement deferred", "note": "v0.8.0 treats unrecoverable assessment submissions as High Impact even at individual scope; the matrix therefore yields P2 at Medium urgency." }
     },
     {
       "id": "large-fee-direct-debit",
@@ -353,8 +354,8 @@
     {
       "id": "edge-browser-stopgap",
       "text": "Chrome can be used for Canvas while Edge remains unavailable for two staff.",
-      "expected": { "assessmentStatus": "assessed", "priority": "P3", "impact": "low", "urgency": "medium", "scope": "few-users", "u7": "yes" },
-      "review": { "classification": "policy disagreement deferred", "note": "The impact and urgency effect of a browser stopgap remains deferred." }
+      "expected": { "assessmentStatus": "assessed", "priority": "P3", "impact": "medium", "urgency": "low", "scope": "few-users", "u7": "yes" },
+      "review": { "classification": "policy disagreement deferred", "note": "v0.8.0 preserves the Medium access consequence and treats the Chrome fallback as Low urgency." }
     },
     {
       "id": "realistic-current-narrow-after-broad-history",
@@ -398,7 +399,7 @@
       "id": "realistic-payroll-success-confirmation-delay",
       "text": "Payroll completed successfully this morning; finance are only asking whether the casual staff file will be ready before next month's processing cycle.",
       "expected": { "assessmentStatus": "assessed", "priority": "P4", "impact": "low", "urgency": "low", "i3": "unknown", "u8": "unknown" },
-      "review": { "classification": "policy disagreement deferred", "note": "Payroll succeeded, but the stated next-cycle readiness date still triggers the unchanged future-deadline floor." }
+      "review": { "classification": "policy disagreement deferred", "note": "v0.8.0 treats successful payroll plus an uncommitted next-cycle readiness question as Low urgency; the future date is not a hard floor." }
     },
     {
       "id": "realistic-wrong-year-level-live-register",

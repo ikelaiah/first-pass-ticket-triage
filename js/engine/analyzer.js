@@ -3,7 +3,7 @@
  *
  *   ticket text
  *      -> evidence          (systems, scope, workaround, deadline, symptom, domain, risks)
- *      -> Impact + Urgency  (weighted scoring, then critical-risk modifiers)
+ *      -> Impact + Urgency  (weighted scoring, then structured policy calibration)
  *      -> priority matrix   (the only place a P number is decided)
  *      -> explanation       (reasoning, missing information, follow-up questions)
  *
@@ -22,9 +22,11 @@ import { detectWorkType, workTypeLabel } from './work-type.js';
 import { detectRisks, emptyRisks, RISK_LABELS } from './risks.js';
 import { assessImpact } from './impact.js';
 import { assessUrgency } from './urgency.js';
+import { applyTriagePolicy } from './policy.js';
+import { detectRecoverability } from './recoverability.js';
 import { assessConfidence } from './confidence.js';
 import {
-  priorityFor, priorityDefinition, raiseLevel, lowerLevel, LEVEL_LABELS
+  priorityFor, priorityDefinition, LEVEL_LABELS
 } from './priority-matrix.js';
 import {
   IMMEDIATE_NEED_PATTERNS, CONTEXT_ELSEWHERE_PHRASES,
@@ -253,118 +255,39 @@ function assessInputRelevance(context) {
   return { inScope: signals.length > 0, signals };
 }
 
-/** Critical risk modifiers, applied to Impact/Urgency *before* the matrix. */
-function applyRiskModifiers(context) {
+/** Map analyzer evidence into the text-free v0.8.0 policy contract. */
+function policyEvidence(context) {
   const {
-    risks, modifiers, symptom, deadlineResult, scopeResult,
-    expectedBehaviour, immediateNeed, workTypeResult
+    risks, modifiers, symptom, deadlineResult, scopeResult, workaroundResult,
+    expectedBehaviour, immediateNeed, workTypeResult, decisionContext, activeIncident,
+    inScope, driver, harmTiming, recoverability, systemResult, domainResult,
+    containment, urgencyResult
   } = context;
-
-  let impact = context.impact;
-  let urgency = context.urgency;
-  const rules = [];
-
-  const lower = (nextImpact, nextUrgency, label) => {
-    const before = { impact, urgency };
-    if (nextImpact) impact = lowerLevel(impact, nextImpact);
-    if (nextUrgency) urgency = lowerLevel(urgency, nextUrgency);
-    if (before.impact !== impact || before.urgency !== urgency) {
-      rules.push({ label, impact, urgency, direction: 'lower' });
-    }
+  return {
+    risks,
+    modifiers,
+    symptom: { ...symptom, id: symptom.symptom },
+    deadline: deadlineResult.deadline,
+    deadlineCommitted: deadlineResult.committed,
+    deadlineDriver: driver?.driver || 'unknown',
+    lowUrgencySignal: Boolean(urgencyResult?.lowUrgencySignal),
+    scope: scopeResult.scope,
+    consequence: context.blockedProcess?.level || 'unknown',
+    workaround: workaroundResult.workaround,
+    workaroundCost: workaroundResult.costPerDay,
+    expectedBehaviour: Boolean(expectedBehaviour),
+    immediateNeed: Boolean(immediateNeed),
+    workType: workTypeResult.workType,
+    decisionContext: decisionContext.status,
+    activeIncident: Boolean(activeIncident),
+    inScope,
+    harmTiming: harmTiming?.timing || 'unknown',
+    recoverability: recoverability?.value || 'unknown',
+    criticalSystem: Boolean(systemResult?.criticalSystem),
+    technicalDomain: domainResult?.domain || 'unknown',
+    accessibilityIssue: domainResult?.domain === 'accessibility',
+    containment: containment || {}
   };
-  const raise = (nextImpact, nextUrgency, label) => {
-    const before = { impact, urgency };
-    if (nextImpact) impact = raiseLevel(impact, nextImpact);
-    if (nextUrgency) urgency = raiseLevel(urgency, nextUrgency);
-    if (before.impact !== impact || before.urgency !== urgency) {
-      rules.push({ label, impact, urgency, direction: 'raise' });
-    }
-  };
-
-  // --- de-escalation ----------------------------------------------------
-  if (context.decisionContext.status === 'resolved') {
-    lower('low', 'low', 'The latest explicit update says the incident is resolved or contained.');
-    return { impact, urgency, rules };
-  }
-  if (context.decisionContext.status === 'planned-test') {
-    lower('low', 'low', 'The failure wording describes a design, simulation, exercise, or test.');
-    return { impact, urgency, rules };
-  }
-  if (!context.inScope) {
-    lower('low', 'low',
-      'No IT system, application-support request or technical symptom was recognised.');
-    return { impact, urgency, rules };
-  }
-  if (expectedBehaviour && !immediateNeed) {
-    lower('low', 'low', 'This matches expected scheduled behaviour, not a failure.');
-  }
-  if (workTypeResult.workType === 'documentation' && !symptom.hasFailure &&
-      deadlineResult.deadline === 'unknown' && !context.activeIncident) {
-    lower('low', 'low', 'A documentation or how-to request with no stated deadline.');
-  }
-
-  // --- escalation -------------------------------------------------------
-  const sameDay = ['now', 'today'].includes(deadlineResult.deadline);
-  if ((risks.payroll || risks.financial) && sameDay &&
-      (modifiers.unpaidRisk || symptom.hasFailure || symptom.isDataIssue)) {
-    raise('high', 'high',
-      'Payroll or payment processing is failing against a same-day deadline.');
-  }
-  if (modifiers.unpaidRisk && (risks.payroll || risks.financial)) {
-    raise('high', null, 'People may not be paid.');
-  }
-  if (modifiers.exposureActive) {
-    raise('high', 'high', 'Information appears to be actively exposed to the wrong people.');
-  }
-  if (modifiers.immediateSafeguarding) {
-    raise('high', 'high', 'An immediate safeguarding risk was described.');
-  }
-
-  // Work that is holding up an incident already in progress inherits its
-  // priority - it is not a separate low-priority request.
-  if (context.activeIncident) {
-    raise('high', 'high',
-      'This is needed to recover from an incident already in progress, so it ' +
-      'carries the priority of that incident rather than its own.');
-  }
-
-  // --- safety of people -------------------------------------------------
-  // Missing or wrong safety information is not an ordinary data problem.
-  if (risks.safety && symptom.severity >= SEVERITY.DATA) {
-    raise('high', null, 'Safety-critical information or equipment is affected.');
-    if (sameDay) {
-      raise(null, 'high', 'The safety consequence arrives today.');
-    }
-  }
-
-  // A person a court order excludes still has access to the record.
-  if (risks.safeguarding &&
-      (symptom.symptom === 'access-not-revoked' || modifiers.crossPersonVisibility)) {
-    raise('high', 'high',
-      'A person who should be excluded still appears to have access.');
-  }
-
-  // --- security incidents ----------------------------------------------
-  if (symptom.symptom === 'account-compromise') {
-    raise('medium', 'high', 'An account appears to be compromised and the attacker is active.');
-  }
-  if (symptom.symptom === 'device-lost' && (risks.privacy || risks.security)) {
-    raise('high', 'high', 'A lost or stolen device may hold personal information.');
-  }
-  if (symptom.symptom === 'consent-granted' && (risks.privacy || risks.security)) {
-    raise('high', null, 'A third party appears to have been granted access to personal data.');
-  }
-  if (modifiers.propagating && scopeResult.scope !== 'individual') {
-    raise('high', 'high', 'Incorrect data appears to be actively propagating across systems.');
-  }
-  if (risks.compliance && sameDay) {
-    raise('medium', null, 'A compliance or regulatory deadline falls today.');
-  }
-  if (modifiers.decisionRisk && (risks.payroll || risks.financial) && sameDay) {
-    raise('high', null, 'Financial decisions may be made on incorrect information.');
-  }
-
-  return { impact, urgency, rules };
 }
 
 function inferStatusConsequence(doc, systemResult, symptom) {
@@ -869,6 +792,7 @@ export function analyse(rawText, overrides = {}) {
   // --- evidence ---------------------------------------------------------
   const systemResult = detectSystems(doc);
   const symptom = detectSymptom(doc);
+  const recoverability = detectRecoverability(doc);
   const domainResult = detectDomain(doc, systemResult, symptom);
 
   const detectedScope = detectScope(doc);
@@ -1039,9 +963,9 @@ export function analyse(rawText, overrides = {}) {
   // --- impact and urgency ----------------------------------------------
   const impactResult = assessImpact(doc, {
     scopeResult, symptom, riskResult: effectiveRisk, deadlineResult, systemResult,
-    consequence: blockedProcess
+    consequence: blockedProcess, harmTiming
   });
-  const urgencyResult = assessUrgency(doc, {
+  let urgencyResult = assessUrgency(doc, {
     deadlineResult, workaroundResult, symptom, scopeResult, riskResult: effectiveRisk,
     differential, driver, harmTiming, consequence: blockedProcess
   });
@@ -1049,21 +973,22 @@ export function analyse(rawText, overrides = {}) {
   const impactBase = impactResult.impact;
   const urgencyBase = urgencyResult.urgency;
 
-  const modified = applyRiskModifiers({
+  const modified = applyTriagePolicy({
     impact: impactBase,
     urgency: urgencyBase,
-    risks,
-    modifiers,
-    symptom,
-    deadlineResult,
-    scopeResult,
-    workTypeResult,
-    expectedBehaviour,
-    immediateNeed,
-    activeIncident,
-    decisionContext,
-    inScope
+    evidence: policyEvidence({
+      risks, modifiers, symptom, deadlineResult, scopeResult, workaroundResult,
+      expectedBehaviour, immediateNeed, workTypeResult, activeIncident,
+      decisionContext, inScope, driver, harmTiming, recoverability,
+      systemResult, domainResult, containment, urgencyResult, blockedProcess
+    })
   });
+  urgencyResult = {
+    ...urgencyResult,
+    urgency: modified.urgency,
+    floorApplied: modified.floorApplied,
+    policyIds: modified.policyIds
+  };
 
   // The analyst's explicit call wins over every automatic rule.
   const impact = applied.impact || modified.impact;
@@ -1094,17 +1019,23 @@ export function analyse(rawText, overrides = {}) {
     const riskSim = { ...effectiveRisk, modifiers: mods };
     const imp = assessImpact(doc, {
       scopeResult: scopeR, symptom, riskResult: riskSim, deadlineResult: deadlineR, systemResult,
-      consequence: consequenceR
+      consequence: consequenceR, harmTiming
     });
     const urg = assessUrgency(doc, {
       deadlineResult: deadlineR, workaroundResult: workaroundR, symptom,
       scopeResult: scopeR, riskResult: riskSim, differential, driver, harmTiming,
       consequence: consequenceR
     });
-    const mod = applyRiskModifiers({
-      impact: imp.impact, urgency: urg.urgency, risks, modifiers: mods, symptom,
-      deadlineResult: deadlineR, scopeResult: scopeR, workTypeResult, expectedBehaviour,
-      immediateNeed, activeIncident, decisionContext, inScope
+    const mod = applyTriagePolicy({
+      impact: imp.impact,
+      urgency: urg.urgency,
+      evidence: policyEvidence({
+        risks, modifiers: mods, symptom, deadlineResult: deadlineR,
+        scopeResult: scopeR, workaroundResult: workaroundR, workTypeResult,
+        expectedBehaviour, immediateNeed, activeIncident, decisionContext, inScope,
+        driver, harmTiming, recoverability, systemResult, domainResult,
+        containment, urgencyResult: urg, blockedProcess: consequenceR
+      })
     });
     return priorityFor(mod.impact, mod.urgency);
   };
@@ -1181,6 +1112,7 @@ export function analyse(rawText, overrides = {}) {
     ...domainResult.evidence,
     ...workaroundResult.evidence,
     ...deadlineResult.evidence,
+    ...recoverability.evidence,
     ...(blockedProcess?.evidence || []),
     ...effectiveRisk.evidence
   ];
@@ -1245,6 +1177,7 @@ export function analyse(rawText, overrides = {}) {
     workaroundLabel: workaroundResult.label,
     deadline: deadlineResult.deadline,
     deadlineLabel: deadlineResult.label,
+    recoverability: recoverability.value,
     consequence: blockedProcess?.level || 'unknown',
     businessConsequence: blockedProcess || {
       level: 'unknown', process: null, label: 'Business consequence not stated',
@@ -1319,6 +1252,7 @@ export function analyse(rawText, overrides = {}) {
     detail: {
       scope: scopeResult,
       deadline: deadlineResult,
+      recoverability,
       workaround: workaroundResult,
       symptom,
       domain: domainResult,
