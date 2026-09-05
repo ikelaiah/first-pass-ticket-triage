@@ -143,7 +143,7 @@ export function applyTriagePolicy(context) {
     lower('low', 'low', 'context.expected-behaviour', 'This matches expected scheduled behaviour, not a failure.');
   }
   if (evidence.workType === 'documentation' && !evidence.symptom.hasFailure &&
-      evidence.deadline === 'unknown' && !evidence.activeIncident) {
+      !evidence.deadlineCommitted && !evidence.activeIncident) {
     lower('low', 'low', 'context.documentation', 'A documentation or how-to request with no stated deadline.');
   }
 

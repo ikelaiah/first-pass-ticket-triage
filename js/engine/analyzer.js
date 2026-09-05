@@ -922,6 +922,44 @@ export function analyse(rawText, overrides = {}) {
   const isQuestion =
     (workTypeResult.workType === 'documentation' || symptom.symptom === 'question') &&
     !symptom.hasFailure;
+
+  // A non-incident how-to concerns the requester unless it names a broader
+  // affected population.  Its optional timing describes when the requester
+  // would like to use the answer, not a triage deadline, unless the language
+  // makes that timing a commitment.  Keep explicit analyst refinements and
+  // real failures authoritative.
+  if (isQuestion && workTypeResult.workType === 'documentation') {
+    if (!applied.scope && scopeResult.scope === 'unknown') {
+      scopeResult = {
+        ...scopeResult,
+        scope: 'individual',
+        label: scopeLabel('individual'),
+        evidence: [{
+          quote: 'requester guidance request',
+          meaning: 'the request concerns one requester',
+          source: 'context'
+        }]
+      };
+    }
+    if (!applied.deadline && !deadlineResult.committed) {
+      deadlineResult = {
+        ...deadlineResult,
+        deadline: 'none',
+        label: deadlineLabel('none'),
+        candidates: [],
+        evidence: []
+      };
+    }
+    if (!applied.driver && driver.driver === 'unknown') {
+      driver = {
+        driver: 'preference',
+        label: 'an ordinary guidance preference drives timing',
+        quote: 'requester guidance request',
+        actor: null,
+        committed: false
+      };
+    }
+  }
   const knownAnswer = findKnownAnswer(doc, isQuestion);
   const sourceOfTruth = findSourceOfTruth(systemResult, symptom, organisationConfig, doc);
   const differential = detectDifferential(doc, symptom, scopeResult);

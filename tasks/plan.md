@@ -664,3 +664,41 @@ policy to its labels.
 | Future dates are mistaken for hard deadlines | High | Require committed statutory/operational evidence; explicit soft/wait wording overrides the floor. |
 | Propagation creates unjustified P1s | High | Preserve scope, raise impact independently, and cap propagation-only urgency at Medium. |
 | Recoverability is confused with data loss | Medium | Add explicit recoverability evidence and direct tests for recoverable/unrecoverable states. |
+## v0.8.0 Semantic Mismatch Burn-Down
+
+### Baseline
+
+The immutable release validator at `85c0dc8` has 36 mismatch cases: 35
+unreviewed plus `release-18-campus-drill-roster`, which is already recorded as
+one legitimate P2/P3 ambiguity. Hard gates are clean: zero assessed-ticket
+abstentions, unsafe under-prioritisations, and severe unsafe
+under-prioritisations.
+
+### Primary classification
+
+| Primary category | Cases |
+| --- | --- |
+| Evidence extraction defect | 01, 02, 03, 06, 07, 09, 10, 11, 13, 14, 15, 16, 17, 21, 23, 24, 25, 32, 35 |
+| Context defect | 04, 05, 08, 12, 20, 22, 27, 28, 29, 30, 31, 33, 34, 36 |
+| Policy defect | 19, 26 |
+| Legitimate ambiguity | 18 (already reviewed) |
+| Provenance/authority defect | None at baseline |
+| Fixture/ground-truth defect | None at baseline |
+| Validator defect | None at baseline |
+
+### Ordered slices
+
+1. Documentation, healthy-state, and reference-only context (01, 04, 08, 30,
+   31, 36). Verify P4 outcomes and do not promote observed timestamps.
+2. Historical, corrected, negated, and pending context (05, 12, 13, 20, 22,
+   27, 28, 29, 33, 34). Preserve active incidents and the safety hard gates.
+3. Explicit scope, process, workaround, and deadline evidence (02, 03, 06,
+   07, 09, 10, 11, 21, 23, 25, 32, 35). Keep each extraction family separate.
+4. Explicit authority/containment facets for the active access and safety cases
+   (14--17, 24), only where the ticket states the fact.
+5. Policy calibration (19, 26), using matrix and documented policy evidence.
+6. Reclassify only a fixture whose written policy independently proves its
+   current expectation wrong; otherwise resolve through production evidence.
+
+Each slice requires a red positive and contrast regression, focused tests,
+`npm test`, locked validation, and unchanged hard-gate values before commit.

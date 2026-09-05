@@ -163,7 +163,9 @@ const WORKAROUND_CASES = [
   ['There is no workaround and we are completely blocked.', 'no'],
   ['We do not have a workaround.', 'no'],
   ['Only a partial work around exists.', 'partial'],
-  ['Canvas sync has stopped.', 'unknown']
+  ['Canvas sync has stopped.', 'unknown'],
+  ['The directory form saves normally after an update.', 'yes'],
+  ['The directory form does not save normally after an update.', 'no']
 ];
 
 for (const [text, expected] of WORKAROUND_CASES) {
@@ -644,6 +646,28 @@ test('Documentation', 'documentation request -> P4', () =>
 test('Documentation', 'classified as documentation', () =>
   field('Where can I find the documentation for the Canvas integration?',
     'workType', 'documentation'));
+
+test('Documentation', 'an explicit no-failure how-to stays P4', () =>
+  priority('Can you guide me through placing a cover teacher on a roster for the following week? Nothing is failing; I just cannot locate the setting.', 'P4'));
+
+test('Documentation', 'a non-incident how-to records requester scope and soft timing', () => {
+  const result = analyse('Can you guide me through placing a cover teacher on a roster for the following week? Nothing is failing; I just cannot locate the setting.');
+  return ok(
+    result.scope === 'individual' && result.deadline === 'none' && result.driver.driver === 'preference',
+    'scope=' + result.scope + ' deadline=' + result.deadline + ' driver=' + result.driver.driver
+  );
+});
+
+test('Documentation', 'a live roster failure remains an incident despite a how-to opening', () =>
+  priority("Can you guide me through the roster function? The roster upload is failing and must be fixed before next week's classes.", 'P3'));
+
+test('Documentation', 'a committed how-to deadline is retained', () => {
+  const result = analyse('Can you guide me through adding a roster before Friday? The completed roster is required by the regulator on Friday.');
+  return ok(
+    result.workType === 'documentation' && result.deadline !== 'none',
+    'workType=' + result.workType + ' deadline=' + result.deadline
+  );
+});
 
 /* -------------------------------------------------------- 18. helpdesk -- */
 

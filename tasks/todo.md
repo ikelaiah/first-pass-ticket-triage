@@ -127,3 +127,12 @@
 - [x] Update README/CHANGELOG/version only after meaningful patch improvements.
 - [x] Run full Node/browser/catalogue/privacy/integrity release gates and review
   the final diff.
+## v0.8.0 semantic mismatch burn-down
+
+- [ ] Resolve documentation and healthy-state context family.
+- [ ] Resolve historical, corrected, negated, and pending context family.
+- [ ] Resolve explicit scope/process/workaround/deadline evidence families.
+- [ ] Resolve explicit authority and containment evidence where stated.
+- [ ] Resolve policy-only P1/P2 calibration cases.
+- [ ] Re-run immutable validation with zero unreviewed mismatches.
+- [ ] Perform complete release qualification and remote release operations.
