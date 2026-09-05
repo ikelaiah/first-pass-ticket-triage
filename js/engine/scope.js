@@ -105,7 +105,7 @@ const UNAFFECTED_COMPARISON_SUFFIX =
   /^\s+else(?:['’]s)?\b[^.;!?]{0,48}\b(?:(?:is|are|was|were)\s+(?:still\s+)?(?:working|fine|ok|okay|healthy|normal|unaffected|unimpacted)|works?|can\s+(?:still\s+)?(?:work|use|access|log in|sign in|proceed))\b/;
 
 const HISTORICAL_SCOPE_MARKER =
-  /\b(?:yesterday|last\s+(?:night|evening|week|month|monday|tuesday|wednesday|thursday|friday|saturday|sunday)|previous(?:ly)?|earlier|the day before)\b/i;
+  /\b(?:yesterday|last\s+(?:night|evening|week|month|monday|tuesday|wednesday|thursday|friday|saturday|sunday|spring|summer|autumn|fall|winter)|previous(?:ly)?|earlier|the day before)\b/i;
 const CURRENT_SCOPE_MARKER =
   /\b(?:today|this\s+(?:morning|afternoon|evening)|currently|right now|at present|still)\b/i;
 
