@@ -1,0 +1,166 @@
+{
+  "metadata": {
+    "name": "v0.8.0 post-calibration holdout",
+    "kind": "independently-authored-policy-labelled-holdout",
+    "note": "Authored and labelled from docs/triage-policy.md after policy implementation; not derived from production phrase dictionaries, existing semantic fixtures, the frozen 81-ticket corpus, or the known mismatch list.",
+    "labelledBeforeEvaluation": true
+  },
+  "cases": [
+    {
+      "id": "holdout-01-paper-attendance-path",
+      "text": "One teacher's attendance screen is blank, but the registrar can use the paper roll and enter it at close of day.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P4", "impact": "low", "urgency": "low" },
+      "labelBasis": { "policyIds": ["workaround.full"], "rationale": "One-person inconvenience with a complete same-process workaround and no stated cutoff." }
+    },
+    {
+      "id": "holdout-02-science-instructions-stopgap",
+      "text": "The science portal is unavailable for fourteen classes, but teachers can switch to printed instructions until tomorrow morning.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P3", "impact": "medium", "urgency": "medium" },
+      "labelBasis": { "policyIds": ["workaround.full", "deadline.hard-near"], "rationale": "A cohort-level outage remains consequential, while a complete stopgap and tomorrow morning create Medium urgency." }
+    },
+    {
+      "id": "holdout-03-receipt-export-preference",
+      "text": "Finance would like the new receipt export by Friday if possible; existing receipts continue to work.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P4", "impact": "low", "urgency": "low" },
+      "labelBasis": { "policyIds": ["financial.topic", "deadline.soft"], "rationale": "Finance vocabulary and a preference do not establish harm or a hard cutoff." }
+    },
+    {
+      "id": "holdout-04-statutory-attendance-export",
+      "text": "The statutory attendance return is due in four days; the export omits one required field and there is no alternate report.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P3", "impact": "medium", "urgency": "medium" },
+      "labelBasis": { "policyIds": ["deadline.hard-near", "safeguarding.pending"], "rationale": "A defective compliance export has a committed four-day requirement, but no High consequence is stated." }
+    },
+    {
+      "id": "holdout-05-completed-archive-question",
+      "text": "The overnight archive completed at 2am; please explain the retention entry in the log for our records.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P4", "impact": "low", "urgency": "low" },
+      "labelBasis": { "policyIds": ["context.expected-behaviour", "context.documentation"], "rationale": "Completed scheduled behaviour and a documentation question have no active failure." }
+    },
+    {
+      "id": "holdout-06-draft-counsellor-permissions",
+      "text": "A draft permissions change could expose counsellor notes to another department if approved; nothing has been deployed.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P3", "impact": "medium", "urgency": "low" },
+      "labelBasis": { "policyIds": ["harm.pending", "privacy.context"], "rationale": "The potential exposure is credible but conditional and not active." }
+    },
+    {
+      "id": "holdout-07-cross-family-medical-note",
+      "text": "A parent can currently see a different child's medical note in the family portal.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P1", "impact": "high", "urgency": "high" },
+      "labelBasis": { "policyIds": ["privacy.active"], "rationale": "Cross-person disclosure is active exposure with an ongoing privacy consequence." }
+    },
+    {
+      "id": "holdout-08-excursion-emergency-list",
+      "text": "The emergency contact list is missing from the tablet used on today's excursion; staff are carrying the current printed list.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P1", "impact": "high", "urgency": "high" },
+      "labelBasis": { "policyIds": ["safety.active", "deadline.hard-near", "workaround.full"], "rationale": "Safety-critical information is unavailable during today's activity; the paper copy preserves operations but not the digital control." }
+    },
+    {
+      "id": "holdout-09-former-contractor-welfare-dashboard",
+      "text": "A former contractor can still sign in to the welfare dashboard, which contains student case notes, because access removal has not completed.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P1", "impact": "high", "urgency": "high" },
+      "labelBasis": { "policyIds": ["privacy.active", "security.active"], "rationale": "An excluded person retains live access to sensitive records, so exposure is active." }
+    },
+    {
+      "id": "holdout-10-payroll-preview-format",
+      "text": "The payroll preview has a column-formatting error, but the pay file was accepted and every employee was paid.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P4", "impact": "low", "urgency": "low" },
+      "labelBasis": { "policyIds": ["financial.topic", "harm.resolved"], "rationale": "Payroll is domain context; successful processing and paid employees provide no active financial consequence." }
+    },
+    {
+      "id": "holdout-11-omitted-payroll-file",
+      "text": "Seven employees were omitted from today's payroll file and finance cannot rerun it before the cutoff.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P1", "impact": "high", "urgency": "high" },
+      "labelBasis": { "policyIds": ["financial.confirmed", "deadline.hard-near"], "rationale": "A confirmed same-day payroll processing failure risks missed pay at the cutoff." }
+    },
+    {
+      "id": "holdout-12-contained-canteen-duplicates",
+      "text": "The canteen charged two families twice; finance has isolated the accounts and will refund them manually next week.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P3", "impact": "medium", "urgency": "low" },
+      "labelBasis": { "policyIds": ["financial.confirmed", "containment.preserve", "loss.recoverable"], "rationale": "Confirmed duplicate charges are consequential but contained and recoverable without a same-day cutoff." }
+    },
+    {
+      "id": "holdout-13-restorable-route-profiles",
+      "text": "A sync wrote the wrong bus route to forty student profiles, but the job is disabled and records can be restored from yesterday's export.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P3", "impact": "medium", "urgency": "low" },
+      "labelBasis": { "policyIds": ["loss.recoverable", "containment.preserve"], "rationale": "Wrong data affected a cohort but propagation is contained and a restoration path exists." }
+    },
+    {
+      "id": "holdout-14-overwritten-exam-submissions",
+      "text": "The only copy of twelve exam submissions was overwritten; the storage snapshot is corrupt and recovery has failed.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P2", "impact": "high", "urgency": "medium" },
+      "labelBasis": { "policyIds": ["loss.unrecoverable"], "rationale": "Material assessment data is permanently lost; no immediate deadline is stated, so Urgency remains Medium." }
+    },
+    {
+      "id": "holdout-15-recurring-timetable-change",
+      "text": "The same timetable change returns after every overnight sync at one campus; staff correct it each morning.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P3", "impact": "medium", "urgency": "low" },
+      "labelBasis": { "policyIds": ["recurrence.pattern", "containment.preserve"], "rationale": "A recurring one-campus data fault has cumulative consequence but no stated immediate cutoff." }
+    },
+    {
+      "id": "holdout-16-multi-campus-duplicate-import",
+      "text": "An import is still duplicating enrolments for three campuses; clerks are correcting records while it runs.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P2", "impact": "high", "urgency": "medium" },
+      "labelBasis": { "policyIds": ["propagation.active"], "rationale": "Active multi-campus propagation raises Impact and supplies a bounded Medium urgency floor." }
+    },
+    {
+      "id": "holdout-17-critical-connector-typo",
+      "text": "The high-availability connector is named in the ticket, but the only fault is a typo in a local report filter.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P4", "impact": "low", "urgency": "low" },
+      "labelBasis": { "policyIds": ["criticality.context", "platform.neutral"], "rationale": "Critical-system identity and platform metadata cannot manufacture consequence." }
+    },
+    {
+      "id": "holdout-18-school-identity-cutoff",
+      "text": "The identity gateway is unavailable for everyone at one school, lessons begin in forty-five minutes, and there is no alternate sign-in.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P1", "impact": "high", "urgency": "high" },
+      "labelBasis": { "policyIds": ["deadline.hard-near", "workaround.unknown"], "rationale": "A whole-school access failure blocks teaching immediately with a near operational deadline and no workaround." }
+    },
+    {
+      "id": "holdout-19-historical-wellbeing-dashboard",
+      "text": "The wellbeing team requests a dashboard of historical contacts; there is no incident and the existing report remains usable.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P4", "impact": "low", "urgency": "low" },
+      "labelBasis": { "policyIds": ["context.documentation", "workaround.full"], "rationale": "This is a non-urgent reporting request with an existing usable path." }
+    },
+    {
+      "id": "holdout-20-screen-reader-submit",
+      "text": "A screen-reader user cannot reach the submit button, but a support officer can complete the form on their behalf.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P3", "impact": "low", "urgency": "medium" },
+      "labelBasis": { "policyIds": ["workaround.full", "safeguarding.pending"], "rationale": "A workaround preserves completion but the accessibility barrier retains a Medium urgency floor." }
+    },
+    {
+      "id": "holdout-21-lab-checklist-next-month",
+      "text": "A safety checklist export is wrong for one laboratory; the inspection is next month and current paper records are available.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P3", "impact": "medium", "urgency": "low" },
+      "labelBasis": { "policyIds": ["safety.active", "workaround.full", "deadline.hard-future"], "rationale": "The safety context has a reliable current paper path and a future inspection, not an immediate exposure." }
+    },
+    {
+      "id": "holdout-22-restorable-compliance-archive",
+      "text": "The compliance archive can be restored from the weekly snapshot, but the audit window closes in two days.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P3", "impact": "medium", "urgency": "medium" },
+      "labelBasis": { "policyIds": ["loss.recoverable", "deadline.hard-near", "safeguarding.pending"], "rationale": "Recoverable archive loss has a committed two-day audit deadline without an active breach." }
+    },
+    {
+      "id": "holdout-23-resolved-mobile-outage",
+      "text": "The mobile app was unavailable for twenty minutes yesterday; it has been stable since and no records were lost.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P4", "impact": "low", "urgency": "low" },
+      "labelBasis": { "policyIds": ["harm.resolved"], "rationale": "The availability incident is historical and explicitly resolved with no loss." }
+    },
+    {
+      "id": "holdout-24-unconfirmed-case-note-view",
+      "text": "A staff member thinks a confidential case note may have been visible, but logs are still being checked and no viewer is confirmed.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P3", "impact": "medium", "urgency": "low" },
+      "labelBasis": { "policyIds": ["harm.pending", "privacy.context"], "rationale": "Potential exposure is credible and material but not confirmed active exposure." }
+    },
+    {
+      "id": "holdout-25-browser-lesson-stopgap",
+      "text": "The mobile lesson view is slow for one teacher, while the desktop browser completes the same lesson normally.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P4", "impact": "low", "urgency": "low" },
+      "labelBasis": { "policyIds": ["workaround.full"], "rationale": "A single-user degradation has a complete equivalent path and no deadline." }
+    },
+    {
+      "id": "holdout-26-grant-file-cutoff",
+      "text": "The grant reporting file is due tomorrow under a funding rule; the export cannot be generated and there is no manual alternative.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P2", "impact": "medium", "urgency": "high" },
+      "labelBasis": { "policyIds": ["deadline.hard-near", "safeguarding.pending"], "rationale": "A blocked compliance deliverable has a committed tomorrow deadline; consequence is significant but not an active safety/privacy breach." }
+    }
+  ]
+}

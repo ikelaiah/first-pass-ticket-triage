@@ -5,6 +5,7 @@
   "type": "module",
   "description": "Local-first IT task triage and priority decision support. Static site - no dependencies, no build step.",
   "scripts": {
-    "test": "node tests/run.mjs && node tests/catalogue-coverage.test.mjs && node tests/evaluate.test.mjs && node tests/corpus-integrity.test.mjs && node tests/evaluate.mjs tests/fixtures/accuracy-corpus.json"
+    "test": "node tests/run.mjs && node tests/catalogue-coverage.test.mjs && node tests/evaluate.test.mjs && node tests/corpus-integrity.test.mjs && node tests/evaluate.mjs tests/fixtures/accuracy-corpus.json",
+    "test:release": "node tests/final-release-validation.mjs --output artifacts/validation/final-release-ci.json"
   }
 }

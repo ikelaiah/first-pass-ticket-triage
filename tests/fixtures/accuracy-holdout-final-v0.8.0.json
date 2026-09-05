@@ -1,0 +1,156 @@
+{
+  "metadata": {
+    "name": "v0.8.0 final untouched holdout",
+    "kind": "independently-authored-policy-labelled-holdout",
+    "note": "Authored independently from the triage policy after the development holdout was designated for remediation. It is not copied from the main corpus, development holdout, phrase dictionaries, or remediation regressions.",
+    "labelledBeforeEvaluation": true,
+    "evaluated": false,
+    "evaluationRule": "Do not run through the engine until the development holdout has zero unresolved engine defects and all regression suites are clean."
+  },
+  "cases": [
+    {
+      "id": "final-01-library-barcode-paper-path",
+      "text": "The library barcode reader is unavailable for one librarian, but loans can be recorded on the paper register and entered at closing.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P4", "impact": "low", "urgency": "low" },
+      "labelBasis": { "policyIds": ["workaround.full"], "rationale": "A single-user inconvenience has a same-process manual continuation path and no stated cutoff." }
+    },
+    {
+      "id": "final-02-grade-publishing-cutoff",
+      "text": "Grade publication is unavailable for three year groups; staff can upload a spreadsheet, but the report lock is tomorrow afternoon.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P2", "impact": "medium", "urgency": "high" },
+      "labelBasis": { "policyIds": ["workaround.partial", "deadline.hard-near"], "rationale": "A multi-cohort publishing failure leaves a costly partial path and a committed near cutoff." }
+    },
+    {
+      "id": "final-03-admissions-duplicate-import",
+      "text": "The admissions feed is adding a second application for families at two campuses, and each new import creates more duplicates.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P2", "impact": "high", "urgency": "medium" },
+      "labelBasis": { "policyIds": ["propagation.active"], "rationale": "Incorrect enrolment data is actively propagating across multiple schools." }
+    },
+    {
+      "id": "final-04-draft-adjustment-permission",
+      "text": "A proposed permission would let a different faculty view disability adjustments if the change is approved; production access is unchanged.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P3", "impact": "medium", "urgency": "low" },
+      "labelBasis": { "policyIds": ["harm.pending", "privacy.context"], "rationale": "A credible sensitive-data exposure is conditional and not active in production." }
+    },
+    {
+      "id": "final-05-family-balance-disclosure",
+      "text": "The billing portal currently shows one household's balance to another household, and support has no way to revoke the viewing session.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P1", "impact": "high", "urgency": "high" },
+      "labelBasis": { "policyIds": ["privacy.active"], "rationale": "Current cross-person financial information exposure is active and cannot be immediately contained." }
+    },
+    {
+      "id": "final-06-payroll-preview-cosmetic",
+      "text": "The pay-run preview has a cosmetic alignment problem, while the bank submission succeeded and all wages were received.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P4", "impact": "low", "urgency": "low" },
+      "labelBasis": { "policyIds": ["financial.topic", "harm.resolved"], "rationale": "Payroll vocabulary is context only because payment succeeded and the stated defect is cosmetic." }
+    },
+    {
+      "id": "final-07-missing-casual-payments",
+      "text": "Eight casual workers are absent from this morning's payment batch, and the payroll team cannot recreate the file before the bank window closes.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P1", "impact": "high", "urgency": "high" },
+      "labelBasis": { "policyIds": ["financial.confirmed", "deadline.hard-near"], "rationale": "Confirmed omitted payments face a same-day processing cutoff with no rerun path." }
+    },
+    {
+      "id": "final-08-restorable-consent-register",
+      "text": "The excursion consent register was deleted from the coordinator's tablet, but last night's snapshot can restore it before Friday's review.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P2", "impact": "medium", "urgency": "high" },
+      "labelBasis": { "policyIds": ["loss.recoverable", "deadline.hard-near"], "rationale": "Material information is recoverable but a committed review date makes restoration time-sensitive." }
+    },
+    {
+      "id": "final-09-unrecoverable-audit-archive",
+      "text": "The sole archive of last year's audit reports was erased; there is no usable backup and the next review is in two weeks.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P2", "impact": "high", "urgency": "medium" },
+      "labelBasis": { "policyIds": ["loss.unrecoverable", "compliance.context"], "rationale": "Permanent material loss is high impact; the future review creates medium time pressure, not an immediate cutoff." }
+    },
+    {
+      "id": "final-10-critical-connector-not-failing",
+      "text": "The high-availability connector is mentioned for context, but the request is only to correct a label in a local report and no service failure is reported.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P4", "impact": "low", "urgency": "low" },
+      "labelBasis": { "policyIds": ["criticality.context", "platform.neutral"], "rationale": "Critical-system identity cannot create consequence without an operational failure." }
+    },
+    {
+      "id": "final-11-expired-welfare-access",
+      "text": "A relief worker whose clearance ended last week can still open student wellbeing notes this morning.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P1", "impact": "high", "urgency": "high" },
+      "labelBasis": { "policyIds": ["privacy.active", "security.active", "safeguarding.active"], "rationale": "An excluded person has current access to sensitive student records." }
+    },
+    {
+      "id": "final-12-evacuation-map-drill",
+      "text": "The digital evacuation maps will not load for tomorrow's drill, but printed copies are posted in every building.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P2", "impact": "high", "urgency": "medium" },
+      "labelBasis": { "policyIds": ["safety.active", "workaround.full", "deadline.hard-near"], "rationale": "Safety information is affected for a committed near event, while paper copies preserve continuity." }
+    },
+    {
+      "id": "final-13-screen-reader-keyboard-route",
+      "text": "Keyboard focus skips the save action for one enrolment officer using a screen reader, although the supported alternate shortcut completes the record.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P3", "impact": "low", "urgency": "medium" },
+      "labelBasis": { "policyIds": ["accessibility.context", "workaround.full"], "rationale": "One user has an accessibility barrier and an equivalent supported route; the barrier retains a Medium urgency floor." }
+    },
+    {
+      "id": "final-14-compliance-filename-request",
+      "text": "The regulatory return is due next week, but the export contains every required field and only its filename convention needs changing.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P4", "impact": "low", "urgency": "low" },
+      "labelBasis": { "policyIds": ["compliance.context", "deadline.hard-future"], "rationale": "No compliance consequence or blocked process is stated; the future date does not by itself make this urgent." }
+    },
+    {
+      "id": "final-15-resolved-student-sync",
+      "text": "The student synchronisation stopped for one campus yesterday, has operated normally since, and no records were changed incorrectly.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P4", "impact": "low", "urgency": "low" },
+      "labelBasis": { "policyIds": ["harm.resolved"], "rationale": "The historical service incident is explicitly resolved with no continuing data consequence." }
+    },
+    {
+      "id": "final-16-contained-address-correction",
+      "text": "Twelve student addresses were written incorrectly in one batch; the import is paused and a prepared repair will restore the records.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P3", "impact": "medium", "urgency": "low" },
+      "labelBasis": { "policyIds": ["containment.preserve", "loss.recoverable"], "rationale": "A material data fault is contained and recoverable, with no immediate deadline stated." }
+    },
+    {
+      "id": "final-17-end-of-term-report-request",
+      "text": "A coordinator would like a new attendance dashboard before the end of term; the current reports remain usable and no failure is reported.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P4", "impact": "low", "urgency": "low" },
+      "labelBasis": { "policyIds": ["deadline.soft", "context.documentation"], "rationale": "A non-blocking improvement request with an existing usable path is low priority." }
+    },
+    {
+      "id": "final-18-unconfirmed-duplicate-charge",
+      "text": "Finance suspects a second charge may have been submitted, but the transaction record is incomplete and no affected account is confirmed.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P4", "impact": "low", "urgency": "low" },
+      "labelBasis": { "policyIds": ["financial.topic", "privacy.context"], "rationale": "Possible financial harm is unconfirmed, so domain context must not be promoted to confirmed consequence." }
+    },
+    {
+      "id": "final-19-medication-record-unavailable",
+      "text": "One nurse cannot open the medication administration record during today's clinic, and there is no paper copy available.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P1", "impact": "high", "urgency": "high" },
+      "labelBasis": { "policyIds": ["safety.active", "deadline.hard-near", "workaround.no"], "rationale": "A safety-critical record is unavailable now with no continuation path during today's clinic." }
+    },
+    {
+      "id": "final-20-certificate-renewal-planned",
+      "text": "The identity certificate expires next month, sign-in is working today, and renewal has already been scheduled.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P4", "impact": "low", "urgency": "low" },
+      "labelBasis": { "policyIds": ["harm.pending", "context.expected-behaviour"], "rationale": "A future risk is planned while the current service remains available." }
+    },
+    {
+      "id": "final-21-regulator-correction-cutoff",
+      "text": "The regulator requires a corrected return tomorrow; the reporting generator is broken and the team has no manual submission route.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P2", "impact": "medium", "urgency": "high" },
+      "labelBasis": { "policyIds": ["compliance.context", "deadline.hard-near", "workaround.no"], "rationale": "A blocked compliance deliverable has a committed tomorrow cutoff and no workaround." }
+    },
+    {
+      "id": "final-22-paused-repeated-address-import",
+      "text": "The nightly import has restored the wrong suburb for the same pupil on four runs, but the job is paused pending correction.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P3", "impact": "medium", "urgency": "low" },
+      "labelBasis": { "policyIds": ["recurrence.pattern", "containment.preserve"], "rationale": "A recurring individual data fault is currently contained and has no stated cutoff." }
+    },
+    {
+      "id": "final-23-draft-api-scope",
+      "text": "A draft API role would include private counselling fields for an analytics group if it is enabled; the role is not active.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P3", "impact": "medium", "urgency": "low" },
+      "labelBasis": { "policyIds": ["harm.pending", "privacy.context"], "rationale": "Potential sensitive-data exposure is stated as conditional and inactive." }
+    },
+    {
+      "id": "final-24-photo-upload-how-to",
+      "text": "The sports registration form needs instructions for adding a profile photo; no submission error or required date is mentioned.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P4", "impact": "low", "urgency": "low" },
+      "labelBasis": { "policyIds": ["context.documentation"], "rationale": "This is a documentation request with no active failure or deadline." }
+    }
+  ]
+}
