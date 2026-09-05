@@ -30,7 +30,7 @@ import {
 } from './priority-matrix.js';
 import {
   IMMEDIATE_NEED_PATTERNS, CONTEXT_ELSEWHERE_PHRASES,
-  WORKING_COMPARATOR_PHRASES, CONTRAST_PHRASES,
+  WORKING_COMPARATOR_PHRASES, CONTINUITY_PHRASES, CONTRAST_PHRASES,
   ACTIVE_INCIDENT_PHRASES, ESCALATION_PHRASES,
   RECURRENCE_PHRASES, UNDETECTED_PHRASES, SLA_BREACH_PHRASES,
   BLOCKED_PROCESS_PHRASES
@@ -922,6 +922,35 @@ export function analyse(rawText, overrides = {}) {
   const isQuestion =
     (workTypeResult.workType === 'documentation' || symptom.symptom === 'question') &&
     !symptom.hasFailure;
+
+  // A viable alternative stated beside a minor fault bounds the effect without
+  // claiming that the primary experience is healthy. This evidence is a
+  // context-derived impairment, so it informs the eight-facet answer but does
+  // not receive the scoring authority of an explicitly blocked process.
+  const continuityHit = scanPositive(doc, CONTINUITY_PHRASES)[0];
+  if (continuityHit && symptom.severity > SEVERITY.NONE && !applied.consequence) {
+    blockedProcess = {
+      level: 'impaired', process: 'primary path',
+      label: 'the primary path is impaired but work can continue',
+      quote: continuityHit.quote, source: 'inferred', inferred: true,
+      evidence: [{ quote: continuityHit.quote, meaning: 'a viable alternative remains available', source: 'consequence-inferred' }]
+    };
+    if (!applied.workaround && workaroundResult.workaround === 'unknown') {
+      workaroundResult = { ...workaroundResult, workaround: 'yes', label: workaroundLabel('yes'),
+        evidence: [{ quote: continuityHit.quote, meaning: 'a viable alternative remains available', source: 'workaround' }] };
+    }
+    if (!applied.deadline && deadlineResult.deadline === 'unknown') {
+      deadlineResult = { ...deadlineResult, deadline: 'none', label: deadlineLabel('none'),
+        evidence: [{ quote: continuityHit.quote, meaning: 'no deadline accompanies the viable alternative', source: 'context' }] };
+    }
+    if (!applied.driver && driver.driver === 'unknown') {
+      driver = { driver: 'none', label: 'no deadline driver was stated', quote: continuityHit.quote, actor: null, committed: false };
+    }
+    if (!applied.contained && !containment.propagating && !containment.recurring) {
+      containment = { ...containment, contained: true, containedEvidence: continuityHit,
+        summary: 'appears contained' };
+    }
+  }
 
   // A non-incident how-to concerns the requester unless it names a broader
   // affected population.  Its optional timing describes when the requester

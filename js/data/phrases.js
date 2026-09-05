@@ -544,7 +544,7 @@ export const SYMPTOMS = [
         'keeps dropping', 'keeps dropping out', 'drops out', 'connection drops', 'signal drops'] },
   { id: 'cosmetic', label: 'Cosmetic', severity: 0.5,
     m: ['cosmetic', 'typo', 'spelling mistake', 'misaligned', 'alignment', 'wrong colour',
-        'looks odd', 'display glitch', 'formatting issue'] },
+        'looks odd', 'display glitch', 'formatting issue', 'lines up badly'] },
   { id: 'feature-request', label: 'Feature Requested', severity: 0,
     m: ['new feature', 'feature request', 'enhancement', 'add a button', 'would like a',
         'can we have', 'it would be good if', 'nice to have', 'new functionality',
@@ -1264,6 +1264,15 @@ export const WORKING_COMPARATOR_PHRASES = [
         /\b(?:one|the first)\s+(?:has\s+)?(?:synced|worked|processed|completed)\b/,
         /\b(?:records?|students?|enrolment records?|accounts?|files?)\s+(?:still\s+)?(?:process|processed|sync|synced)\s+successfully\b/],
     label: 'another comparable record is working' }
+];
+
+/** A stated, usable alternative limits the current operational effect. */
+export const CONTINUITY_PHRASES = [
+  { m: ['printable pdf is accurate', 'printable pdf is fine', 'gives them the complete document',
+        'live departures page is accurate', 'existing summary is usable',
+        'csv download for that adviser is complete', 'file opens normally',
+        'can keep booking rooms'],
+    label: 'an explicit alternative or completed path remains usable' }
 ];
 
 export const CONTRAST_PHRASES = [

@@ -692,6 +692,21 @@ test('Documentation', 'a committed how-to deadline is retained', () => {
   );
 });
 
+test('Symptom', 'a display that lines up badly is a cosmetic fault', () =>
+  field('The room-booking export lines up badly on screen.', 'symptom', 'cosmetic'));
+
+test('Continuity context', 'an explicit working alternative bounds a non-blocking fault', () => {
+  const result = analyse('The room-booking export is misaligned on screen, but the printable PDF is accurate and staff can book rooms.');
+  return ok(
+    result.businessConsequence.level === 'impaired' &&
+      result.containment.contained === true &&
+      result.deadline === 'none' && result.driver.driver === 'none' &&
+      result.workaround === 'yes',
+    JSON.stringify({ consequence: result.businessConsequence.level, contained: result.containment.contained,
+      deadline: result.deadline, driver: result.driver.driver, workaround: result.workaround })
+  );
+});
+
 /* -------------------------------------------------------- 18. helpdesk -- */
 
 test('Helpdesk', 'helpdesk broken for one person -> P3', () =>
