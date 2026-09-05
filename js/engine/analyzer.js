@@ -33,7 +33,7 @@ import {
   WORKING_COMPARATOR_PHRASES, CONTINUITY_PHRASES, CONTRAST_PHRASES,
   ACTIVE_INCIDENT_PHRASES, ESCALATION_PHRASES,
   RECURRENCE_PHRASES, UNDETECTED_PHRASES, SLA_BREACH_PHRASES,
-  BLOCKED_PROCESS_PHRASES
+  BLOCKED_PROCESS_PHRASES, IMPAIRED_PROCESS_PHRASES
 } from '../data/phrases.js';
 import { detectContainment } from './containment.js';
 import { detectDriver } from './driver.js';
@@ -308,6 +308,12 @@ function detectBlockedProcess(doc, domainResult, symptom, systemResult) {
     level: 'blocked', process: hit[0].entry.process, label: hit[0].entry.label,
     quote: hit[0].quote, source: 'explicit', hit: hit[0],
     evidence: [{ quote: hit[0].quote, meaning: hit[0].entry.label, source: 'consequence' }]
+  };
+  const impairedHit = scanPositive(doc, IMPAIRED_PROCESS_PHRASES);
+  if (impairedHit.length) return {
+    level: 'impaired', process: impairedHit[0].entry.process, label: impairedHit[0].entry.label,
+    quote: impairedHit[0].quote, source: 'explicit', hit: impairedHit[0],
+    evidence: [{ quote: impairedHit[0].quote, meaning: impairedHit[0].entry.label, source: 'consequence' }]
   };
   if (has(doc, BLOCKED_PROCESS_PHRASES)) return null;
   const statusConsequence = inferStatusConsequence(doc, systemResult, symptom);

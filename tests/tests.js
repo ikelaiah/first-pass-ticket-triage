@@ -882,6 +882,18 @@ test('Consequence', 'an impaired process adds only the documented impact contrib
   );
 });
 
+for (const [text, expected] of [
+  ['The finance queue will not send invoices, but no invoice has been lost.', 'impaired'],
+  ['The attendance import skipped several records in the register.', 'impaired'],
+  ['The reconciliation report leaves out two cost centres.', 'impaired'],
+  ['The report is complete and the import processed normally.', 'unknown']
+]) {
+  test('Consequence', JSON.stringify(text.slice(0, 52)) + ' -> ' + expected, () => {
+    const actual = analyse(text).businessConsequence.level;
+    return ok(actual === expected, actual);
+  });
+}
+
 /* -------------------------------------------------------- 20. behaviour -- */
 
 test('Result model', 'an empty ticket returns an empty result', () => {

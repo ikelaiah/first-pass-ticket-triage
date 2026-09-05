@@ -1363,6 +1363,16 @@ export const BLOCKED_PROCESS_PHRASES = [
     process: 'reporting', label: 'reporting is blocked' }
 ];
 
+/** Explicitly degraded business processes that remain usable but impaired. */
+export const IMPAIRED_PROCESS_PHRASES = [
+  { m: [
+      /\b(?:queue|export|import|report|view|form|mapping)\b[^.;!?]{0,24}\b(?:will not|does not|do not|can not)\s+(?:send|load|open|display|update|complete)\b/,
+      /\b(?:import|report|export|queue|mapping|view)\b[^.;!?]{0,24}\b(?:skips?|skipped|leaves out|omits?|drops?|misaligns?|shows?\s+incorrect)\b/,
+      /\b(?:records?|rows?|forms?|entries)\s+(?:were|was|are|is)\s+(?:skipped|omitted|dropped|overwritten|missing)\b/
+    ],
+    process: 'named operational process', label: 'a business process is impaired' }
+];
+
 /** U6 driver — what creates the deadline: a requirement (statutory/operational) or a preference. */
 export const DRIVER_PHRASES = [
   { m: ['census', 'naplan', 'nesa', 'acara', 'statutory reporting', 'government reporting',
