@@ -195,7 +195,8 @@ function actualEightFacet(result, facet) {
     if (value.risks?.includes('security')) return 'security-compromise';
     if (value.risks?.includes('safety')) return 'safety';
     if (result.symptom === 'data-loss') return 'lost-data';
-    if (result.symptom === 'unavailable') return 'unavailable';
+    if (result.symptom === 'unavailable' || result.symptom === 'action-blocked' ||
+        value.answer === 'Unavailable/outage') return 'unavailable';
     return 'unknown';
   }
   if (facet === 'i4') {

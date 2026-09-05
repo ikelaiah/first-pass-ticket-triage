@@ -695,6 +695,11 @@ test('Documentation', 'a committed how-to deadline is retained', () => {
 test('Symptom', 'a display that lines up badly is a cosmetic fault', () =>
   field('The room-booking export lines up badly on screen.', 'symptom', 'cosmetic'));
 
+test('Irreversibility', 'a blocked download is unavailable even with a viable alternative', () => {
+  const result = analyse('One coordinator cannot download the timetable PDF, but the browser gives them the complete document.');
+  return ok(result.eightFacets.i3Irreversibility.answer === 'Unavailable/outage', result.eightFacets.i3Irreversibility.answer);
+});
+
 test('Continuity context', 'an explicit working alternative bounds a non-blocking fault', () => {
   const result = analyse('The room-booking export is misaligned on screen, but the printable PDF is accurate and staff can book rooms.');
   return ok(

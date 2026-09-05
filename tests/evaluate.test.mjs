@@ -265,6 +265,16 @@ const eightOutput = [];
 printReport(eightReport, (line) => eightOutput.push(line));
 assert(eightOutput.some((line) => line === 'I3: 1/1 (100.0%)'));
 
+const actionBlockedUnavailableReport = evaluateCases([{
+  id: 'action-blocked-is-unavailable', text: 'ticket',
+  expected: { assessmentStatus: 'assessed', priority: 'P4', i3: 'unavailable' }
+}], () => ({
+  assessmentStatus: 'assessed', suggestedPriority: 'P4', impact: 'low', urgency: 'low',
+  symptom: 'action-blocked',
+  eightFacets: { i3Irreversibility: { answer: 'Unavailable/outage', risks: [], modifiers: {} } }
+}));
+assert.equal(actionBlockedUnavailableReport.eightFacets.i3.accuracy, 1);
+
 const securityExposureCase = {
   id: 'security-exposure-labelled',
   text: 'ticket',
