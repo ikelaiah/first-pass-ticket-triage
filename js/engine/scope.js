@@ -22,7 +22,7 @@ export function scopeLabel(id) {
 }
 
 /** People counts: "35 casual staff" -> team. Also "1847 records affected" -> cohort for batch data validation. */
-const PEOPLE_COUNT = /\b(\d{1,4})\s+(?:casual\s+|part[- ]time\s+|full[- ]time\s+|new\s+|additional\s+|affected\s+)?(staff|users|employees|teachers|students|people|parents|accounts|administrators|admins|registrar|registrars|timesheets|records|mailboxes|girls|boys|children|kids|pupils|applicants|enrolments|families|treaties)\b/g;
+const PEOPLE_COUNT = /\b(\d{1,4})\s+(?:casual\s+|part[- ]time\s+|full[- ]time\s+|new\s+|additional\s+|affected\s+)?(staff|users|employees|teachers|students|people|parents|accounts|administrators|admins|adviser|advisers|registrar|registrars|timesheets|records|mailboxes|girls|boys|children|kids|pupils|applicants|enrolments|families|treaties)\b/g;
 
 const WRITTEN_NUMBER_VALUES = new Map([
   ['one', 1], ['two', 2], ['three', 3], ['four', 4], ['five', 5],
@@ -34,7 +34,7 @@ const WRITTEN_NUMBER_VALUES = new Map([
 const PEOPLE_WORD_COUNT = new RegExp(
   '\\b(' + [...WRITTEN_NUMBER_VALUES.keys()].join('|') +
   ')\\s+(?:(?:casual|part[- ]time|full[- ]time|new|additional|affected)\\s+)?' +
-  '(staff|users|employees|teachers|students|people|parents|accounts|administrators|admins|registrar|registrars|timesheets|records|mailboxes|girls|boys|children|kids|pupils|applicants|enrolments|families|treaties)\\b', 'g'
+  '(staff|users|employees|teachers|students|people|parents|accounts|administrators|admins|adviser|advisers|registrar|registrars|timesheets|records|mailboxes|girls|boys|children|kids|pupils|applicants|enrolments|families|treaties)\\b', 'g'
 );
 
 /** School counts: "three schools" is handled by phrases, "4 schools" here. */

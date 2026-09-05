@@ -30,4 +30,6 @@ export const cases = [
   caseWith('u5-login-yesterday', 'The teacher logged in yesterday.', 'unknown', false, 'timestamp', 'historical'),
   caseWith('u5-meeting-clock', 'The meeting is at 11am.', 'unknown', false, 'timestamp', 'negative'),
   caseWith('u5-discovered-today', 'Today we discovered the import problem.', 'unknown', false, 'timestamp', 'negative'),
+  caseWith('u5-current-view-today', 'Today only one adviser sees an empty view; the CSV download is complete.', 'unknown', false, 'timestamp', 'negative'),
+  caseWith('u5-accepted-payroll-today', "Today's payroll file was accepted and all salaries landed.", 'unknown', false, 'timestamp', 'negative'),
 ];

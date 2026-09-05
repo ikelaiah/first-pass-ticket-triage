@@ -1166,7 +1166,7 @@ export const UNDETECTED_PHRASES = [
  */
 export const OBSERVATION_VERBS = [
   'discover', 'discovered', 'discovers', 'notice', 'noticed', 'found', 'find',
-  'see', 'saw', 'spotted', 'spot', 'logged', 'reported', 'raised', 'rang',
+  'see', 'sees', 'saw', 'spotted', 'spot', 'accepted', 'logged', 'reported', 'raised', 'rang',
   'called', 'emailed', 'realised', 'realise', 'picked up', 'came across',
   'identified', 'flagged'
 ];
