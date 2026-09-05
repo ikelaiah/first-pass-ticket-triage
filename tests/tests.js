@@ -372,6 +372,9 @@ test('Payroll', 'ABA file missing with same-day payroll -> P1', () =>
 test('Payroll', '35 casual staff unpaid before cutoff -> P1', () =>
   priority('35 casual staff will not be paid unless this is fixed before today’s payroll cutoff.', 'P1'));
 
+test('Payroll', 'employees missing from a current pay run before a bank-file cutoff -> P1', () =>
+  priority('Four casual employees are absent from the current pay run. The payroll team has two hours before the bank file cutoff and cannot regenerate the file from this screen.', 'P1'));
+
 test('Payroll', 'payroll question with no deadline -> P3 or P4', () =>
   priority('I have a general question about how payroll records are stored.', ['P3', 'P4']));
 

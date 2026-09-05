@@ -159,7 +159,8 @@ export const DEADLINE_BUCKETS = [
 export const DEADLINE_PHRASES = [
   { m: [/(?<!\bfor )(?<!\bby )(?<!\buntil )(?<!\bis )(?<!\bare )(?<!\bwas )(?<!\bwere )(?<!\bhas )(?<!\bhave )(?<!\bam )\bnow\b/, 'right now', 'immediately', 'straight away',
         'within the hour', 'in the next hour', 'this minute', /in \d{1,2} minutes/,
-        'in a few minutes', 'about to start', 'starting in', 'any minute'],
+        'in a few minutes', 'about to start', 'starting in', 'any minute',
+        /\b(?:one|two|three|four|five|six|seven|eight|nine|ten|\d{1,2})\s+hours?\s+before\b[^.!?;]{0,48}\b(?:bank\s+file|payroll|payment)\s+(?:file\s+)?cut[- ]?off\b/],
     v: 'now', label: 'needed immediately' },
   { m: ['today', "today's", 'this morning', 'this afternoon', 'tonight', 'this evening',
         'end of day', 'eod', 'close of business', 'cob', 'before 5pm', 'by lunchtime',
@@ -1021,6 +1022,7 @@ export const RISK_MODIFIERS = {
   unpaidRisk: [
     /\b(?:will not|would not|may not|might not|can not) be paid\b/,
     /\bnot be paid\b/, /\b(?:have|has|had|were|was) not been paid\b/, /\bunpaid\b/, /\bmiss(?:ing|es)? (?:today's |this )?pay\b/,
+    /\b(?:employees?|staff|workers?|casual(?:\s+employees?)?)\b[^.;!?]{0,48}\babsent from\b[^.;!?]{0,48}\b(?:current|this)\s+(?:pay run|payroll)\b/,
     /\bnot get paid\b/, /\bno pay\b/, /\bmiss the pay run\b/, /\bmiss payroll\b/,
     /\bpay will not\b/, /\bstaff will not be paid\b/,
     /\bpay file (?:is|was|has been|have been) not (?:produced|created|generated)\b/
