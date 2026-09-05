@@ -1333,6 +1333,9 @@ test('Safety and continuity', 'missing safety information is not an ordinary dat
     result.impact + '/' + result.urgency);
 });
 
+test('Safety and continuity', 'a dry eyewash control in an occupied lab is P1', () =>
+  priority('The eyewash station valve is dry while students are using the lab this afternoon.', ['P1']));
+
 test('Safety and continuity', 'a court order plus retained access escalates', () => {
   const result = analyse('A court order says the non-custodial parent must not see the student record, but he still has portal access.');
   return ok(result.risks.safeguarding === true && result.priority === 'P1',
