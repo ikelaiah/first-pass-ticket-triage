@@ -1332,6 +1332,11 @@ export const CONTAINED_PHRASES = [
  */
 export const BLOCKED_PROCESS_PHRASES = [
   { m: [
+      /\b(?:can not|cannot)\s+(?:submit|lodge|regenerate)\s+(?:the\s+)?(?:grades?|claims?|claim|bank file|file)\b/,
+      /\b(?:service|portal|system)\b[^.;!?]{0,24}\brejects?\s+submissions?\b/
+    ],
+    process: 'required submission or processing', label: 'a required submission or processing step is blocked' },
+  { m: [
       // normalise() expands cannot, can't and unable to to "can not".
       /\bcan not\s+(?:mark|take|record|enter)\s+(?:the\s+)?(?:rolls?|attendance)\b/,
       /\b(?:the\s+)?rolls?\s+can not\s+be\s+(?:marked|recorded)\b/,

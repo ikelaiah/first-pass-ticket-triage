@@ -894,6 +894,18 @@ for (const [text, expected] of [
   });
 }
 
+for (const [text, expected] of [
+  ['Three tutors cannot submit grades from the assessment portal.', 'blocked'],
+  ['The transport claim service rejects submissions and there is no paper route.', 'blocked'],
+  ['The payroll clerk cannot regenerate the bank file.', 'blocked'],
+  ['The replacement portal can submit the claim successfully.', 'unknown']
+]) {
+  test('Consequence', JSON.stringify(text.slice(0, 52)) + ' -> ' + expected, () => {
+    const actual = analyse(text).businessConsequence.level;
+    return ok(actual === expected, actual);
+  });
+}
+
 /* -------------------------------------------------------- 20. behaviour -- */
 
 test('Result model', 'an empty ticket returns an empty result', () => {
