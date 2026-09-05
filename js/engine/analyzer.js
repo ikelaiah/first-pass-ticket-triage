@@ -39,6 +39,7 @@ import { detectContainment } from './containment.js';
 import { detectDriver } from './driver.js';
 import { detectHarmTiming } from './harm-timing.js';
 import { prepareDecisionContext } from './context.js';
+import { detectExplicitSupportContext } from './support-context.js';
 
 const TIME_12H = /\b(\d{1,2})(?::(\d{2}))?\s*(am|pm)\b/g;
 const TIME_24H = /\b([01]?\d|2[0-3]):([0-5]\d)\b/g;
@@ -233,7 +234,7 @@ function hasImmediateNeed(doc) {
  */
 function assessInputRelevance(context) {
   const {
-    doc, systemResult, symptom, domainResult, workTypeResult, risks, serviceManagementSignal
+    doc, systemResult, symptom, domainResult, workTypeResult, risks, serviceManagementSignal, supportContext
   } = context;
   const signals = [];
   // "This is broken" tells us neither what "this" is nor whether it belongs
@@ -251,6 +252,7 @@ function assessInputRelevance(context) {
   }
   if (Object.values(risks).some(Boolean)) signals.push('risk');
   if (serviceManagementSignal) signals.push('service-management');
+  if (supportContext) signals.push('explicit-support-context');
 
   return { inScope: signals.length > 0, signals };
 }
@@ -926,10 +928,12 @@ export function analyse(rawText, overrides = {}) {
   const activeIncident = has(doc, ACTIVE_INCIDENT_PHRASES);
   const escalated = has(doc, ESCALATION_PHRASES);
   const slaBreached = has(doc, SLA_BREACH_PHRASES);
+  const supportContext = detectExplicitSupportContext(doc);
   const relevance = assessInputRelevance({
     doc, systemResult, symptom, domainResult, workTypeResult, risks,
     serviceManagementSignal: activeIncident || slaBreached ||
-      decisionContext.status !== 'active-or-unspecified'
+      decisionContext.status !== 'active-or-unspecified',
+    supportContext
   });
   const inScope = relevance.inScope;
 
@@ -1106,6 +1110,7 @@ export function analyse(rawText, overrides = {}) {
 
   const evidenceDetail = [
     ...decisionContext.evidence,
+    ...(supportContext?.evidence || []),
     ...systemResult.evidence,
     ...scopeResult.evidence,
     ...symptom.evidence,
