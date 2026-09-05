@@ -9,6 +9,7 @@ import { createDocument, isNegated, normalise } from '../js/engine/negation.js';
 import { detectScope } from '../js/engine/scope.js';
 import { detectWorkaround } from '../js/engine/workaround.js';
 import { detectDeadline } from '../js/engine/deadline.js';
+import { detectDriver } from '../js/engine/driver.js';
 import { priorityFor, matrixCells } from '../js/engine/priority-matrix.js';
 import { EXAMPLES } from '../js/data/examples.js';
 import { buildReply, buildMarkdown } from '../js/ui/reply.js';
@@ -213,6 +214,21 @@ test('Deadline', '"immediately" without a consequence is asserted, not committed
   const result = detectDeadline(createDocument('Please fix immediately!!!'));
   return ok(result.asserted === true, 'asserted = ' + result.asserted);
 });
+
+const DRIVER_CASES = [
+  ['Marks close at 4pm today.', 'operational'],
+  ['The bank file cutoff is in two hours.', 'operational'],
+  ['The funding claim window closes today.', 'statutory'],
+  ['The finance team says that cleanup can wait until Thursday.', 'preference'],
+  ['Could the sharing option be considered for next year?', 'preference']
+];
+
+for (const [text, expected] of DRIVER_CASES) {
+  test('Driver', JSON.stringify(text.slice(0, 46)) + ' -> ' + expected, () => {
+    const actual = detectDriver(createDocument(text)).driver;
+    return ok(actual === expected, actual);
+  });
+}
 
 /* ---------------------------------------------------------- 5. negation -- */
 

@@ -1359,12 +1359,14 @@ export const DRIVER_PHRASES = [
   { m: ['census', 'naplan', 'nesa', 'acara', 'statutory reporting', 'government reporting',
         'legal requirement', 'court order', 'compliance deadline', 'audit deadline',
         'regulatory deadline', 'statutory deadline', 'statutory submission', 'statutory requirement',
-        'compliance requirement', 'compliance submission'],
+        'compliance requirement', 'compliance submission', 'funding claim window', 'grant submission'],
     driver: 'statutory', w: 0, label: 'a statutory or compliance deadline drives timing' },
   { m: ['payroll cutoff', 'pay cutoff', 'pay run due', 'payroll must be processed', 'enrolment cycle',
         'enrolments close', 'enrolment closes', 'direct debit run', 'nightly job', 'scheduled job', 'class starts', 'classes start',
         'lesson starts', 'lessons start', 'term starts', 'report cards out',
         'reports due out', 'attendance roll', 'excursion leaves', 'vendor cutoff',
+        'marks close', 'month-end close', 'bank file cutoff', 'term-start roster',
+        'appeal panel', 'close of business', 'approval goes through',
         /\bpay\s+run\b[^.!?]{0,20}\bdue\b/,
         /\b(?:assessment|class|lesson)\s+(?:begins?|commences?|starts?)\b/],
     driver: 'operational', w: 0, label: 'an operational or business event drives timing' },
@@ -1372,7 +1374,8 @@ export const DRIVER_PHRASES = [
         'when you get a chance', 'whenever suits', 'whenever convenient', 'no particular rush',
         'nice to have by', 'at your convenience', 'if possible',
         /\b(?:i|we)(?:['’]d|\s+would)?\s+prefer\b/,
-        /\bwould be nice(?: to have)?\b/],
+        /\bwould be nice(?: to have)?\b/, /\bcan wait(?: until)?\b/,
+        /\bcould\s+(?:the\s+)?[\w-]+(?:\s+[\w-]+){0,3}\s+be considered\b/],
     driver: 'preference', w: 0, label: 'a preference rather than a deadline was expressed' }
 ];
 
