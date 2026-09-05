@@ -14,6 +14,9 @@ const PRIORITIES = ['P1', 'P2', 'P3', 'P4'];
 const OUTPUT_LABELS = [...PRIORITIES, 'UNASSESSED'];
 const LEVELS = ['low', 'medium', 'high'];
 const PRIORITY_RANK = { P1: 4, P2: 3, P3: 2, P4: 1 };
+const HIGH_CONSEQUENCE_HARMS = new Set([
+  'privacy-exposure', 'security-compromise', 'safety', 'safeguarding'
+]);
 export const REVIEW_CLASSIFICATIONS = [
   'engine defect',
   'ground-truth defect',
@@ -51,6 +54,35 @@ function ratio(numerator, denominator) {
 
 function assert(condition, message) {
   if (!condition) throw new Error('Invalid accuracy corpus: ' + message);
+}
+
+/**
+ * Canonical evaluator-facing evidence authority. This intentionally does not
+ * promote inferred automatic evidence to manual or explicit confirmation.
+ */
+export function normaliseEvidenceAuthority(value) {
+  const authority = String(value || '').trim().toLowerCase();
+  if (authority === 'explicit' || authority === 'automatic-explicit') return 'explicit';
+  if (authority === 'manual' || authority.startsWith('analyst-') ||
+      authority === 'manual-refinement' || authority === 'analyst-review') return 'manual';
+  if (authority === 'inferred' || authority === 'automatic-inferred') return 'inferred';
+  return 'unknown';
+}
+
+function expectedSafetyProfile(item) {
+  const expected = item.expected || {};
+  const activeHarm = expected.u8 === 'active' && HIGH_CONSEQUENCE_HARMS.has(expected.i3);
+  const financialCutoff = expected.i3 === 'financial-harm' &&
+    ['now', 'today'].includes(expected.u5) &&
+    ['statutory', 'operational'].includes(expected.u6);
+  const unrecoverableLoss = expected.i3 === 'lost-data' && expected.impact === 'high' &&
+    Array.isArray(item.labelBasis?.policyIds) && item.labelBasis.policyIds.includes('loss.unrecoverable');
+  return {
+    activeHarm,
+    financialCutoff,
+    unrecoverableLoss,
+    highConsequence: activeHarm || financialCutoff || unrecoverableLoss
+  };
 }
 
 export function normaliseEvaluationText(text) {
@@ -233,6 +265,10 @@ export function evaluateCases(cases, analyseTicket = analyse) {
   let underPrioritisation = 0;
   let severeUnderPrioritisation = 0;
   let dangerousUnderPrioritisation = 0;
+  let unsafeUnderPrioritisation = 0;
+  let severeUnsafeUnderPrioritisation = 0;
+  let expectedHighConsequence = 0;
+  let actionableHighConsequence = 0;
   let abstentionsOnAssessed = 0;
   const mismatchClassifications = Object.fromEntries(
     REVIEW_CLASSIFICATIONS.map((classification) => [classification, 0])
@@ -256,6 +292,8 @@ export function evaluateCases(cases, analyseTicket = analyse) {
       ? item.expected.priority
       : 'UNASSESSED';
     const actualPriority = result.suggestedPriority || 'UNASSESSED';
+    const safetyProfile = expectedSafetyProfile(item);
+    if (safetyProfile.highConsequence) expectedHighConsequence += 1;
 
     if (result.suggestedPriority) actionable += 1;
     if (actualStatus === expectedStatus) statusCorrect += 1;
@@ -274,6 +312,15 @@ export function evaluateCases(cases, analyseTicket = analyse) {
       if (priorityGap >= 2) severeUnderPrioritisation += 1;
       if (priorityGap >= 2) {
         dangerousUnderPrioritisation += 1;
+      }
+      // Unsafe under-prioritisation is deliberately narrower than ordinary
+      // under-prioritisation: it requires independently labelled high
+      // consequence semantics and an actionable result. Abstentions are a
+      // separate release blocker, never silently counted as safe.
+      if (safetyProfile.highConsequence && result.suggestedPriority) {
+        actionableHighConsequence += 1;
+        if (priorityGap > 0) unsafeUnderPrioritisation += 1;
+        if (priorityGap >= 2) severeUnsafeUnderPrioritisation += 1;
       }
     }
 
@@ -370,6 +417,8 @@ export function evaluateCases(cases, analyseTicket = analyse) {
     facet.accuracy = ratio(facet.correct, facet.labelled);
   }
 
+  const reviewedMismatchCount = REVIEW_CLASSIFICATIONS.reduce((sum, classification) =>
+    sum + mismatchClassifications[classification], 0);
   const quality = {
     evaluationCases: cases.length,
     assessed: assessedExpected,
@@ -380,8 +429,9 @@ export function evaluateCases(cases, analyseTicket = analyse) {
     reviewedAlternatives: cases.filter((item) =>
       Array.isArray(item.review?.acceptablePriorities) && item.review.acceptablePriorities.length > 0).length,
     reviewedAlternativesDenominator: cases.length,
-    reviewedMismatchCases: REVIEW_CLASSIFICATIONS.reduce((sum, classification) =>
-      sum + mismatchClassifications[classification], 0) + unreviewedMismatchCount,
+    reviewedMismatchCases: reviewedMismatchCount + unreviewedMismatchCount,
+    reviewedValidationMismatches: reviewedMismatchCount,
+    totalValidationMismatches: reviewedMismatchCount + unreviewedMismatchCount,
     acceptableAmbiguities: mismatchClassifications['acceptable ambiguity'],
     policyDisagreements: mismatchClassifications['policy disagreement deferred'],
     engineDefects: mismatchClassifications['engine defect'],
@@ -430,6 +480,13 @@ export function evaluateCases(cases, analyseTicket = analyse) {
     severeUnderPrioritisation,
     // Backwards-compatible alias retained for consumers of the old report.
     dangerousUnderPrioritisation,
+    unsafeUnderPrioritisation,
+    severeUnsafeUnderPrioritisation,
+    safety: {
+      expectedHighConsequence,
+      actionableHighConsequence,
+      actionableHighConsequenceDenominator: expectedHighConsequence
+    },
     abstentionsOnAssessed,
     facets,
     facetMismatches,
@@ -469,6 +526,8 @@ export function printReport(report, write = console.log) {
   write('Policy disagreements: ' + quality.policyDisagreements + '/' + quality.reviewedMismatchCases + ' mismatches');
   write('Engine defects: ' + quality.engineDefects + '/' + quality.reviewedMismatchCases + ' mismatches');
   write('Ground-truth defects: ' + quality.groundTruthDefects + '/' + quality.reviewedMismatchCases + ' mismatches');
+  write('Total validation mismatches: ' + quality.totalValidationMismatches);
+  write('Reviewed validation mismatches: ' + quality.reviewedValidationMismatches);
   write('Unreviewed mismatches: ' + quality.unreviewedMismatches + '/' + quality.reviewedMismatchCases + ' mismatches');
   write('Accuracy corpus: ' + report.total + ' cases');
   write('Coverage: ' + metric(report.actionable, report.total));
@@ -485,6 +544,12 @@ export function printReport(report, write = console.log) {
     metric(report.p1.truePositive, report.p1.recallDenominator));
   write('Under-prioritisation (any): ' + report.underPrioritisation);
   write('Severe under-prioritisation (two or more levels): ' + report.severeUnderPrioritisation);
+  write('Unsafe under-prioritisation: ' + report.unsafeUnderPrioritisation +
+    '/' + report.safety.actionableHighConsequence + ' actionable high-consequence cases');
+  write('Severe unsafe under-prioritisation: ' + report.severeUnsafeUnderPrioritisation +
+    '/' + report.safety.actionableHighConsequence + ' actionable high-consequence cases');
+  write('High-consequence evidence: ' + report.safety.expectedHighConsequence +
+    ' expected / ' + report.safety.actionableHighConsequence + ' actionable');
   write('P1 misses (false negatives): ' + report.p1.falseNegative);
   write('P1 false positives: ' + report.p1.falsePositive);
   write('Abstentions on assessed tickets: ' + report.abstentionsOnAssessed);

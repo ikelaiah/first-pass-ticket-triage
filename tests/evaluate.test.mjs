@@ -1,5 +1,10 @@
 import assert from 'node:assert/strict';
-import { evaluateCases, printReport, validateCorpus } from './evaluate.mjs';
+import {
+  evaluateCases,
+  normaliseEvidenceAuthority,
+  printReport,
+  validateCorpus
+} from './evaluate.mjs';
 
 const cases = [
   { id: 'critical-correct', text: 'a', expected: { assessmentStatus: 'assessed', priority: 'P1', impact: 'high', urgency: 'high', scope: 'all-schools', consequence: 'blocked', deadline: 'today', driver: 'operational', workaround: 'no' } },
@@ -192,6 +197,48 @@ assert(output.some((line) => line === 'Unreviewed mismatch gate: 0'));
 assert(output.some((line) => line.includes('normal-over') && line.includes('acceptable alternatives: P1')));
 assert(output.some((line) => line.includes('critical-under') && line.includes('priority expected P1, got P3')));
 assert(!output.some((line) => line.includes('critical-correct: a')));
+
+assert.equal(normaliseEvidenceAuthority('explicit'), 'explicit');
+assert.equal(normaliseEvidenceAuthority('automatic-explicit'), 'explicit');
+assert.equal(normaliseEvidenceAuthority('manual'), 'manual');
+assert.equal(normaliseEvidenceAuthority('automatic-inferred'), 'inferred');
+assert.equal(normaliseEvidenceAuthority('unrecognised'), 'unknown');
+
+const safetyMetrics = evaluateCases([
+  {
+    id: 'active-privacy-actionable-under',
+    text: 'active privacy actionable under',
+    expected: {
+      assessmentStatus: 'assessed', priority: 'P1', impact: 'high', urgency: 'high',
+      i3: 'privacy-exposure', u8: 'active'
+    }
+  },
+  {
+    id: 'active-privacy-abstention',
+    text: 'active privacy abstention',
+    expected: {
+      assessmentStatus: 'assessed', priority: 'P1', impact: 'high', urgency: 'high',
+      i3: 'privacy-exposure', u8: 'active'
+    }
+  },
+  {
+    id: 'ordinary-priority-under',
+    text: 'ordinary priority under',
+    expected: {
+      assessmentStatus: 'assessed', priority: 'P1', impact: 'high', urgency: 'high',
+      i3: 'unknown', u8: 'unknown'
+    }
+  }
+], (text) => text.includes('actionable') || text.includes('ordinary')
+  ? { assessmentStatus: 'assessed', suggestedPriority: 'P3', impact: 'low', urgency: 'low' }
+  : { assessmentStatus: 'unassessed', suggestedPriority: null, impact: 'low', urgency: 'low' });
+assert.equal(safetyMetrics.unsafeUnderPrioritisation, 1,
+  'only an actionable under-prioritisation of labelled active harm is unsafe');
+assert.equal(safetyMetrics.severeUnsafeUnderPrioritisation, 1);
+assert.equal(safetyMetrics.abstentionsOnAssessed, 1,
+  'a high-risk abstention remains visible through the separate abstention metric');
+assert.equal(safetyMetrics.safety.expectedHighConsequence, 2);
+assert.equal(safetyMetrics.safety.actionableHighConsequence, 1);
 
 const eightCase = {
   id: 'eight-facet-labelled',
