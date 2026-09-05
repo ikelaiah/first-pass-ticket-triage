@@ -1026,10 +1026,12 @@ export const RISK_MODIFIERS = {
    * This is an exposure, so it also asserts the privacy risk on its own.
    */
   crossPersonVisibility: [
-    /\b(?:can|could|are able to|is able to) (?:see|view|access|open|download) (?:another|other|others|someone else's|a different|the wrong)\b/,
+    /\b(?:can|could|are able to|is able to) (?:see|view|access|open|download|read) (?:another|other|others|someone else's|a different|the wrong)\b/,
     /\b(?:another|other|a different) (?:family|families|student|students|parent|parents|carer|carers)['’]?s? (?:details|information|data|(?:fee )?balance|(?:fee )?balances|record|records|account|accounts|address|addresses|fees)\b/,
     /\b(?:sent|emailed|disclosed|released|went|delivered|addressed) to (?:the )?wrong (?:parent|carer|guardian|family|recipient|person|student|address|email)\b/,
-    /\b(?:wrong|another|other) (?:student|child|family|parent|staff)['’]?s? (?:photo|photograph|image|name|details|address|record)\b/
+    /\b(?:wrong|another|other) (?:student|child|family|parent|staff)['’]?s? (?:photo|photograph|image|name|details|address|record)\b/,
+    /\b(?:case officer|staff member|employee|user)\b[^.!?;]{0,48}\b(?:another|different)\s+(?:department|team)\b[^.!?;]{0,64}\b(?:can|could|is able to)\s+(?:see|view|access|open|read)\b[^.!?;]{0,96}\b(?:student(?:s)?['’]?s?\s+)?(?:disciplinary|welfare|medical|case)\s+(?:note|notes|record|records)\b/,
+    /\b(?:account\s+for\s+)?(?:a\s+)?(?:volunteer|staff member|employee|contractor|worker)\b[^.!?;]{0,48}\b(?:who\s+)?(?:left|departed|retired)\b[^.!?;]{0,64}\b(?:still|continues to)\s+(?:opens?|access(?:es)?|views?|reads?)\b[^.!?;]{0,96}\b(?:student(?:s)?['’]?s?\s+)?(?:welfare|wellbeing|medical|case)\s+(?:plan|plans|record|records|note|notes)\b/
   ],
 
   /**
@@ -1046,8 +1048,10 @@ export const RISK_MODIFIERS = {
 
   exposureActive: [
     /\b(?:visible|available|accessible|shown|displayed) to (?:the )?(?:wrong|another|other|an unauthorised|incorrect)\b/,
-    /\bcan (?:see|view|access|open) (?:another|other|someone else's|a different)\b/,
+    /\b(?:can|could|are able to|is able to) (?:see|view|access|open|read) (?:another|other|someone else's|a different)\b/,
     /\b(?:another|other|a different) (?:family|families|student|students|parent|parents)['’]?s? (?:details|information|data|(?:fee )?balance|(?:fee )?balances|record|records|account|accounts|address|addresses)\b/,
+    /\b(?:case officer|staff member|employee|user)\b[^.!?;]{0,48}\b(?:another|different)\s+(?:department|team)\b[^.!?;]{0,64}\b(?:can|could|is able to)\s+(?:see|view|access|open|read)\b[^.!?;]{0,96}\b(?:student(?:s)?['’]?s?\s+)?(?:disciplinary|welfare|medical|case)\s+(?:note|notes|record|records)\b/,
+    /\b(?:account\s+for\s+)?(?:a\s+)?(?:volunteer|staff member|employee|contractor|worker)\b[^.!?;]{0,48}\b(?:who\s+)?(?:left|departed|retired)\b[^.!?;]{0,64}\b(?:still|continues to)\s+(?:opens?|access(?:es)?|views?|reads?)\b[^.!?;]{0,96}\b(?:student(?:s)?['’]?s?\s+)?(?:welfare|wellbeing|medical|case)\s+(?:plan|plans|record|records|note|notes)\b/,
     /\bcurrently (?:visible|exposed|accessible)\b/,
     /\b(?:actively|currently) exposed\b/,
     /\bunauthorised access (?:is|remains) (?:currently )?(?:happening|ongoing|active)(?: now)?\b/,
