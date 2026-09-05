@@ -37,6 +37,11 @@ const PEOPLE_WORD_COUNT = new RegExp(
   '(staff|users|employees|teachers|students|people|parents|accounts|administrators|admins|adviser|advisers|registrar|registrars|timesheets|records|mailboxes|girls|boys|children|kids|pupils|applicants|enrolments|families|treaties)\\b', 'g'
 );
 
+// Rows and submitted forms are a batch of records, rather than a team of
+// people. Their count does not change the fact that the affected object is a
+// cohort of records that needs coordinated remediation.
+const BATCH_RECORD_COUNT = /\b(\d{1,4}|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty)\s+(?:submitted\s+)?(?:(?:enrolment|permission)\s+)?(?:rows?|forms?)\b/g;
+
 /** School counts: "three schools" is handled by phrases, "4 schools" here. */
 const SCHOOL_COUNT = /\b(\d{1,3})\s+schools\b/g;
 
@@ -132,6 +137,16 @@ function isComparison(doc, start, end) {
   return ROLE_SUFFIX.test(doc.text.slice(end, end + 40));
 }
 
+// "One teacher at North campus" identifies a person's location, not an
+// affected campus.  Keep the individual scope unless the ticket says the
+// campus itself is affected.
+function isIndividualLocationDescriptor(doc, hit) {
+  if (hit.entry.v !== 'one-school' || !/^at\s+.+\s+campus$/i.test(hit.quote)) return false;
+  const clause = doc.clauses[hit.clauseIndex];
+  const before = doc.text.slice(clause?.start || 0, hit.start);
+  return /\b(?:one|a)\s+(?:teacher|tutor|coordinator|staff member|student|employee|parent|guardian|user)\s*$/i.test(before);
+}
+
 function isUnaffectedComparison(doc, end) {
   return UNAFFECTED_COMPARISON_SUFFIX.test(doc.text.slice(end, end + 80));
 }
@@ -147,6 +162,7 @@ export function detectScope(doc) {
 
   for (const hit of scanPositive(doc, SCOPE_PHRASES)) {
     if (isComparison(doc, hit.start, hit.end)) continue;
+    if (isIndividualLocationDescriptor(doc, hit)) continue;
     if (isHistoricalOnlyHit(doc, hit.start)) continue;
     if (isValueNotPopulation(doc, hit.quote, hit.start, hit.end)) continue;
 
@@ -197,6 +213,19 @@ export function detectScope(doc) {
       weight: 3,
       quote: m[0],
       meaning: count + ' ' + m[2] + ' affected'
+    });
+  }
+
+  BATCH_RECORD_COUNT.lastIndex = 0;
+  while ((m = BATCH_RECORD_COUNT.exec(doc.text)) !== null) {
+    const count = /^\d+$/.test(m[1]) ? parseInt(m[1], 10) : WRITTEN_NUMBER_VALUES.get(m[1]);
+    if (!count || isHistoricalOnlyHit(doc, m.index) || isUnaffectedCount(doc, m.index, m.index + m[0].length)) continue;
+    candidates.push({
+      scope: 'cohort',
+      rank: scopeDefinition('cohort').rank,
+      weight: 3,
+      quote: m[0],
+      meaning: count + ' records affected as a batch'
     });
   }
 

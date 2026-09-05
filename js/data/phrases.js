@@ -27,8 +27,8 @@ export const SCOPE_DEFINITIONS = [
 
 export const SCOPE_PHRASES = [
   // Individual
-  { m: [/\b(?:one|a single|1) (?:user|student|staff member|teacher|person|employee|parent|record|report|account|mailbox|device|analyst|applicant|administrator)\b/,
-        /\b(?:a|one) (?:casual |part[- ]time |full[- ]time |new |relief |temporary |visiting )?(?:staff member|teacher|student|employee|user|parent|contractor|analyst|applicant|administrator)\b/,
+  { m: [/\b(?:one|a single|1) (?:user|student|staff member|teacher|person|employee|parent|guardian|coordinator|record|report|account|mailbox|device|analyst|applicant|administrator)\b/,
+        /\b(?:a|one) (?:casual |part[- ]time |full[- ]time |new |relief |temporary |visiting )?(?:staff member|teacher|student|employee|user|parent|guardian|coordinator|contractor|analyst|applicant|administrator)\b/,
         'single user', 'one individual', 'individual user', 'just me', 'only me', 'for me', 'my account',
         'one family', 'a single family', 'one household', 'this parent',
         /\bonly (?:the|this) (?:one )?(?:bursar|teacher|student|parent|user|person|staff member)\b/,
@@ -44,12 +44,12 @@ export const SCOPE_PHRASES = [
   // Few users
   { m: ['a few users', 'several users', 'some users', 'a handful of users', 'two users', 'three users',
         'a couple of users', 'a few staff', 'several staff', 'a few people', 'a small number of users',
-        /\b(?:two|three|four|five|six|a couple of|a few|a handful of|several)\s+(?:staff|staff members|users|teachers|employees|students|parents|casuals|families|applicants)\b/],
+        /\b(?:two|three|four|five|six|a couple of|a few|a handful of|several)\s+(?:staff|staff members|users|teachers|tutors|employees|students|parents|casuals|families|applicants)\b/],
     v: 'few-users', w: 2, label: 'a small number of users' },
 
   // Team / department
   { m: ['the team', 'our team', 'a team', 'the department', 'our department', 'registrar team', 'registrars',
-        'finance team', 'payroll team', 'admin team', 'the office', 'reception staff', 'registrars', 'business unit',
+        'finance team', 'payroll team', 'admin team', 'the office', 'our office', 'wellbeing office', 'north office', 'reception staff', 'registrars', 'business unit',
         'the faculty', 'head office', 'central office', 'one department', 'a single department',
         'all casuals', 'every casual', 'the casuals'],
     v: 'team', w: 2, label: 'a team or department' },
@@ -71,6 +71,7 @@ export const SCOPE_PHRASES = [
         /\bschool [a-z]\b/,
         // "at Smith School" names one school; "at any school" does not.
         /\bat (?!any|every|all|each|another|other|both)[a-z]+ school\b/,
+        /\bat (?!any|every|all|each|another|other|both)[a-z]+ campus\b/,
         'a school', 'this school', 'one of our schools'],
     v: 'one-school', w: 2, label: 'a single school' },
 

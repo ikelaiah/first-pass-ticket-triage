@@ -123,7 +123,14 @@ const SCOPE_CASES = [
   ['Laserfiche SSO has failed for every school.', 'all-schools'],
   ['This is corporation-wide.', 'corporation-wide'],
   ['Something is wrong with the report.', 'unknown'],
-  ['35 casual staff timesheets failed.', 'team']
+  ['35 casual staff timesheets failed.', 'team'],
+  ['Three tutors cannot submit grades.', 'few-users'],
+  ['One coordinator cannot download the timetable.', 'individual'],
+  ['The wellbeing office needs a report.', 'team'],
+  ['Eighteen enrolment rows disappeared after an import.', 'cohort'],
+  ['Nine submitted permission forms were overwritten.', 'cohort'],
+  ['At East Campus, the timetable import failed.', 'one-school'],
+  ['One teacher at North Campus cannot open the learning app.', 'individual']
 ];
 
 for (const [text, expected] of SCOPE_CASES) {
