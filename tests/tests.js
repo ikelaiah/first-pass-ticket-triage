@@ -480,6 +480,10 @@ test('Recoverability', 'explicit irretrievable loss is unrecoverable evidence', 
   field('The assessment submissions were permanently deleted and cannot be recovered.',
     'recoverability', 'unrecoverable'));
 
+test('Recoverability', 'an unusable storage snapshot is not a recovery path', () =>
+  field('Nine submitted permission forms were overwritten; the storage snapshot is unusable.',
+    'recoverability', 'unrecoverable'));
+
 test('Recoverability', 'temporary unavailability is not inferred to be lost', () =>
   field('The assessment folder is temporarily unavailable while the server is restarted.',
     'recoverability', 'unknown'));
