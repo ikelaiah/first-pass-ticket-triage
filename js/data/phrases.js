@@ -1395,6 +1395,7 @@ export const DRIVER_PHRASES = [
         /\b(?:assessment|class|lesson)\s+(?:begins?|commences?|starts?)\b/],
     driver: 'operational', w: 0, label: 'an operational or business event drives timing' },
   { m: ['would like it by', 'would be nice by', 'prefer it by', 'if possible by',
+        'would it be possible',
         'when you get a chance', 'whenever suits', 'whenever convenient', 'no particular rush',
         'nice to have by', 'at your convenience', 'if possible',
         /\b(?:i|we)(?:['’]d|\s+would)?\s+prefer\b/,

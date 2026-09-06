@@ -220,7 +220,8 @@ const DRIVER_CASES = [
   ['The bank file cutoff is in two hours.', 'operational'],
   ['The funding claim window closes today.', 'statutory'],
   ['The finance team says that cleanup can wait until Thursday.', 'preference'],
-  ['Could the sharing option be considered for next year?', 'preference']
+  ['Could the sharing option be considered for next year?', 'preference'],
+  ['Would it be possible to add a bulk-copy option?', 'preference']
 ];
 
 for (const [text, expected] of DRIVER_CASES) {
