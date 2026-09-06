@@ -713,6 +713,11 @@ test('Continuity context', 'an explicit working alternative bounds a non-blockin
   );
 });
 
+test('Continuity context', 'an available exposed view is not a workaround', () => {
+  const result = analyse('A guardian can see a different household balance; that view is still available.');
+  return ok(result.workaround === 'unknown', JSON.stringify(result.workaround));
+});
+
 /* -------------------------------------------------------- 18. helpdesk -- */
 
 test('Helpdesk', 'helpdesk broken for one person -> P3', () =>
