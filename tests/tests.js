@@ -240,6 +240,20 @@ for (const [text, expected] of WORKAROUND_CASES) {
   });
 }
 
+test('Workaround', 'a historical manual path is not a current workaround', () => {
+  const result = detectWorkaround(createDocument(
+    'Last term we could process applications manually. Today the export is unavailable.'
+  ));
+  return ok(result.workaround === 'unknown', JSON.stringify(result));
+});
+
+test('Workaround', 'a committed manual correction remains a viable workaround', () => {
+  const result = detectWorkaround(createDocument(
+    'Fee payments are duplicated and finance will process the corrections manually today.'
+  ));
+  return ok(result.workaround === 'yes', JSON.stringify(result));
+});
+
 /* ---------------------------------------------------------- 4. deadline -- */
 
 const DEADLINE_CASES = [

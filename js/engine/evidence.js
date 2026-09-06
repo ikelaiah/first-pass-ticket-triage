@@ -10,11 +10,12 @@
 
 const HISTORICAL = /\b(?:yesterday|last\s+(?:term|week|month|year|night|monday|tuesday|wednesday|thursday|friday)|previous(?:ly)?|earlier|formerly|was|were)\b/i;
 const RESOLVED = /\b(?:resolved|fixed|restored|recovered|working again|completed successfully|no longer at risk)\b/i;
-const HYPOTHETICAL = /\b(?:if|unless|could|may|might|would|planned|proposed|queued|will)\b/i;
+const HYPOTHETICAL = /\b(?:if|unless|could|may|might|would|planned|proposed|queued)\b/i;
+const FUTURE = /\bwill\b/i;
 
 const VALID_AUTHORITY = new Set(['explicit', 'inferred', 'analyst-confirmed']);
 const VALID_POLARITY = new Set(['positive', 'negated']);
-const VALID_TEMPORAL = new Set(['current', 'historical', 'resolved', 'hypothetical']);
+const VALID_TEMPORAL = new Set(['current', 'future', 'historical', 'resolved', 'hypothetical']);
 const VALID_CONTEXT = new Set(['primary', 'quoted']);
 const VALID_ROLE = new Set(['primary', 'alternative-path', 'comparator', 'observation', 'requirement']);
 
@@ -26,11 +27,15 @@ function oneOf(value, values, fallback) {
 export function temporalForClause(doc, clauseIndex) {
   const clause = Number.isInteger(clauseIndex) ? doc?.clauses?.[clauseIndex] : null;
   const text = clause?.text || '';
-  if (RESOLVED.test(text) && !HYPOTHETICAL.test(text)) return 'resolved';
+  // "using paper until the system is fixed" describes a current workaround,
+  // not a resolution. A resolved word must itself state the clause outcome.
+  const conditionalResolution = /\b(?:until|if|unless|before)\b/i.test(text);
+  if (RESOLVED.test(text) && !HYPOTHETICAL.test(text) && !conditionalResolution) return 'resolved';
   if (HYPOTHETICAL.test(text)) return 'hypothetical';
   if (HISTORICAL.test(text) && !/\b(?:today|currently|right now|at present|still)\b/i.test(text)) {
     return 'historical';
   }
+  if (FUTURE.test(text)) return 'future';
   return 'current';
 }
 

@@ -11,10 +11,11 @@
  * anywhere else in the application.
  */
 import { createDocument, has, scanPositive } from './negation.js';
+import { createEvidenceLedger } from './evidence.js';
 import { organisationConfig } from '../config.js';
 import { detectSystems, describeSystems } from '../data/systems.js';
 import { detectScope, scopeDefinition, scopeLabel } from './scope.js';
-import { detectWorkaround, workaroundLabel } from './workaround.js';
+import { extractWorkaroundEvidence, projectWorkaround, workaroundLabel } from './workaround.js';
 import { detectDeadline, deadlineLabel } from './deadline.js';
 import { detectSymptom, SEVERITY } from './symptom.js';
 import { detectDomain, domainLabel } from './domain.js';
@@ -793,6 +794,7 @@ export function analyse(rawText, overrides = {}) {
   const preparedContext = prepareDecisionContext(rawText);
   const { decisionText, ...decisionContext } = preparedContext;
   const doc = createDocument(decisionText);
+  const evidenceLedger = createEvidenceLedger(doc);
 
   const applied = normaliseOverrides(overrides);
   const overridesApplied = Object.keys(applied).length > 0;
@@ -804,7 +806,8 @@ export function analyse(rawText, overrides = {}) {
   const domainResult = detectDomain(doc, systemResult, symptom);
 
   const detectedScope = detectScope(doc);
-  const detectedWorkaround = detectWorkaround(doc);
+  const workaroundEvidence = extractWorkaroundEvidence(doc, evidenceLedger);
+  const detectedWorkaround = projectWorkaround(workaroundEvidence);
   const detectedDeadline = detectDeadline(doc);
   const riskResult = detectRisks(doc, { symptom, scope: detectedScope });
 
@@ -827,6 +830,13 @@ export function analyse(rawText, overrides = {}) {
         evidence: [{ quote: 'manual input', meaning: 'Workaround confirmed by the analyst', source: 'workaround' }]
       }
     : detectedWorkaround;
+  if (applied.workaround) {
+    evidenceLedger.add({
+      type: 'workaround', value: applied.workaround, quote: 'manual input',
+      authority: 'analyst-confirmed', temporal: 'current',
+      role: applied.workaround === 'no' ? 'primary' : 'alternative-path'
+    });
+  }
 
   let deadlineResult = applied.deadline
     ? {
@@ -946,8 +956,11 @@ export function analyse(rawText, overrides = {}) {
       evidence: [{ quote: continuityHit.quote, meaning: 'a viable alternative remains available', source: 'consequence-inferred' }]
     };
     if (!applied.workaround && workaroundResult.workaround === 'unknown') {
-      workaroundResult = { ...workaroundResult, workaround: 'yes', label: workaroundLabel('yes'),
-        evidence: [{ quote: continuityHit.quote, meaning: 'a viable alternative remains available', source: 'workaround' }] };
+      evidenceLedger.addFromHit({
+        type: 'workaround', value: 'yes', hit: continuityHit,
+        authority: 'inferred', polarity: 'positive', role: 'alternative-path'
+      });
+      workaroundResult = projectWorkaround(workaroundEvidence);
     }
     if (!applied.deadline && deadlineResult.deadline === 'unknown') {
       deadlineResult = { ...deadlineResult, deadline: 'none', label: deadlineLabel('none'),
@@ -1297,6 +1310,7 @@ export function analyse(rawText, overrides = {}) {
 
     evidence: evidenceDetail.map((e) => e.meaning),
     evidenceDetail,
+    evidenceFacts: evidenceLedger.all(),
     reasoning,
     appliedRules: rules,
     missingInformation: missingInfo.missing,
@@ -1347,6 +1361,7 @@ export function analyse(rawText, overrides = {}) {
       overridesApplied: applied,
       wordCount: doc.wordCount,
       normalisedText: doc.text,
+      evidenceFacts: evidenceLedger.all(),
       decisionText
     }
   };
