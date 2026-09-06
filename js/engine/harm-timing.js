@@ -39,7 +39,7 @@ function explicitlyNegated(doc, start) {
     /\b(?:no one|nobody|nothing|not|never)\b[^.;!?]{0,42}$/i.test(before);
 }
 
-export function detectHarmTiming(doc, symptom) {
+export function detectHarmTiming(doc, symptom, context = {}) {
   const symptomId = symptom?.symptom || symptom?.id;
   const isExpired = symptomId === 'expired-credential';
   const isExpiring = symptomId === 'expiring-soon';
@@ -61,9 +61,23 @@ export function detectHarmTiming(doc, symptom) {
   const pendingHit = matchesAny(doc, HARM_TIMING_PHRASES.pending);
   if (pendingHit) return { timing: 'pending', label: 'harm is waiting to happen', quote: pendingHit.quote, source: 'harm-phrase' };
 
+  const pendingChange = /\b(?:proposed|queued|planned)\b[\s\S]{0,120}\b(?:could|may|might|would)\b/i.test(doc.text) &&
+    /\b(?:if\s+(?:the\s+)?approval|not\s+(?:live|enabled)|has not been enabled)\b/i.test(doc.text);
+  if (pendingChange) {
+    return { timing: 'pending', label: 'harm is waiting to happen', quote: 'proposed change pending approval', source: 'pending-change' };
+  }
+
   const nowHit = scanPositive(doc, ACTIVE_NOW_PHRASES)
     .filter((hit) => !explicitlyNegated(doc, hit.start));
   if (nowHit.length) return { timing: 'active', label: 'issue is happening now', quote: nowHit[0].quote, source: 'active-now' };
+
+  if (context.modifiers?.exposureActive) {
+    return { timing: 'active', label: 'harm is happening now — exposure is active', quote: context.blockedProcess?.quote || 'active exposure', source: 'risk-modifier' };
+  }
+  if (context.blockedProcess?.level === 'blocked' &&
+      (context.workaround === 'no' || context.workaround === 'partial')) {
+    return { timing: 'active', label: 'harm is happening now — work is currently affected', quote: context.blockedProcess.quote, source: 'business-consequence' };
+  }
 
   return { timing: 'unknown', label: null, quote: null, source: null };
 }

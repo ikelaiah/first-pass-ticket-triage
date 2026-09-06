@@ -1999,6 +1999,27 @@ test('Handoff', 'active exposure flags harm timing as a key facet', () => {
     JSON.stringify(result.keyFacets));
 });
 
+test('Harm timing', 'a currently blocked business operation is active harm', () => {
+  const result = analyse('Tutors cannot submit grades and there is no workaround.');
+  return ok(result.businessConsequence.level === 'blocked' && result.harmTiming.timing === 'active',
+    JSON.stringify({ consequence: result.businessConsequence, harmTiming: result.harmTiming }));
+});
+
+test('Harm timing', 'a blocked report step without active harm remains unknown', () => {
+  const result = analyse('The reporting service cannot generate reports for all schools today; the statutory submission is due now.');
+  return ok(result.harmTiming.timing === 'unknown', JSON.stringify(result.harmTiming));
+});
+
+test('Harm timing', 'a proposed access change remains pending', () => {
+  const result = analyse('A proposed role change could open private records if approval is granted; it is not live yet.');
+  return ok(result.harmTiming.timing === 'pending', JSON.stringify(result.harmTiming));
+});
+
+test('Harm timing', 'a successful claim with no active exposure remains unknown', () => {
+  const result = analyse('The submitted claim is accepted and no one is currently exposed.');
+  return ok(result.harmTiming.timing === 'unknown', JSON.stringify(result.harmTiming));
+});
+
 test('Handoff', 'draft reply is polite, short and names the priority', () => {
   const result = analyse('Canvas synchronisation has stopped across all 19 schools and today’s classes are affected.');
   const reply = buildReply(result);

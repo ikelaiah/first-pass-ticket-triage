@@ -860,8 +860,12 @@ export function analyse(rawText, overrides = {}) {
   const undetected = has(doc, UNDETECTED_PHRASES);
   let containment = detectContainment(doc, risks);
   let driver = detectDriver(doc);
-  let harmTiming = detectHarmTiming(doc, symptom);
   let blockedProcess = detectBlockedProcess(doc, domainResult, symptom, systemResult);
+  let harmTiming = detectHarmTiming(doc, symptom, {
+    modifiers,
+    blockedProcess,
+    workaround: workaroundResult.workaround
+  });
   // Facet overrides — analyst confirmed values
   if (applied.contained) {
     if (applied.contained === 'contained') containment = { ...containment, contained: true, propagating: false, recurring: false, undetected: false, summary: 'appears contained (manually confirmed)' };
