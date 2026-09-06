@@ -19,3 +19,5 @@ jobs:
           node-version: lts/*
       - name: Run test gate
         run: npm test
+      - name: Run authoritative release validator
+        run: npm run test:release

@@ -83,6 +83,31 @@
 - [x] Review every remaining P1 false positive/negative and unexplained regression.
 - [x] Keep release operations blocked until all known engine defects are resolved.
 
+## v0.8.0 Triage Policy Calibration
+
+- [x] Capture v0.7.1 baseline and audit all 18 deferred disagreements plus
+  acceptable-ambiguity boundaries without changing labels.
+- [x] Write `docs/triage-policy.md` and the per-case calibration audit before
+  production scoring changes.
+- [x] Add a machine-readable policy decision table and direct structured-input
+  policy tests.
+- [x] Add policy monotonicity/invariance tests for workaround, deadline, harm,
+  recoverability, containment, propagation, scope, seniority, platform, and
+  criticality boundaries.
+- [x] Implement the pure policy layer and integrate it into normal and
+  hypothetical analysis paths incrementally.
+- [x] Reconcile payroll/financial, privacy/security, recoverability,
+  accessibility, critical-system, safeguarding, and propagation behavior with
+  named policy rules.
+- [x] Re-evaluate every reviewed disagreement and update corpus expectations
+  only where the written policy justifies the result.
+- [x] Compare v0.7.1 -> v0.8.0 complete-corpus behavior with zero unexplained
+  changes and audit every final P1.
+- [x] Update README, PRIORITY-FRAMEWORK, CHANGELOG, package version, ADRs, and
+  `docs/260830-triage-policy-calibration-report.md`.
+- [x] Run the complete release gate, browser runtime, diff review, and local
+  release-branch/commit workflow; defer tag until after merge.
+
 ## v0.7.1 NLP Evaluation Integrity & Regression Hardening
 
 - [x] Confirm the clean v0.7.0 baseline on `main` and record exact metrics.
@@ -102,3 +127,25 @@
 - [x] Update README/CHANGELOG/version only after meaningful patch improvements.
 - [x] Run full Node/browser/catalogue/privacy/integrity release gates and review
   the final diff.
+## v0.8.0 semantic mismatch burn-down
+
+## v0.8.0 bounded Category A qualification
+
+- [x] Audit Category A candidates and add independent red/contrast tests only
+  for defensible semantic families.
+- [x] Apply the smallest proven context/detector correction and verify focused
+  tests before full-suite measurement.
+- [x] Measure the immutable validator and adjudicate every remaining divergence
+  without hiding exact failures.
+- [x] Document boundaries, limitations, residual B/C/D cases, and the v0.9
+  manual-confirmation-only direction.
+- [x] Create a final candidate only after the documented qualification contract
+  passes; remote operations remain separately gated on exact-SHA verification.
+
+- [ ] Resolve documentation and healthy-state context family.
+- [ ] Resolve historical, corrected, negated, and pending context family.
+- [ ] Resolve explicit scope/process/workaround/deadline evidence families.
+- [ ] Resolve explicit authority and containment evidence where stated.
+- [ ] Resolve policy-only P1/P2 calibration cases.
+- [ ] Re-run immutable validation with zero unreviewed mismatches.
+- [ ] Perform complete release qualification and remote release operations.

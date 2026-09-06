@@ -188,8 +188,8 @@ export const EXAMPLES = [
     title: 'SQL trigger writing incorrect payment records everywhere',
     group: 'Database',
     text: 'SQL trigger is silently writing incorrect payment records across all schools.',
-    expected: ['P1'],
-    note: 'Data integrity risk that is actively propagating.'
+    expected: ['P2'],
+    note: 'Data integrity risk that is actively propagating; without a time-bound consequence, the policy sets a Medium urgency floor.'
   },
   {
     id: 'ex24',

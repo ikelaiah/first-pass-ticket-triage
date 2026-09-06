@@ -5,15 +5,19 @@
  * (tests/run.mjs). No framework, no build step, no network.
  */
 import { analyse } from '../js/engine/analyzer.js';
-import { createDocument, isNegated, normalise } from '../js/engine/negation.js';
+import { createDocument, isNegated, normalise, scan } from '../js/engine/negation.js';
+import { createEvidenceLedger } from '../js/engine/evidence.js';
 import { detectScope } from '../js/engine/scope.js';
 import { detectWorkaround } from '../js/engine/workaround.js';
 import { detectDeadline } from '../js/engine/deadline.js';
+import { detectDriver } from '../js/engine/driver.js';
+import { detectHarmTiming } from '../js/engine/harm-timing.js';
 import { priorityFor, matrixCells } from '../js/engine/priority-matrix.js';
 import { EXAMPLES } from '../js/data/examples.js';
 import { buildReply, buildMarkdown } from '../js/ui/reply.js';
 import { statusSentence } from '../js/ui/render-result.js';
 import { registerFacetTests } from './facet-tests.js';
+import { registerPolicyTests } from './policy-tests.js';
 import { legacyRegressionCases } from './fixtures/legacy-regressions.js';
 import {
   encodeTicket, decodeTicket, tooLongForShare, readTicketFromLocation,
@@ -69,6 +73,62 @@ function risk(text, key, expected) {
   return ok(actual === expected, 'risks.' + key + ' = ' + actual);
 }
 
+/* ---------------------------------------------------------- evidence -- */
+
+test('Evidence', 'clause facts retain current and historical context', () => {
+  const doc = createDocument('Payments are currently failing. Last term, payments failed after the cutoff.');
+  const ledger = createEvidenceLedger(doc);
+  const hits = scan(doc, [{ m: 'payments are currently failing' }, { m: 'payments failed' }]);
+  const current = ledger.addFromHit({ type: 'harm-state', value: 'active', hit: hits[0] });
+  const historical = ledger.addFromHit({ type: 'harm-state', value: 'active', hit: hits[1] });
+  return ok(current.temporal === 'current' && historical.temporal === 'historical' &&
+    current.clauseIndex === 0 && historical.clauseIndex === 1,
+  JSON.stringify({ current, historical }));
+});
+
+test('Evidence', 'negated and hypothetical facts remain non-current', () => {
+  const negatedDoc = createDocument('No payments are failing.');
+  const negatedHit = scan(negatedDoc, [{ m: 'payments are failing' }])[0];
+  const negated = createEvidenceLedger(negatedDoc)
+    .addFromHit({ type: 'harm-state', value: 'active', hit: negatedHit });
+  const hypotheticalDoc = createDocument('Payments will fail tomorrow if the certificate is not renewed.');
+  const hypothetical = createEvidenceLedger(hypotheticalDoc).add({
+    type: 'harm-state', value: 'active', quote: 'payments will fail tomorrow', clauseIndex: 0
+  });
+  return ok(negated.polarity === 'negated' && hypothetical.temporal === 'hypothetical',
+    JSON.stringify({ negated, hypothetical }));
+});
+
+test('Evidence', 'authority and comparator context survive normalization', () => {
+  const doc = createDocument('The previous message says every campus failed; today one student is affected.');
+  const ledger = createEvidenceLedger(doc);
+  const quoted = ledger.add({
+    type: 'scope', value: 'all-schools', quote: 'every campus failed', clauseIndex: 0,
+    context: 'quoted', role: 'comparator'
+  });
+  const inferred = ledger.add({
+    type: 'workaround', value: 'yes', quote: 'derived alternative', clauseIndex: 1,
+    authority: 'inferred'
+  });
+  const confirmed = ledger.add({
+    type: 'scope', value: 'individual', quote: 'manual input',
+    authority: 'analyst-confirmed', temporal: 'current', role: 'primary'
+  });
+  return ok(quoted.context === 'quoted' && quoted.role === 'comparator' &&
+    inferred.authority === 'inferred' && confirmed.authority === 'analyst-confirmed',
+  JSON.stringify({ quoted, inferred, confirmed }));
+});
+
+test('Evidence', 'projection candidates exclude historical, negated, hypothetical and comparator facts', () => {
+  const doc = createDocument('Last term every campus failed, but today two students are affected.');
+  const ledger = createEvidenceLedger(doc);
+  ledger.add({ type: 'scope', value: 'all-schools', quote: 'every campus', clauseIndex: 0 });
+  ledger.add({ type: 'scope', value: 'few-users', quote: 'two students', clauseIndex: 1 });
+  ledger.add({ type: 'scope', value: 'corporation-wide', quote: 'comparison only', clauseIndex: 1, role: 'comparator' });
+  const candidates = ledger.currentPrimary('scope');
+  return ok(candidates.length === 1 && candidates[0].value === 'few-users', JSON.stringify(candidates));
+});
+
 /* --------------------------------------------------------- 1. the matrix -- */
 
 const MATRIX_EXPECTATIONS = [
@@ -122,8 +182,43 @@ const SCOPE_CASES = [
   ['Laserfiche SSO has failed for every school.', 'all-schools'],
   ['This is corporation-wide.', 'corporation-wide'],
   ['Something is wrong with the report.', 'unknown'],
-  ['35 casual staff timesheets failed.', 'team']
+  ['35 casual staff timesheets failed.', 'team'],
+  ['Three tutors cannot submit grades.', 'few-users'],
+  ['One coordinator cannot download the timetable.', 'individual'],
+  ['The wellbeing office needs a report.', 'team'],
+  ['Eighteen enrolment rows disappeared after an import.', 'cohort'],
+  ['Nine submitted permission forms were overwritten.', 'cohort'],
+  ['At East Campus, the timetable import failed.', 'one-school'],
+  ['One teacher at North Campus cannot open the learning app.', 'individual']
 ];
+
+test('Scope', 'current narrow scope outranks historical broad scope', () => {
+  const result = detectScope(createDocument(
+    'Last term every campus could not process applications. Today one registrar cannot submit claims.'
+  ));
+  return ok(result.scope === 'individual', JSON.stringify(result));
+});
+
+test('Scope', 'a current stale display keeps its stated people population', () => {
+  const result = detectScope(createDocument(
+    "The display is showing yesterday's arrival times for twelve pupils, but the live page is current."
+  ));
+  return ok(result.scope === 'team', JSON.stringify(result));
+});
+
+test('Scope', 'an explicit affected count outranks an organisational deadline actor', () => {
+  const result = detectScope(createDocument(
+    'Four casual employees are absent from the current pay run. The payroll team has two hours before the bank cutoff.'
+  ));
+  return ok(result.scope === 'few-users', JSON.stringify(result));
+});
+
+test('Scope', 'an unaffected comparison population does not become the affected scope', () => {
+  const result = detectScope(createDocument(
+    'One registrar cannot submit claims. All other schools are working normally.'
+  ));
+  return ok(result.scope === 'individual', JSON.stringify(result));
+});
 
 for (const [text, expected] of SCOPE_CASES) {
   test('Scope', JSON.stringify(text.slice(0, 46)) + ' -> ' + expected, () => {
@@ -162,7 +257,9 @@ const WORKAROUND_CASES = [
   ['There is no workaround and we are completely blocked.', 'no'],
   ['We do not have a workaround.', 'no'],
   ['Only a partial work around exists.', 'partial'],
-  ['Canvas sync has stopped.', 'unknown']
+  ['Canvas sync has stopped.', 'unknown'],
+  ['The directory form saves normally after an update.', 'yes'],
+  ['The directory form does not save normally after an update.', 'no']
 ];
 
 for (const [text, expected] of WORKAROUND_CASES) {
@@ -171,6 +268,20 @@ for (const [text, expected] of WORKAROUND_CASES) {
     return ok(actual === expected, actual);
   });
 }
+
+test('Workaround', 'a historical manual path is not a current workaround', () => {
+  const result = detectWorkaround(createDocument(
+    'Last term we could process applications manually. Today the export is unavailable.'
+  ));
+  return ok(result.workaround === 'unknown', JSON.stringify(result));
+});
+
+test('Workaround', 'a committed manual correction remains a viable workaround', () => {
+  const result = detectWorkaround(createDocument(
+    'Fee payments are duplicated and finance will process the corrections manually today.'
+  ));
+  return ok(result.workaround === 'yes', JSON.stringify(result));
+});
 
 /* ---------------------------------------------------------- 4. deadline -- */
 
@@ -199,10 +310,47 @@ test('Deadline', 'a time mention is not a deadline when it is not needed today',
   return ok(actual === 'none', actual);
 });
 
+test('Deadline', 'a resolved historical incident can have an explanatory timing preference', () => {
+  const result = analyse(
+    'Last year, an export displayed a legacy category. The current entry is correct and the overnight job completed. Can we document why?'
+  );
+  return ok(result.priority === 'P4' && result.driver.driver === 'preference',
+    JSON.stringify({ priority: result.priority, driver: result.driver, workType: result.workType }));
+});
+
+test('Deadline', 'an active failure is not downgraded by a documentation question', () => {
+  const result = analyse('The archive job is still failing. Can we document the cause?');
+  return ok(result.driver.driver !== 'preference', JSON.stringify(result.driver));
+});
+
+test('Deadline', 'an explicit absent requirement also answers the deadline driver', () => {
+  const result = analyse(
+    'The export is usable. The committee review is next month, but nobody has given the team a required-by date.'
+  );
+  return ok(result.deadline === 'none' && result.driver.driver === 'none',
+    JSON.stringify({ deadline: result.deadline, driver: result.driver }));
+});
+
 test('Deadline', '"immediately" without a consequence is asserted, not committed', () => {
   const result = detectDeadline(createDocument('Please fix immediately!!!'));
   return ok(result.asserted === true, 'asserted = ' + result.asserted);
 });
+
+const DRIVER_CASES = [
+  ['Marks close at 4pm today.', 'operational'],
+  ['The bank file cutoff is in two hours.', 'operational'],
+  ['The funding claim window closes today.', 'statutory'],
+  ['The finance team says that cleanup can wait until Thursday.', 'preference'],
+  ['Could the sharing option be considered for next year?', 'preference'],
+  ['Would it be possible to add a bulk-copy option?', 'preference']
+];
+
+for (const [text, expected] of DRIVER_CASES) {
+  test('Driver', JSON.stringify(text.slice(0, 46)) + ' -> ' + expected, () => {
+    const actual = detectDriver(createDocument(text)).driver;
+    return ok(actual === expected, actual);
+  });
+}
 
 /* ---------------------------------------------------------- 5. negation -- */
 
@@ -371,6 +519,9 @@ test('Payroll', 'ABA file missing with same-day payroll -> P1', () =>
 test('Payroll', '35 casual staff unpaid before cutoff -> P1', () =>
   priority('35 casual staff will not be paid unless this is fixed before today’s payroll cutoff.', 'P1'));
 
+test('Payroll', 'employees missing from a current pay run before a bank-file cutoff -> P1', () =>
+  priority('Four casual employees are absent from the current pay run. The payroll team has two hours before the bank file cutoff and cannot regenerate the file from this screen.', 'P1'));
+
 test('Payroll', 'payroll question with no deadline -> P3 or P4', () =>
   priority('I have a general question about how payroll records are stored.', ['P3', 'P4']));
 
@@ -457,14 +608,32 @@ test('Safeguarding', 'historical WWCC audit is not a P1', () => {
 test('Data integrity', 'one bad record is P3', () =>
   priority('One parent profile has been merged incorrectly and needs fixing.', ['P3', 'P4']));
 
-test('Data integrity', 'incorrect payment records across all schools -> P1', () =>
-  priority('SQL trigger is silently writing incorrect payment records across all schools.', 'P1'));
+test('Data integrity', 'incorrect payment records across all schools -> P2 under propagation policy', () =>
+  priority('SQL trigger is silently writing incorrect payment records across all schools.', 'P2'));
 
 test('Data integrity', 'propagation is detected', () => {
   const result = analyse('SQL trigger is silently writing incorrect payment records across all schools.');
   return ok(result.riskModifiers.propagating === true,
     'propagating = ' + result.riskModifiers.propagating);
 });
+
+/* ------------------------------------------------------ 10a. recoverability -- */
+
+test('Recoverability', 'a stated backup path is recoverable evidence', () =>
+  field('The deleted class list can be restored from last night\'s backup.',
+    'recoverability', 'recoverable'));
+
+test('Recoverability', 'explicit irretrievable loss is unrecoverable evidence', () =>
+  field('The assessment submissions were permanently deleted and cannot be recovered.',
+    'recoverability', 'unrecoverable'));
+
+test('Recoverability', 'an unusable storage snapshot is not a recovery path', () =>
+  field('Nine submitted permission forms were overwritten; the storage snapshot is unusable.',
+    'recoverability', 'unrecoverable'));
+
+test('Recoverability', 'temporary unavailability is not inferred to be lost', () =>
+  field('The assessment folder is temporarily unavailable while the server is restarted.',
+    'recoverability', 'unknown'));
 
 /* ------------------------------------------------- 11. auth and windows -- */
 
@@ -623,6 +792,53 @@ test('Documentation', 'classified as documentation', () =>
   field('Where can I find the documentation for the Canvas integration?',
     'workType', 'documentation'));
 
+test('Documentation', 'an explicit no-failure how-to stays P4', () =>
+  priority('Can you guide me through placing a cover teacher on a roster for the following week? Nothing is failing; I just cannot locate the setting.', 'P4'));
+
+test('Documentation', 'a non-incident how-to records requester scope and soft timing', () => {
+  const result = analyse('Can you guide me through placing a cover teacher on a roster for the following week? Nothing is failing; I just cannot locate the setting.');
+  return ok(
+    result.scope === 'individual' && result.deadline === 'none' && result.driver.driver === 'preference',
+    'scope=' + result.scope + ' deadline=' + result.deadline + ' driver=' + result.driver.driver
+  );
+});
+
+test('Documentation', 'a live roster failure remains an incident despite a how-to opening', () =>
+  priority("Can you guide me through the roster function? The roster upload is failing and must be fixed before next week's classes.", 'P3'));
+
+test('Documentation', 'a committed how-to deadline is retained', () => {
+  const result = analyse('Can you guide me through adding a roster before Friday? The completed roster is required by the regulator on Friday.');
+  return ok(
+    result.workType === 'documentation' && result.deadline !== 'none',
+    'workType=' + result.workType + ' deadline=' + result.deadline
+  );
+});
+
+test('Symptom', 'a display that lines up badly is a cosmetic fault', () =>
+  field('The room-booking export lines up badly on screen.', 'symptom', 'cosmetic'));
+
+test('Irreversibility', 'a blocked download is unavailable even with a viable alternative', () => {
+  const result = analyse('One coordinator cannot download the timetable PDF, but the browser gives them the complete document.');
+  return ok(result.eightFacets.i3Irreversibility.answer === 'Unavailable/outage', result.eightFacets.i3Irreversibility.answer);
+});
+
+test('Continuity context', 'an explicit working alternative bounds a non-blocking fault', () => {
+  const result = analyse('The room-booking export is misaligned on screen, but the printable PDF is accurate and staff can book rooms.');
+  return ok(
+    result.businessConsequence.level === 'impaired' &&
+      result.containment.contained === true &&
+      result.deadline === 'none' && result.driver.driver === 'none' &&
+      result.workaround === 'yes',
+    JSON.stringify({ consequence: result.businessConsequence.level, contained: result.containment.contained,
+      deadline: result.deadline, driver: result.driver.driver, workaround: result.workaround })
+  );
+});
+
+test('Continuity context', 'an available exposed view is not a workaround', () => {
+  const result = analyse('A guardian can see a different household balance; that view is still available.');
+  return ok(result.workaround === 'unknown', JSON.stringify(result.workaround));
+});
+
 /* -------------------------------------------------------- 18. helpdesk -- */
 
 test('Helpdesk', 'helpdesk broken for one person -> P3', () =>
@@ -660,7 +876,7 @@ test('Refinement', 'confirming that incorrect data is spreading affects scoring'
     contained: 'spreading'
   });
   return ok(
-    result.riskModifiers.propagating === true && result.priority === 'P1',
+    result.riskModifiers.propagating === true && result.priority === 'P2',
     'propagating=' + result.riskModifiers.propagating + ' ' + result.priority
   );
 });
@@ -792,6 +1008,30 @@ test('Consequence', 'an impaired process adds only the documented impact contrib
     JSON.stringify(result.detail.impactResult.contributions)
   );
 });
+
+for (const [text, expected] of [
+  ['The finance queue will not send invoices, but no invoice has been lost.', 'impaired'],
+  ['The attendance import skipped several records in the register.', 'impaired'],
+  ['The reconciliation report leaves out two cost centres.', 'impaired'],
+  ['The report is complete and the import processed normally.', 'unknown']
+]) {
+  test('Consequence', JSON.stringify(text.slice(0, 52)) + ' -> ' + expected, () => {
+    const actual = analyse(text).businessConsequence.level;
+    return ok(actual === expected, actual);
+  });
+}
+
+for (const [text, expected] of [
+  ['Three tutors cannot submit grades from the assessment portal.', 'blocked'],
+  ['The transport claim service rejects submissions and there is no paper route.', 'blocked'],
+  ['The payroll clerk cannot regenerate the bank file.', 'blocked'],
+  ['The replacement portal can submit the claim successfully.', 'unknown']
+]) {
+  test('Consequence', JSON.stringify(text.slice(0, 52)) + ' -> ' + expected, () => {
+    const actual = analyse(text).businessConsequence.level;
+    return ok(actual === expected, actual);
+  });
+}
 
 /* -------------------------------------------------------- 20. behaviour -- */
 
@@ -1318,6 +1558,9 @@ test('Safety and continuity', 'missing safety information is not an ordinary dat
     result.impact + '/' + result.urgency);
 });
 
+test('Safety and continuity', 'a dry eyewash control in an occupied lab is P1', () =>
+  priority('The eyewash station valve is dry while students are using the lab this afternoon.', ['P1']));
+
 test('Safety and continuity', 'a court order plus retained access escalates', () => {
   const result = analyse('A court order says the non-custodial parent must not see the student record, but he still has portal access.');
   return ok(result.risks.safeguarding === true && result.priority === 'P1',
@@ -1698,7 +1941,7 @@ const GUIDE_EXAMPLES = [
   [['P3'], 'Parent profiles need routine merging.'],
   [['P1'], "A parent can see another family's confidential information."],
   [['P3'], 'Sibling profiles are swapped but contained to one family.'],
-  [['P1'], 'Incorrect profile data is propagating to downstream systems.'],
+  [['P2'], 'Incorrect profile data is propagating to downstream systems.'],
   [['P4'], 'Custom SQL report with no deadline.'],
   [['P3'], 'An important SQL report is required within 3 days.'],
   [['P2', 'P1'], 'A report is required today for a critical compliance response.'],
@@ -1880,6 +2123,64 @@ test('Handoff', 'active exposure flags harm timing as a key facet', () => {
   const result = analyse('Parents can see other families balances in the fee portal.');
   return ok(result.keyFacets.includes('u8') || result.keyFacets.length === 0,
     JSON.stringify(result.keyFacets));
+});
+
+test('Harm timing', 'a currently blocked business operation is active harm', () => {
+  const result = analyse('Tutors cannot submit grades and there is no workaround.');
+  return ok(result.businessConsequence.level === 'blocked' && result.harmTiming.timing === 'active',
+    JSON.stringify({ consequence: result.businessConsequence, harmTiming: result.harmTiming }));
+});
+
+test('Process consequence', 'explicit blocked evidence outranks separate impaired evidence', () => {
+  const result = analyse('Staff cannot submit claims. The export also skips some rows.');
+  return ok(result.businessConsequence.level === 'blocked' && result.businessConsequence.evidence.length === 2,
+    JSON.stringify(result.businessConsequence));
+});
+
+test('Process consequence', 'a technical symptom alone does not invent a blocked process', () => {
+  const result = analyse('The claims application shows an error.');
+  return ok(result.businessConsequence.level === 'unknown', JSON.stringify(result.businessConsequence));
+});
+
+test('Process consequence', 'current blocked evidence outranks historical impaired evidence', () => {
+  const result = analyse('Yesterday the report skipped rows. Staff cannot submit claims today.');
+  return ok(result.businessConsequence.level === 'blocked', JSON.stringify(result.businessConsequence));
+});
+
+test('Harm timing', 'current pending harm outranks a historical active statement', () => {
+  const result = detectHarmTiming(createDocument(
+    'Last term, families were currently exposed. The proposed export could expose records if approval is granted.'
+  ), { symptom: 'unknown' });
+  return ok(result.timing === 'pending', JSON.stringify(result));
+});
+
+test('Harm timing', 'the month May is not a hypothetical modal', () => {
+  const result = detectHarmTiming(createDocument(
+    'The compliance certificate expired in May.'
+  ), { symptom: 'expired-credential', evidence: [{ quote: 'certificate expired' }] });
+  return ok(result.timing === 'active', JSON.stringify(result));
+});
+
+test('Harm timing', 'explicit unrecoverable data loss remains active', () => {
+  const result = detectHarmTiming(createDocument(
+    'A student account was deleted and cannot be recovered; all assessment submissions are lost.'
+  ), { symptom: 'data-loss', evidence: [{ quote: 'was deleted' }] });
+  return ok(result.timing === 'active', JSON.stringify(result));
+});
+
+test('Harm timing', 'a blocked report step without active harm remains unknown', () => {
+  const result = analyse('The reporting service cannot generate reports for all schools today; the statutory submission is due now.');
+  return ok(result.harmTiming.timing === 'unknown', JSON.stringify(result.harmTiming));
+});
+
+test('Harm timing', 'a proposed access change remains pending', () => {
+  const result = analyse('A proposed role change could open private records if approval is granted; it is not live yet.');
+  return ok(result.harmTiming.timing === 'pending', JSON.stringify(result.harmTiming));
+});
+
+test('Harm timing', 'a successful claim with no active exposure remains unknown', () => {
+  const result = analyse('The submitted claim is accepted and no one is currently exposed.');
+  return ok(result.harmTiming.timing === 'unknown', JSON.stringify(result.harmTiming));
 });
 
 test('Handoff', 'draft reply is polite, short and names the priority', () => {
@@ -2269,6 +2570,7 @@ for (const example of EXAMPLES) {
 }
 
 registerFacetTests(test, ok);
+registerPolicyTests(test, ok);
 
 function legacyFacetState(result, facet) {
   if (facet === 'i1') return result.eightFacets.i1Scope.value;

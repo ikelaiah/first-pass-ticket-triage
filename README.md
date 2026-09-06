@@ -2,7 +2,7 @@
 
 > Local-first, explainable P1–P4 suggestions for IT and application support.
 
-v0.7.1: **NLP Evaluation Integrity & Regression Hardening**.
+v0.8.0: **Triage Policy Calibration**.
 
 Paste a messy ticket, email or work request. Get a suggested priority, the evidence
 behind it, the facts that are missing, and the questions worth asking next.
@@ -10,6 +10,22 @@ behind it, the facts that are missing, and the questions worth asking next.
 Built for an Application Specialist / IT support role servicing multiple schools and
 internal business teams. Plain HTML, CSS and vanilla JavaScript — no framework, no
 build step, no backend, no dependencies.
+
+## Evidence boundary and release qualification
+
+First Pass uses deterministic local evidence extraction; it does **not** claim
+general natural-language understanding. It is deliberately conservative when a
+ticket implies relationships across clauses. State who is affected, what business
+operation is blocked or impaired, when work is required, what creates that
+deadline, whether a usable path remains, whether harm is current or pending, and
+whether the problem is contained or spreading.
+
+The v0.8 locked release measurement reports exact Priority, Impact, Urgency, and
+facet differences separately from safety blockers. The current qualification has
+25 exact semantic divergences, all individually adjudicated (24 capability
+boundaries and one reviewed ambiguity), with zero unsafe under-prioritisation,
+severe unsafe under-prioritisation, assessed-ticket abstentions, and P1 false
+negatives. See [the capability-boundary qualification](docs/260906-v0.8-capability-boundary-qualification.md).
 
 ---
 
@@ -142,7 +158,10 @@ and only then does the matrix decide.
 
 The full framework — impact and urgency definitions, wording cues, payroll, privacy,
 safeguarding, data-integrity and expected-behaviour rules — is documented in
-[PRIORITY-FRAMEWORK.md](PRIORITY-FRAMEWORK.md).
+[PRIORITY-FRAMEWORK.md](PRIORITY-FRAMEWORK.md). The v0.8.0 normative policy table,
+structured rule IDs, and calibration decisions are in
+[docs/triage-policy.md](docs/triage-policy.md) and the
+[calibration audit](docs/260830-triage-policy-calibration-audit.md).
 
 ### 🔍 Worked example
 
@@ -260,7 +279,7 @@ Open <http://localhost:8000/tests/tests.html> — the suite runs in the page and
 PASS/FAIL line for every assertion.
 
 With Node available, the same suite runs in a terminal; `npm test` runs the complete
-v0.7.1 gate:
+v0.8.0 gate:
 
 ```bash
 node tests/run.mjs      # behavioural suite + privacy scan
@@ -428,13 +447,15 @@ entities or category assignments.
 ## 🧩 Extending the rules
 
 - **New wording** → add a phrase to the relevant list in `js/data/phrases.js`.
-- **New risk** → add an entry to `RISK_DEFINITIONS`, then decide its weight in
-  `js/engine/impact.js` and, if it can escalate, in `applyRiskModifiers()`.
+- **New risk** → add an entry to `RISK_DEFINITIONS`, then decide its base evidence
+  contribution in `js/engine/impact.js` and any structured calibration in
+  `js/engine/policy.js`.
 - **New scenario** → add it to `js/data/examples.js` with the priorities you consider
   defensible; the test suite asserts every example automatically.
 
-Weights are deliberately in two small files (`impact.js`, `urgency.js`) so tuning is a
-readable diff rather than a hunt.
+Base weights are deliberately in two small files (`impact.js`, `urgency.js`), with
+structured policy calibration isolated in `policy.js`, so tuning is a readable diff
+rather than a hunt.
 
 ### Measuring accuracy offline
 
@@ -486,6 +507,9 @@ authoritative matrix out of facet detectors; changes to those are separate decis
 
 - 🤖 **This is not AI.** It is a deterministic phrase and weighting engine. It does not
   understand your ticket; it recognises wording.
+- 🧭 **Clarification is a safety feature.** Implied deadline relationships,
+  workaround equivalence, and multi-clause business consequences can remain
+  Unknown; confirm them with the analyst instead of treating inference as fact.
 - 💬 **Natural-language understanding is imperfect.** Sarcasm, unusual phrasing, heavy
   abbreviation and pasted log dumps will all reduce accuracy.
 - 🧑‍⚖️ **It is advisory.** Human judgement, local policy and agreed service levels always

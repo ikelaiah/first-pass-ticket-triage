@@ -27,8 +27,8 @@ export const SCOPE_DEFINITIONS = [
 
 export const SCOPE_PHRASES = [
   // Individual
-  { m: [/\b(?:one|a single|1) (?:user|student|staff member|teacher|person|employee|parent|record|report|account|mailbox|device|analyst|applicant|administrator)\b/,
-        /\b(?:a|one) (?:casual |part[- ]time |full[- ]time |new |relief |temporary |visiting )?(?:staff member|teacher|student|employee|user|parent|contractor|analyst|applicant|administrator)\b/,
+  { m: [/\b(?:one|a single|1) (?:user|student|staff member|teacher|person|employee|parent|guardian|coordinator|record|report|account|mailbox|device|analyst|applicant|administrator)\b/,
+        /\b(?:a|one) (?:casual |part[- ]time |full[- ]time |new |relief |temporary |visiting )?(?:staff member|teacher|student|employee|user|parent|guardian|coordinator|contractor|analyst|applicant|administrator)\b/,
         'single user', 'one individual', 'individual user', 'just me', 'only me', 'for me', 'my account',
         'one family', 'a single family', 'one household', 'this parent',
         /\bonly (?:the|this) (?:one )?(?:bursar|teacher|student|parent|user|person|staff member)\b/,
@@ -44,12 +44,12 @@ export const SCOPE_PHRASES = [
   // Few users
   { m: ['a few users', 'several users', 'some users', 'a handful of users', 'two users', 'three users',
         'a couple of users', 'a few staff', 'several staff', 'a few people', 'a small number of users',
-        /\b(?:two|three|four|five|six|a couple of|a few|a handful of|several)\s+(?:staff|staff members|users|teachers|employees|students|parents|casuals|families|applicants)\b/],
+        /\b(?:two|three|four|five|six|a couple of|a few|a handful of|several)\s+(?:staff|staff members|users|teachers|tutors|employees|students|parents|casuals|families|applicants)\b/],
     v: 'few-users', w: 2, label: 'a small number of users' },
 
   // Team / department
   { m: ['the team', 'our team', 'a team', 'the department', 'our department', 'registrar team', 'registrars',
-        'finance team', 'payroll team', 'admin team', 'the office', 'reception staff', 'registrars', 'business unit',
+        'finance team', 'payroll team', 'admin team', 'the office', 'our office', 'wellbeing office', 'north office', 'reception staff', 'registrars', 'business unit',
         'the faculty', 'head office', 'central office', 'one department', 'a single department',
         'all casuals', 'every casual', 'the casuals'],
     v: 'team', w: 2, label: 'a team or department' },
@@ -71,6 +71,7 @@ export const SCOPE_PHRASES = [
         /\bschool [a-z]\b/,
         // "at Smith School" names one school; "at any school" does not.
         /\bat (?!any|every|all|each|another|other|both)[a-z]+ school\b/,
+        /\bat (?!any|every|all|each|another|other|both)[a-z]+ campus\b/,
         'a school', 'this school', 'one of our schools'],
     v: 'one-school', w: 2, label: 'a single school' },
 
@@ -111,7 +112,8 @@ export const LOW_URGENCY_PHRASES = [
         'not blocking us', 'not blocking', 'sometime this week', 'not needed immediately',
         'in due course', 'nice to have', 'would be nice', 'future request', 'when someone has time',
         'no immediate need', 'for the backlog', 'add to the backlog', 'no particular rush',
-        'take your time', 'happy to wait', 'whenever suits'],
+        'take your time', 'happy to wait', 'whenever suits', 'can wait', 'can wait until',
+        'can wait for'],
     w: -1.75, label: 'requester signalled it can wait' },
   { m: ['for now', 'for the moment', 'at this stage'], w: -0.6, label: 'situation is tolerable for now' }
 ];
@@ -158,7 +160,8 @@ export const DEADLINE_BUCKETS = [
 export const DEADLINE_PHRASES = [
   { m: [/(?<!\bfor )(?<!\bby )(?<!\buntil )(?<!\bis )(?<!\bare )(?<!\bwas )(?<!\bwere )(?<!\bhas )(?<!\bhave )(?<!\bam )\bnow\b/, 'right now', 'immediately', 'straight away',
         'within the hour', 'in the next hour', 'this minute', /in \d{1,2} minutes/,
-        'in a few minutes', 'about to start', 'starting in', 'any minute'],
+        'in a few minutes', 'about to start', 'starting in', 'any minute',
+        /\b(?:one|two|three|four|five|six|seven|eight|nine|ten|\d{1,2})\s+hours?\s+before\b[^.!?;]{0,48}\b(?:bank\s+file|payroll|payment)\s+(?:file\s+)?cut[- ]?off\b/],
     v: 'now', label: 'needed immediately' },
   { m: ['today', "today's", 'this morning', 'this afternoon', 'tonight', 'this evening',
         'end of day', 'eod', 'close of business', 'cob', 'before 5pm', 'by lunchtime',
@@ -219,8 +222,9 @@ export const WORKAROUND_PHRASES = [
         'manual process', 'manually process', 'process manually', 'processing manually',
         'doing it manually', 'do it manually', 'enter them manually', 'manually enter',
         'can work without', 'can continue', 'we can continue', 'able to continue',
-        'still able to', 'alternative process', 'alternative method', 'we can manage',
-        'remains available', 'still available', 'still works', 'still working', 'can still',
+          'still able to', 'alternative process', 'alternative method', 'we can manage',
+          'remains available', 'still works', 'still working', 'can still',
+        'saves normally', 'save normally',
         'interim process', 'by hand', 'business as usual', 'temporary process',
         'can manually', 'in the meantime we', 'we have a work around',
         'have corrected', 'corrected it', 'i have fixed', 'already corrected',
@@ -289,6 +293,9 @@ export const SYMPTOMS = [
         'can not be enrolled', 'can not be created', 'can not be added',
         'can not be provisioned', 'can not be issued', 'can not get', 'can not obtain',
         /\b(?:nobody|no one|no-one) (?:can|is able to)\b/] },
+  { id: 'safety-control-failed', label: 'Safety Control Failed', severity: 2,
+    m: [/\b(?:eyewash station|eyewash)\b[^.!?;]{0,64}\b(?:valve is dry|dry|failed|not working|unavailable)\b/,
+        /\b(?:valve is dry|dry|failed|not working|unavailable)\b[^.!?;]{0,64}\b(?:eyewash station|eyewash)\b/] },
   { id: 'access-denied', label: 'Access Denied', severity: 2,
     m: ['access denied', 'permission denied', 'not authorised', 'insufficient permissions',
         'incorrect permissions', 'no access to', 'forbidden', '403 error', 'error 403',
@@ -537,7 +544,7 @@ export const SYMPTOMS = [
         'keeps dropping', 'keeps dropping out', 'drops out', 'connection drops', 'signal drops'] },
   { id: 'cosmetic', label: 'Cosmetic', severity: 0.5,
     m: ['cosmetic', 'typo', 'spelling mistake', 'misaligned', 'alignment', 'wrong colour',
-        'looks odd', 'display glitch', 'formatting issue'] },
+        'looks odd', 'display glitch', 'formatting issue', 'lines up badly'] },
   { id: 'feature-request', label: 'Feature Requested', severity: 0,
     m: ['new feature', 'feature request', 'enhancement', 'add a button', 'would like a',
         'can we have', 'it would be good if', 'nice to have', 'new functionality',
@@ -872,7 +879,7 @@ export const WORK_TYPES = [
     m: ['documentation', 'how do i', 'how can i', 'where can i find', 'where do i',
         'user guide', 'knowledge base', 'instructions', 'training', 'what is the process',
         'explain how', 'is there a guide', 'i do not know how', 'not sure how',
-        'help me use', 'help using',
+        'help me use', 'help using', 'guide me through', 'talk me through', 'point me to',
         'what time', 'when does', 'when do', 'when is the', 'how often', 'how long does',
         'what happens when', 'what is the schedule', 'do you know when', 'can you tell me'] },
   { id: 'security-privacy', label: 'Security / Privacy',
@@ -943,6 +950,7 @@ export const RISK_DEFINITIONS = [
     m: ['allergy', 'allergies', 'anaphylaxis', 'anaphylactic', 'epipen', 'medical alert',
         'medical condition', 'medical information', 'asthma', 'medication', 'health care plan',
         'healthcare plan', 'dietary requirement', 'first aid', 'injury',
+        'eyewash', 'eyewash station',
         'evacuation', 'intercom', 'pa system', 'public address', 'lockdown', 'duress',
         'emergency call', 'emergency services', 'triple zero', '000', 'fire alarm',
         'bell system', 'excursion', 'school camp', 'bus run', 'head count', 'roll call',
@@ -1016,6 +1024,7 @@ export const RISK_MODIFIERS = {
   unpaidRisk: [
     /\b(?:will not|would not|may not|might not|can not) be paid\b/,
     /\bnot be paid\b/, /\b(?:have|has|had|were|was) not been paid\b/, /\bunpaid\b/, /\bmiss(?:ing|es)? (?:today's |this )?pay\b/,
+    /\b(?:employees?|staff|workers?|casual(?:\s+employees?)?)\b[^.;!?]{0,48}\babsent from\b[^.;!?]{0,48}\b(?:current|this)\s+(?:pay run|payroll)\b/,
     /\bnot get paid\b/, /\bno pay\b/, /\bmiss the pay run\b/, /\bmiss payroll\b/,
     /\bpay will not\b/, /\bstaff will not be paid\b/,
     /\bpay file (?:is|was|has been|have been) not (?:produced|created|generated)\b/
@@ -1025,10 +1034,12 @@ export const RISK_MODIFIERS = {
    * This is an exposure, so it also asserts the privacy risk on its own.
    */
   crossPersonVisibility: [
-    /\b(?:can|could|are able to|is able to) (?:see|view|access|open|download) (?:another|other|others|someone else's|a different|the wrong)\b/,
+    /\b(?:can|could|are able to|is able to) (?:see|view|access|open|download|read) (?:another|other|others|someone else's|a different|the wrong)\b/,
     /\b(?:another|other|a different) (?:family|families|student|students|parent|parents|carer|carers)['’]?s? (?:details|information|data|(?:fee )?balance|(?:fee )?balances|record|records|account|accounts|address|addresses|fees)\b/,
     /\b(?:sent|emailed|disclosed|released|went|delivered|addressed) to (?:the )?wrong (?:parent|carer|guardian|family|recipient|person|student|address|email)\b/,
-    /\b(?:wrong|another|other) (?:student|child|family|parent|staff)['’]?s? (?:photo|photograph|image|name|details|address|record)\b/
+    /\b(?:wrong|another|other) (?:student|child|family|parent|staff)['’]?s? (?:photo|photograph|image|name|details|address|record)\b/,
+    /\b(?:case officer|staff member|employee|user)\b[^.!?;]{0,48}\b(?:another|different)\s+(?:department|team)\b[^.!?;]{0,64}\b(?:can|could|is able to)\s+(?:see|view|access|open|read)\b[^.!?;]{0,96}\b(?:student(?:s)?['’]?s?\s+)?(?:disciplinary|welfare|medical|case)\s+(?:note|notes|record|records)\b/,
+    /\b(?:account\s+for\s+)?(?:a\s+)?(?:volunteer|staff member|employee|contractor|worker)\b[^.!?;]{0,48}\b(?:who\s+)?(?:left|departed|retired)\b[^.!?;]{0,64}\b(?:still|continues to)\s+(?:opens?|access(?:es)?|views?|reads?)\b[^.!?;]{0,96}\b(?:student(?:s)?['’]?s?\s+)?(?:welfare|wellbeing|medical|case)\s+(?:plan|plans|record|records|note|notes)\b/
   ],
 
   /**
@@ -1045,8 +1056,10 @@ export const RISK_MODIFIERS = {
 
   exposureActive: [
     /\b(?:visible|available|accessible|shown|displayed) to (?:the )?(?:wrong|another|other|an unauthorised|incorrect)\b/,
-    /\bcan (?:see|view|access|open) (?:another|other|someone else's|a different)\b/,
+    /\b(?:can|could|are able to|is able to) (?:see|view|access|open|read) (?:another|other|someone else's|a different)\b/,
     /\b(?:another|other|a different) (?:family|families|student|students|parent|parents)['’]?s? (?:details|information|data|(?:fee )?balance|(?:fee )?balances|record|records|account|accounts|address|addresses)\b/,
+    /\b(?:case officer|staff member|employee|user)\b[^.!?;]{0,48}\b(?:another|different)\s+(?:department|team)\b[^.!?;]{0,64}\b(?:can|could|is able to)\s+(?:see|view|access|open|read)\b[^.!?;]{0,96}\b(?:student(?:s)?['’]?s?\s+)?(?:disciplinary|welfare|medical|case)\s+(?:note|notes|record|records)\b/,
+    /\b(?:account\s+for\s+)?(?:a\s+)?(?:volunteer|staff member|employee|contractor|worker)\b[^.!?;]{0,48}\b(?:who\s+)?(?:left|departed|retired)\b[^.!?;]{0,64}\b(?:still|continues to)\s+(?:opens?|access(?:es)?|views?|reads?)\b[^.!?;]{0,96}\b(?:student(?:s)?['’]?s?\s+)?(?:welfare|wellbeing|medical|case)\s+(?:plan|plans|record|records|note|notes)\b/,
     /\bcurrently (?:visible|exposed|accessible)\b/,
     /\b(?:actively|currently) exposed\b/,
     /\bunauthorised access (?:is|remains) (?:currently )?(?:happening|ongoing|active)(?: now)?\b/,
@@ -1165,7 +1178,7 @@ export const UNDETECTED_PHRASES = [
  */
 export const OBSERVATION_VERBS = [
   'discover', 'discovered', 'discovers', 'notice', 'noticed', 'found', 'find',
-  'see', 'saw', 'spotted', 'spot', 'logged', 'reported', 'raised', 'rang',
+  'see', 'sees', 'saw', 'spotted', 'spot', 'accepted', 'logged', 'reported', 'raised', 'rang',
   'called', 'emailed', 'realised', 'realise', 'picked up', 'came across',
   'identified', 'flagged'
 ];
@@ -1253,6 +1266,15 @@ export const WORKING_COMPARATOR_PHRASES = [
     label: 'another comparable record is working' }
 ];
 
+/** A stated, usable alternative limits the current operational effect. */
+export const CONTINUITY_PHRASES = [
+  { m: ['printable pdf is accurate', 'printable pdf is fine', 'gives them the complete document',
+        'live departures page is accurate', 'existing summary is usable',
+        'csv download for that adviser is complete', 'file opens normally',
+        'can keep booking rooms'],
+    label: 'an explicit alternative or completed path remains usable' }
+];
+
 export const CONTRAST_PHRASES = [
   { m: [/\bbut not\b/, /\bthe other (?:one|student|record|user|account|file|child)\b/,
         /\bonly one of\b/, /\bwhereas\b/, /\bwhile the other\b/, /\bone of (?:the )?two\b/,
@@ -1310,6 +1332,11 @@ export const CONTAINED_PHRASES = [
  */
 export const BLOCKED_PROCESS_PHRASES = [
   { m: [
+      /\b(?:can not|cannot)\s+(?:submit|lodge|regenerate)\s+(?:the\s+)?(?:grades?|claims?|claim|bank file|file)\b/,
+      /\b(?:service|portal|system)\b[^.;!?]{0,24}\brejects?\s+submissions?\b/
+    ],
+    process: 'required submission or processing', label: 'a required submission or processing step is blocked' },
+  { m: [
       // normalise() expands cannot, can't and unable to to "can not".
       /\bcan not\s+(?:mark|take|record|enter)\s+(?:the\s+)?(?:rolls?|attendance)\b/,
       /\b(?:the\s+)?rolls?\s+can not\s+be\s+(?:marked|recorded)\b/,
@@ -1341,25 +1368,39 @@ export const BLOCKED_PROCESS_PHRASES = [
     process: 'reporting', label: 'reporting is blocked' }
 ];
 
+/** Explicitly degraded business processes that remain usable but impaired. */
+export const IMPAIRED_PROCESS_PHRASES = [
+  { m: [
+      /\b(?:queue|export|import|report|view|form|mapping)\b[^.;!?]{0,24}\b(?:will not|does not|do not|can not)\s+(?:send|load|open|display|update|complete)\b/,
+      /\b(?:import|report|export|queue|mapping|view)\b[^.;!?]{0,24}\b(?:skips?|skipped|leaves out|omits?|drops?|misaligns?|shows?\s+incorrect)\b/,
+      /\b(?:records?|rows?|forms?|entries)\s+(?:were|was|are|is)\s+(?:skipped|omitted|dropped|overwritten|missing)\b/
+    ],
+    process: 'named operational process', label: 'a business process is impaired' }
+];
+
 /** U6 driver — what creates the deadline: a requirement (statutory/operational) or a preference. */
 export const DRIVER_PHRASES = [
   { m: ['census', 'naplan', 'nesa', 'acara', 'statutory reporting', 'government reporting',
         'legal requirement', 'court order', 'compliance deadline', 'audit deadline',
         'regulatory deadline', 'statutory deadline', 'statutory submission', 'statutory requirement',
-        'compliance requirement', 'compliance submission'],
+        'compliance requirement', 'compliance submission', 'funding claim window', 'grant submission'],
     driver: 'statutory', w: 0, label: 'a statutory or compliance deadline drives timing' },
   { m: ['payroll cutoff', 'pay cutoff', 'pay run due', 'payroll must be processed', 'enrolment cycle',
         'enrolments close', 'enrolment closes', 'direct debit run', 'nightly job', 'scheduled job', 'class starts', 'classes start',
         'lesson starts', 'lessons start', 'term starts', 'report cards out',
         'reports due out', 'attendance roll', 'excursion leaves', 'vendor cutoff',
+        'marks close', 'month-end close', 'bank file cutoff', 'term-start roster',
+        'appeal panel', 'close of business', 'approval goes through',
         /\bpay\s+run\b[^.!?]{0,20}\bdue\b/,
         /\b(?:assessment|class|lesson)\s+(?:begins?|commences?|starts?)\b/],
     driver: 'operational', w: 0, label: 'an operational or business event drives timing' },
   { m: ['would like it by', 'would be nice by', 'prefer it by', 'if possible by',
+        'would it be possible',
         'when you get a chance', 'whenever suits', 'whenever convenient', 'no particular rush',
         'nice to have by', 'at your convenience', 'if possible',
         /\b(?:i|we)(?:['’]d|\s+would)?\s+prefer\b/,
-        /\bwould be nice(?: to have)?\b/],
+        /\bwould be nice(?: to have)?\b/, /\bcan wait(?: until)?\b/,
+        /\bcould\s+(?:the\s+)?[\w-]+(?:\s+[\w-]+){0,3}\s+be considered\b/],
     driver: 'preference', w: 0, label: 'a preference rather than a deadline was expressed' }
 ];
 

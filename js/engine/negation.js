@@ -221,6 +221,13 @@ export function isNegated(doc, start, end) {
   const { clause } = clauseAt(doc, start);
   const before = doc.text.slice(clause.start, start);
   const after = doc.text.slice(end, clause.end);
+  const phrase = doc.text.slice(start, end);
+
+  // "Nothing is failing" denies a failure; unlike "nothing is working", it
+  // must not be treated as an outage. Keep this subject-level form narrow so
+  // it does not change ordinary negation behaviour for other symptoms.
+  if (/\bnothing\s*$/i.test(before) &&
+      /^(?:is|was|has been)\s+(?:failing|failed|broken|wrong)$/i.test(phrase)) return true;
 
   // Backward: cue, then up to four linker words, then the phrase.
   const tokens = tokenise(before);

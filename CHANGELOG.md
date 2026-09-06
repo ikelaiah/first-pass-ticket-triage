@@ -1,5 +1,45 @@
 # Changelog
 
+## [0.8.0] - 2026-08-30 — Triage Policy Calibration
+
+### Added
+
+- Added the normative, machine-readable triage policy layer between structured
+  evidence and the unchanged Impact × Urgency matrix.
+- Added explicit recoverability evidence and direct policy, monotonicity,
+  invariance, policy-ID, and recoverability tests.
+- Added the policy, ADR, per-case audit, and release report documentation.
+
+### Changed
+
+- Separated consequence from time sensitivity for workaround, deadline, harm,
+  privacy/security, payroll/financial, recoverability, containment/propagation,
+  critical-system, safety, safeguarding, compliance, and accessibility cases.
+- Passive topic vocabulary no longer creates standalone Impact escalation;
+  confirmed consequences and active harm remain evidence-dependent.
+- Propagation-only cases now receive High Impact with a Medium urgency floor;
+  same-day confirmed processing failures and active exposures retain P1 behavior.
+- Updated the labelled corpus to reflect the written v0.8.0 policy, leaving the
+  seven acceptable ambiguity boundaries explicitly reviewed.
+
+### Verification
+
+- 828 behavioral assertions pass; catalogue reconciliation remains 206/206.
+- Complete 81-case evaluator: 75/79 exact Priority, 75/79 Impact, 74/79
+  Urgency, zero unreviewed mismatches, zero severe under-prioritisation.
+
+### Evidence-reliability qualification
+
+- Added a bounded Category-A evidence pass for historical explanatory requests,
+  explicit population versus organisational actors, and observation/event versus
+  required-by timing; no policy, scoring, matrix, or fixture changed.
+- The frozen 36-case release validator now reports raw exact divergences apart
+  from adjudicated capability boundaries: 25 exact differences, 24 documented
+  boundaries, one reviewed ambiguity, and zero unadjudicated or safety-blocking
+  cases.
+- Documented the deterministic evidence boundary and a v0.9 clarification-first
+  Next Action direction that never changes P1–P4.
+
 ## [0.7.1] - 2026-08-29 — NLP Evaluation Integrity & Regression Hardening
 
 ### Added

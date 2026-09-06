@@ -1,0 +1,230 @@
+{
+  "metadata": {
+    "name": "v0.8.0 final independent release-validation corpus",
+    "kind": "independently-authored-policy-labelled-release-validation",
+    "note": "Authored after implementation freeze and labelled from docs/triage-policy.md before execution. These tickets are newly written and are not derived from production phrase dictionaries, existing semantic fixtures, the main corpus, development holdout, consumed final holdout, or implementation documentation examples.",
+    "labelledBeforeEvaluation": true,
+    "evaluated": false,
+    "frozenAt": "2026-08-30",
+    "authoringRule": "No engine output was consulted during authoring or labelling."
+  },
+  "cases": [
+    {
+      "id": "release-01-rota-instruction",
+      "text": "Hi service desk, could someone talk me through adding a substitute teacher to next week's rota? Nothing is failing; I just cannot find the menu.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P4", "impact": "low", "urgency": "low", "i1": "individual", "i2": "unknown", "i3": "unknown", "i4": "unknown", "u5": "none", "u6": "preference", "u7": "unknown", "u8": "unknown" },
+      "labelBasis": { "policyIds": ["context.documentation", "deadline.soft"], "state": "current request, no incident", "rationale": "A how-to request with no failure or committed cutoff is Low Impact and Low Urgency." }
+    },
+    {
+      "id": "release-02-office-export-alignment",
+      "text": "The monthly room-booking export lines up badly on screen for our office. The printable PDF is fine and nobody is blocked from booking rooms.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P4", "impact": "low", "urgency": "low", "i1": "team", "i2": "impaired", "i3": "unknown", "i4": "contained", "u5": "none", "u6": "none", "u7": "yes", "u8": "unknown" },
+      "labelBasis": { "policyIds": ["workaround.full", "containment.preserve"], "state": "active cosmetic defect", "workaroundState": "full", "containmentState": "contained", "rationale": "A cosmetic team-level inconvenience has an equivalent usable output and no deadline." }
+    },
+    {
+      "id": "release-03-bulk-copy-request",
+      "text": "Would it be possible to add a bulk-copy option for the resource catalogue before the January intake? The current one-at-a-time process still works.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P4", "impact": "low", "urgency": "low", "i1": "unknown", "i2": "unknown", "i3": "unknown", "i4": "unknown", "u5": "unknown", "u6": "preference", "u7": "yes", "u8": "unknown" },
+      "labelBasis": { "policyIds": ["deadline.soft", "workaround.full"], "state": "feature request", "rationale": "The named future intake is not a committed cutoff and the existing process remains usable." }
+    },
+    {
+      "id": "release-04-contact-field-guide",
+      "text": "Please point me to the page explaining how to update an office phone number in the directory. I tested the form this morning and it saves normally.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P4", "impact": "low", "urgency": "low", "i1": "individual", "i2": "unknown", "i3": "unknown", "i4": "unknown", "u5": "none", "u6": "preference", "u7": "yes", "u8": "unknown" },
+      "labelBasis": { "policyIds": ["context.documentation", "harm.resolved"], "state": "resolved/no fault", "rationale": "This is a documentation request against a functioning form." }
+    },
+    {
+      "id": "release-05-archive-label-history",
+      "text": "The archive dashboard showed an old retention label last year, but the label is correct in this year's records and the archive job completed overnight. Can we document what happened?",
+      "expected": { "assessmentStatus": "assessed", "priority": "P4", "impact": "low", "urgency": "low", "i1": "unknown", "i2": "unknown", "i3": "unknown", "i4": "unknown", "u5": "unknown", "u6": "preference", "u7": "unknown", "u8": "unknown" },
+      "labelBasis": { "policyIds": ["harm.resolved", "context.documentation", "containment.preserve"], "state": "historical issue resolved", "rationale": "The historical label issue is corrected, the current job succeeds, and the request is explanatory." }
+    },
+    {
+      "id": "release-06-timetable-preview-route",
+      "text": "One coordinator cannot download the timetable PDF from the tablet app. Opening the same timetable in the browser gives them the complete document.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P4", "impact": "low", "urgency": "low", "i1": "individual", "i2": "impaired", "i3": "unavailable", "i4": "contained", "u5": "none", "u6": "none", "u7": "yes", "u8": "unknown" },
+      "labelBasis": { "policyIds": ["workaround.full", "containment.preserve"], "state": "active individual availability issue", "workaroundState": "full", "rationale": "A single-user app problem has an equivalent browser path and no time pressure." }
+    },
+    {
+      "id": "release-07-keyboard-accommodation",
+      "text": "A staff member who navigates by keyboard cannot land on the approval control in the leave form. A colleague can click it for now, but that is not an equivalent way for them to work.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P3", "impact": "low", "urgency": "medium", "i1": "individual", "i2": "impaired", "i3": "unavailable", "i4": "unknown", "u5": "unknown", "u6": "unknown", "u7": "partial", "u8": "active" },
+      "labelBasis": { "policyIds": ["accessibility.context", "workaround.partial", "containment.preserve"], "state": "active accessibility barrier", "workaroundState": "partial", "rationale": "The colleague-assisted path preserves the transaction but not equivalent access; the policy supplies a Medium urgency floor." }
+    },
+    {
+      "id": "release-08-library-search-howto",
+      "text": "Hello, how do I search the library system for books checked in before 2019? There is no incident here; I am preparing a reference list.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P4", "impact": "low", "urgency": "low", "i1": "individual", "i2": "unknown", "i3": "unknown", "i4": "unknown", "u5": "none", "u6": "preference", "u7": "unknown", "u8": "unknown" },
+      "labelBasis": { "policyIds": ["context.documentation"], "state": "no incident", "rationale": "An ordinary search instruction request has no active consequence or deadline." }
+    },
+    {
+      "id": "release-09-three-tutors-assessment-submit",
+      "text": "Three tutors are locked out of the assessment portal. The paper sign-in sheet covers attendance, but it cannot submit grades, and marks close at 4pm today.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P2", "impact": "medium", "urgency": "high", "i1": "few-users", "i2": "blocked", "i3": "unavailable", "i4": "unknown", "u5": "today", "u6": "operational", "u7": "partial", "u8": "active" },
+      "labelBasis": { "policyIds": ["workaround.partial", "deadline.hard-near"], "state": "active blocked process", "workaroundState": "partial", "containmentState": "contained", "rationale": "A small group cannot complete grade submission, the attendance alternative is incomplete, and the same-day close makes urgency High." }
+    },
+    {
+      "id": "release-10-invoice-entry-cost",
+      "text": "The invoice queue for the north office will not send to Finance. We can retype each invoice by hand, although the 18 items already take nearly an hour and the month-end close is tomorrow.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P2", "impact": "medium", "urgency": "high", "i1": "team", "i2": "impaired", "i3": "financial-harm", "i4": "unknown", "u5": "tomorrow", "u6": "operational", "u7": "yes", "u8": "active" },
+      "labelBasis": { "policyIds": ["financial.confirmed", "workaround.costly", "deadline.hard-near"], "state": "active finance process failure", "workaroundState": "costly", "containmentState": "contained", "rationale": "A confirmed invoice-processing failure has a costly manual path and a committed month-end deadline; consequence is material but not a stated missed payment." }
+    },
+    {
+      "id": "release-11-stale-bus-arrivals",
+      "text": "The arrival board is showing yesterday's bus times for twelve pupils, but the live departures page is accurate and the coordinator has posted the current times.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P3", "impact": "medium", "urgency": "low", "i1": "few-users", "i2": "impaired", "i3": "incorrect-data", "i4": "unknown", "u5": "unknown", "u6": "unknown", "u7": "yes", "u8": "unknown" },
+      "labelBasis": { "policyIds": ["workaround.full", "containment.preserve"], "state": "active incorrect display", "workaroundState": "full", "containmentState": "contained", "rationale": "The displayed data is wrong for a small group, but an equivalent current source keeps the process moving." }
+    },
+    {
+      "id": "release-12-wellbeing-report-request",
+      "text": "The wellbeing office would like a report of last term's contact categories for planning. No one is seeing another person's notes, and the existing summary is usable.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P4", "impact": "low", "urgency": "low", "i1": "team", "i2": "unknown", "i3": "privacy-context", "i4": "unknown", "u5": "unknown", "u6": "preference", "u7": "yes", "u8": "unknown" },
+      "labelBasis": { "policyIds": ["privacy.context", "context.documentation", "workaround.full"], "state": "no exposure; reporting request", "rationale": "Sensitive content is context only, there is no exposure, and the usable summary removes urgency." }
+    },
+    {
+      "id": "release-13-approved-permissions-draft",
+      "text": "A permissions change is queued for next Wednesday. If the approval goes through, interns could open examination-adjustment records; the change is not live yet.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P3", "impact": "medium", "urgency": "medium", "i1": "team", "i2": "unknown", "i3": "privacy-context", "i4": "unknown", "u5": "days-2-5", "u6": "operational", "u7": "unknown", "u8": "pending" },
+      "labelBasis": { "policyIds": ["privacy.context", "harm.pending", "deadline.hard-future"], "state": "potential, not active", "rationale": "The possible cross-role exposure is credible but conditional; the scheduled operational change supplies a future Medium floor, not active-harm urgency." }
+    },
+    {
+      "id": "release-14-disciplinary-note-cross-department",
+      "text": "Right now a case officer in another department can open one student's disciplinary note from the conduct portal. We have reproduced it twice and the permission has not been removed.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P1", "impact": "high", "urgency": "high", "i1": "individual", "i2": "unknown", "i3": "privacy-exposure", "i4": "contained", "u5": "now", "u6": "unknown", "u7": "unknown", "u8": "active" },
+      "labelBasis": { "policyIds": ["privacy.active", "security.active", "containment.preserve"], "state": "active unauthorised cross-person access", "containmentState": "contained", "rationale": "A current cross-person disclosure is reproduced and ongoing, which is High Impact and High Urgency." }
+    },
+    {
+      "id": "release-15-volunteer-welfare-account",
+      "text": "The account for a volunteer who left in June still opens three students' welfare plans. The account was used this morning and access removal is still pending.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P1", "impact": "high", "urgency": "high", "i1": "few-users", "i2": "unknown", "i3": "privacy-exposure", "i4": "contained", "u5": "unknown", "u6": "unknown", "u7": "unknown", "u8": "active" },
+      "labelBasis": { "policyIds": ["privacy.active", "security.active", "safeguarding.active", "containment.preserve"], "state": "active excluded-person access", "containmentState": "contained", "rationale": "A former worker retains live access to sensitive welfare records; this is an active safeguarding and privacy breach." }
+    },
+    {
+      "id": "release-16-household-fee-cross-view",
+      "text": "A guardian logged in to the household portal and could read a different student's fee-balance details. The view is still available after signing out and back in.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P1", "impact": "high", "urgency": "high", "i1": "individual", "i2": "unknown", "i3": "privacy-exposure", "i4": "unknown", "u5": "unknown", "u6": "unknown", "u7": "unknown", "u8": "active" },
+      "labelBasis": { "policyIds": ["privacy.active", "financial.confirmed", "containment.preserve"], "state": "active cross-household exposure", "containmentState": "contained", "rationale": "A current guardian-to-other-student disclosure is reproducible and remains active." }
+    },
+    {
+      "id": "release-17-lab-eyewash-control",
+      "text": "The lab safety panel says the eyewash station passed, but the valve is dry and students are using the room this afternoon. Facilities has no replacement unit on site.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P1", "impact": "high", "urgency": "high", "i1": "cohort", "i2": "blocked", "i3": "safety", "i4": "unknown", "u5": "today", "u6": "unknown", "u7": "no", "u8": "active" },
+      "labelBasis": { "policyIds": ["safety.active", "containment.preserve"], "state": "active safety control failure", "containmentState": "contained", "rationale": "People are using a room with a known missing safety control this afternoon and no alternative is available." }
+    },
+    {
+      "id": "release-18-campus-drill-roster",
+      "text": "The drill roster cannot be opened for one campus. The safety coordinator has a current printed copy, and the exercise is scheduled in three days.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P2", "impact": "high", "urgency": "medium", "i1": "one-school", "i2": "impaired", "i3": "safety", "i4": "unknown", "u5": "days-2-5", "u6": "operational", "u7": "yes", "u8": "pending" },
+      "labelBasis": { "policyIds": ["safety.active", "workaround.full", "deadline.hard-near", "containment.preserve"], "state": "current safety-information availability issue", "workaroundState": "full", "containmentState": "contained", "rationale": "Safety information is unavailable digitally for one campus, but the current paper roster preserves the imminent exercise." },
+      "review": { "classification": "acceptable ambiguity", "acceptablePriorities": ["P3"], "note": "The policy clearly supports a safety consequence and a future event, but reviewers may reasonably treat the current paper copy as reducing the consequence itself rather than only urgency." }
+    },
+    {
+      "id": "release-19-transport-claim-cutoff",
+      "text": "The transport claim service rejects submissions from five campuses. There is no paper route, and the funding claim window closes at 5pm today.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P2", "impact": "medium", "urgency": "high", "i1": "multiple-schools", "i2": "blocked", "i3": "unavailable", "i4": "unknown", "u5": "today", "u6": "statutory", "u7": "no", "u8": "active" },
+      "labelBasis": { "policyIds": ["deadline.hard-near", "compliance.context", "containment.preserve"], "state": "active multi-site blocked submission", "workaroundState": "none", "containmentState": "contained", "rationale": "Several campuses cannot submit a time-bound claim, but no missed payment or permanent financial loss is stated, so Impact remains Medium." }
+    },
+    {
+      "id": "release-20-payroll-reconcile-separation",
+      "text": "Today's payroll file was accepted and all salaries landed. Separately, the reconciliation report leaves out two cost centres; the finance team says that cleanup can wait until Thursday.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P4", "impact": "low", "urgency": "low", "i1": "team", "i2": "impaired", "i3": "financial-harm", "i4": "unknown", "u5": "none", "u6": "preference", "u7": "unknown", "u8": "unknown" },
+      "labelBasis": { "policyIds": ["financial.topic", "harm.resolved", "deadline.soft", "containment.preserve"], "state": "payroll resolved; separate report defect", "workaroundState": "full", "containmentState": "contained", "rationale": "Successful payroll is not failed pay; the unrelated reconciliation defect is non-urgent and can wait." }
+    },
+    {
+      "id": "release-21-casual-pay-missing",
+      "text": "Four casual employees are absent from the current pay run. The payroll team has two hours before the bank file cutoff and cannot regenerate the file from this screen.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P1", "impact": "high", "urgency": "high", "i1": "few-users", "i2": "blocked", "i3": "financial-harm", "i4": "unknown", "u5": "now", "u6": "operational", "u7": "unknown", "u8": "active" },
+      "labelBasis": { "policyIds": ["financial.confirmed", "deadline.hard-near", "containment.preserve"], "state": "active same-process missed pay risk", "workaroundState": "none", "containmentState": "contained", "rationale": "Employees are confirmed missing from a live pay run and the immediate bank cutoff leaves no recovery path." }
+    },
+    {
+      "id": "release-22-corrected-pay-history",
+      "text": "Last month's duplicate payslips were corrected and the adjustment is visible. This fortnight's run reconciles normally; I need the old incident number for an audit note.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P4", "impact": "low", "urgency": "low", "i1": "unknown", "i2": "unknown", "i3": "unknown", "i4": "unknown", "u5": "unknown", "u6": "preference", "u7": "unknown", "u8": "unknown" },
+      "labelBasis": { "policyIds": ["financial.topic", "harm.resolved", "containment.preserve"], "state": "historical financial issue resolved", "workaroundState": "full", "containmentState": "contained", "rationale": "The prior duplicate payment issue is corrected and the current run succeeds; this is an audit-documentation request." }
+    },
+    {
+      "id": "release-23-enrolment-restore-lock",
+      "text": "Eighteen enrolment rows disappeared after a cleanup job. They can be rebuilt from Tuesday's snapshot, but the term-start roster locks tomorrow morning.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P2", "impact": "medium", "urgency": "high", "i1": "cohort", "i2": "impaired", "i3": "lost-data", "i4": "unknown", "u5": "tomorrow", "u6": "operational", "u7": "yes", "u8": "active" },
+      "labelBasis": { "policyIds": ["loss.recoverable", "workaround.full", "deadline.hard-near", "containment.preserve"], "state": "active recoverable loss", "recoverability": "recoverable", "workaroundState": "full", "containmentState": "contained", "rationale": "The deleted cohort data is recoverable, but restoration is time-sensitive before the roster lock." }
+    },
+    {
+      "id": "release-24-permission-forms-no-snapshot",
+      "text": "Nine submitted permission forms were overwritten by a second upload. The storage snapshot is unusable, and the appeal panel meets in eight days.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P2", "impact": "high", "urgency": "medium", "i1": "cohort", "i2": "impaired", "i3": "lost-data", "i4": "contained", "u5": "weeks-1-2", "u6": "operational", "u7": "no", "u8": "active" },
+      "labelBasis": { "policyIds": ["loss.unrecoverable", "deadline.hard-future", "containment.preserve"], "state": "active unrecoverable loss", "recoverability": "unrecoverable", "workaroundState": "none", "containmentState": "contained", "rationale": "Material forms are permanently unavailable, producing High Impact; the eight-day panel creates Medium rather than immediate High Urgency." }
+    },
+    {
+      "id": "release-25-timetable-repeating-campus",
+      "text": "Every Monday the timetable import drops the same three bus routes at East Campus. Staff repair the entries before classes and the next import is Friday.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P3", "impact": "medium", "urgency": "low", "i1": "one-school", "i2": "impaired", "i3": "incorrect-data", "i4": "recurring", "u5": "none", "u6": "operational", "u7": "yes", "u8": "unknown" },
+      "labelBasis": { "policyIds": ["recurrence.pattern", "workaround.full"], "state": "recurring contained data issue", "workaroundState": "full", "containmentState": "recurring", "rationale": "The repeated one-campus correction creates cumulative Medium Impact but no current hard cutoff." }
+    },
+    {
+      "id": "release-26-year-group-spread",
+      "text": "A bad year-group mapping is still being copied into the timetable for five campuses. The job is running now, managers need tomorrow's schedules, and there is no alternate feed.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P2", "impact": "high", "urgency": "medium", "i1": "multiple-schools", "i2": "impaired", "i3": "incorrect-data", "i4": "spreading", "u5": "tomorrow", "u6": "operational", "u7": "no", "u8": "active" },
+      "labelBasis": { "policyIds": ["propagation.active", "deadline.hard-near"], "state": "active propagating incorrect data", "workaroundState": "none", "containmentState": "spreading", "rationale": "The stated multi-campus corruption is continuing to spread and a next-day operational need makes urgency at least Medium; no immediate safety or privacy consequence is stated." }
+    },
+    {
+      "id": "release-27-current-narrow-after-history",
+      "text": "Last winter the transcript service was blank for every campus. Today only one adviser sees an empty view; the CSV download for that adviser is complete and everyone else is unaffected.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P4", "impact": "low", "urgency": "low", "i1": "individual", "i2": "impaired", "i3": "unavailable", "i4": "contained", "u5": "unknown", "u6": "unknown", "u7": "yes", "u8": "unknown" },
+      "labelBasis": { "policyIds": ["harm.resolved", "workaround.full", "containment.preserve"], "state": "historical broad outage plus current individual issue", "workaroundState": "full", "containmentState": "contained", "rationale": "Current scope is one adviser, not the historical campus-wide scope; a complete export is available and no deadline exists." }
+    },
+    {
+      "id": "release-28-certificate-grant-window",
+      "text": "The old compliance certificate expired in May. The replacement portal works now, but the new certificate is required for a grant submission in ten days.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P3", "impact": "medium", "urgency": "medium", "i1": "unknown", "i2": "unknown", "i3": "unavailable", "i4": "unknown", "u5": "weeks-1-2", "u6": "statutory", "u7": "unknown", "u8": "pending" },
+      "labelBasis": { "policyIds": ["harm.resolved", "deadline.hard-future", "compliance.context", "safeguarding.pending"], "state": "historical certificate issue; current future requirement", "rationale": "The expired certificate is historical, while a committed ten-day grant requirement supplies the policy's future Medium floor." }
+    },
+    {
+      "id": "release-29-export-timestamp-observation",
+      "text": "At 09:12 I noticed yesterday's timestamp beside the committee export. The meeting is next month and nobody has given us a required-by date; the file opens normally.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P4", "impact": "low", "urgency": "low", "i1": "unknown", "i2": "unknown", "i3": "unknown", "i4": "unknown", "u5": "none", "u6": "none", "u7": "unknown", "u8": "unknown" },
+      "labelBasis": { "policyIds": ["deadline.timestamp", "workaround.full"], "state": "timestamp observation, no committed deadline", "workaroundState": "full", "rationale": "A noticed timestamp and a distant meeting do not create urgency; the file remains usable." }
+    },
+    {
+      "id": "release-30-no-submit-failure",
+      "text": "There is no error when submitting the travel request. I only need instructions for changing the notification address, and the current form completes successfully.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P4", "impact": "low", "urgency": "low", "i1": "individual", "i2": "unknown", "i3": "unknown", "i4": "unknown", "u5": "none", "u6": "preference", "u7": "unknown", "u8": "unknown" },
+      "labelBasis": { "policyIds": ["context.documentation", "harm.resolved"], "state": "negated failure; functioning submission", "rationale": "The explicit absence of a submission error leaves only a low-impact how-to request." }
+    },
+    {
+      "id": "release-31-critical-archive-howto",
+      "text": "The archive cluster is marked critical in the catalogue. How do I add a read-only viewer? There is no outage, and the existing administrator account is unchanged.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P4", "impact": "low", "urgency": "low", "i1": "individual", "i2": "unknown", "i3": "unknown", "i4": "unknown", "u5": "none", "u6": "preference", "u7": "unknown", "u8": "unknown" },
+      "labelBasis": { "policyIds": ["criticality.context", "context.documentation", "platform.neutral"], "state": "no incident", "rationale": "Critical-system metadata cannot elevate an ordinary access how-to request without an actual consequence." }
+    },
+    {
+      "id": "release-32-retired-phone-workaround",
+      "text": "The phone route we used last term was retired by the supplier. Two offices now cannot lodge attendance adjustments before close of business today, and the web form rejects every attempt.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P2", "impact": "medium", "urgency": "high", "i1": "team", "i2": "blocked", "i3": "unavailable", "i4": "unknown", "u5": "today", "u6": "operational", "u7": "no", "u8": "active" },
+      "labelBasis": { "policyIds": ["workaround.unknown", "deadline.hard-near", "containment.preserve"], "state": "active blocked process; historical route unavailable", "workaroundState": "no", "containmentState": "contained", "rationale": "The old workaround is not current evidence; two offices are blocked against a same-day operational cutoff." }
+    },
+    {
+      "id": "release-33-household-records-separated",
+      "text": "The family portal shows each member only their own allergy record; we have not found any cross-household view. Could the sharing option be considered for next year?",
+      "expected": { "assessmentStatus": "assessed", "priority": "P4", "impact": "low", "urgency": "low", "i1": "unknown", "i2": "unknown", "i3": "privacy-context", "i4": "contained", "u5": "none", "u6": "preference", "u7": "unknown", "u8": "unknown" },
+      "labelBasis": { "policyIds": ["privacy.context", "deadline.soft", "containment.preserve"], "state": "no exposure; future feature request", "workaroundState": "full", "containmentState": "contained", "rationale": "Household data is present but explicitly separated; a future feature request has no active privacy consequence." }
+    },
+    {
+      "id": "release-34-potential-export-and-analytics",
+      "text": "A proposed export permission may expose donor records after Friday's approval; it has not been enabled. Separately, the analytics job is failing for six departments, but their managers can use the CSV extract until tomorrow.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P3", "impact": "medium", "urgency": "medium", "i1": "team", "i2": "impaired", "i3": "unavailable", "i4": "unknown", "u5": "tomorrow", "u6": "operational", "u7": "yes", "u8": "pending" },
+      "labelBasis": { "policyIds": ["privacy.context", "harm.pending", "workaround.full", "deadline.hard-near", "containment.preserve"], "state": "potential privacy issue plus active separate analytics failure", "workaroundState": "full", "containmentState": "contained", "rationale": "The privacy concern is conditional, while the separate analytics failure has a current equivalent extract and a next-day operational expectation." }
+    },
+    {
+      "id": "release-35-small-group-absence-import",
+      "text": "The absence import skipped seven pupils in one year group. The attendance clerk can enter them manually, and the register closes in two days.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P3", "impact": "medium", "urgency": "medium", "i1": "cohort", "i2": "impaired", "i3": "incorrect-data", "i4": "contained", "u5": "days-2-5", "u6": "operational", "u7": "yes", "u8": "active" },
+      "labelBasis": { "policyIds": ["workaround.full", "deadline.hard-near", "containment.preserve"], "state": "active bounded incorrect data", "workaroundState": "full", "containmentState": "contained", "rationale": "A small cohort's attendance data is wrong, but manual completion and a two-day register requirement keep the case at Medium Impact/Medium Urgency." }
+    },
+    {
+      "id": "release-36-submission-reference-only",
+      "text": "Ref 48291 mentions the grants service, but the only request is to rename a saved view. No grant submission is late, and the service has been processing normally all week.",
+      "expected": { "assessmentStatus": "assessed", "priority": "P4", "impact": "low", "urgency": "low", "i1": "unknown", "i2": "unknown", "i3": "unknown", "i4": "unknown", "u5": "unknown", "u6": "preference", "u7": "unknown", "u8": "unknown" },
+      "labelBasis": { "policyIds": ["financial.topic", "context.documentation", "harm.resolved"], "state": "reference-only context; no failure", "rationale": "A ticket number and service name do not create a late submission or business consequence." }
+    }
+  ]
+}
