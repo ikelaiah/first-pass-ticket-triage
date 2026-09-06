@@ -22,8 +22,8 @@ assert.ok(!requestedOutput || requestedOutput !== '--output', '--output requires
 const RESULT_PATH = requestedOutput
   ? (isAbsolute(requestedOutput) ? requestedOutput : resolve(process.cwd(), requestedOutput))
   : join(ROOT, '..', 'artifacts', 'validation', 'final-release-' + new Date().toISOString().replace(/[:.]/g, '-') + '.json');
-const EXPECTED_BYTES = 29726;
-const EXPECTED_SHA256 = '90f90812671113a12e34d43ec6aec68cf26aee6e64ffb27dc536a639b87542bf';
+const EXPECTED_BYTES = 29784;
+const EXPECTED_SHA256 = '44c3c7902dcdb33f50eedef915581f72af89ca7bd676ef004f9337e0d6db3b53';
 
 const fixtureBytes = readFileSync(FIXTURE_PATH);
 const fixtureSha256 = createHash('sha256').update(fixtureBytes).digest('hex');
