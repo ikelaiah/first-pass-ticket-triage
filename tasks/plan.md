@@ -1,5 +1,38 @@
 # Implementation Plan: v0.5.0 reliability, privacy, and safety pass
 
+## v0.10.0 Triage Handoff MVP
+
+Build a small result-projection layer that turns existing analysis into a concise,
+channel-neutral internal handoff. Keep requester-facing Suggested Reply separate and
+preserve every existing extraction, Eight Question, Impact, Urgency, policy, matrix,
+P1–P4, and Safe Next Action behavior.
+
+### Ordered tasks
+
+1. Confirm the v0.9.1 remote baseline and record exact local/browser gates.
+2. Define the handoff contract and write failing formatter/UI tests first.
+3. Implement pure plain-text and Markdown projections from existing result fields;
+   ensure unassessed and Clarify cases remain non-actionable/explicitly cautious.
+4. Add a dedicated Triage Handoff panel with compact preview, copy handoff, copy
+   Markdown, and Download `.md`; keep Suggested Reply with Copy reply only.
+5. Add focused documentation, README/changelog/version metadata, and task records.
+6. Compare v0.9.1 and v0.10.0 across the full 385-case set with zero semantic
+   divergences, then run all local and browser gates.
+7. Complete review, PR, CI, merge, tag, release, Pages, and live-site checks.
+
+### Acceptance criteria
+
+- `buildHandoffText` and `buildHandoffMarkdown` are deterministic pure projections;
+  they do not call NLP or mutate the analysis result.
+- Handoff reports existing Priority/Impact/Urgency/Safe Next Action values exactly,
+  with Known, Unknown, and up to three reused Ask questions.
+- Unassessed cases never export an actionable priority; Clarify explicitly says no
+  operational intervention is recommended until facts are confirmed.
+- Suggested Reply remains requester-facing with Copy reply; handoff owns Markdown
+  copy/download controls.
+- Existing triage and Safe Next Action behavior is byte-equivalent across the full
+  v0.9.1 comparison corpus.
+
 ## v0.9.1 Eight-Question Model Consistency
 
 Clarify that the eight Decision Questions are the analyst-facing model built

@@ -9,7 +9,8 @@ import {
   priorityDefinition, MATRIX, IMPACT_ORDER, URGENCY_ORDER
 } from '../engine/priority-matrix.js';
 import { organisationConfig } from '../config.js';
-import { buildReply, buildMarkdown } from './reply.js';
+import { buildReply } from './reply.js';
+import { buildHandoffText, buildHandoffMarkdown } from './handoff.js';
 
 /** Non-colour severity indicator: four blocks, filled by severity. */
 function severityBlocks(priority) {
@@ -366,9 +367,7 @@ function copyButton(text, label) {
         btn.textContent = 'Copied';
         setTimeout(() => { btn.textContent = prev; }, 1400);
       };
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(text).then(done);
-      } else {
+      const fallback = () => {
         const ta = document.createElement('textarea');
         ta.value = text;
         document.body.appendChild(ta);
@@ -376,37 +375,56 @@ function copyButton(text, label) {
         document.execCommand('copy');
         document.body.removeChild(ta);
         done();
-      }
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done).catch(fallback);
+      } else fallback();
     }
   }, label);
 }
 
-/** Polite, short, audience-neutral draft reply + handoff exports. */
-function replySection(result) {
-  const reply = buildReply(result);
-  const markdown = buildMarkdown(result);
-  const download = () => {
-    const blob = new Blob([markdown], { type: 'text/markdown' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'triage-' + (result.assessmentStatus === 'assessed' && result.suggestedPriority
+function downloadMarkdown(markdown, filename) {
+  const blob = new Blob([markdown], { type: 'text/markdown' });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = filename;
+  document.body.appendChild(anchor);
+  anchor.click();
+  document.body.removeChild(anchor);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+/** Internal, onward-facing summary built from the existing analysis result. */
+function handoffSection(result) {
+  const text = buildHandoffText(result);
+  const markdown = buildHandoffMarkdown(result);
+  const filename = 'triage-handoff-' +
+    (result.assessmentStatus === 'assessed' && result.suggestedPriority
       ? result.suggestedPriority
       : 'unassessed') + '.md';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-  };
+  return el('div', {}, [
+    el('pre', { class: 'handoff-box' }, text),
+    el('div', { class: 'actions' }, [
+      copyButton(text, 'Copy handoff'),
+      copyButton(markdown, 'Copy Markdown'),
+      el('button', { class: 'btn btn-quiet', type: 'button', onClick: () => downloadMarkdown(markdown, filename) }, 'Download .md')
+    ]),
+    el('p', { class: 'hint muted' },
+      'Internal, channel-neutral summary. Nothing is stored or transmitted.')
+  ]);
+}
+
+/** Polite, short, audience-neutral draft reply. */
+function replySection(result) {
+  const reply = buildReply(result);
   return el('div', {}, [
     el('pre', { class: 'reply-box' }, reply),
     el('div', { class: 'actions' }, [
-      copyButton(reply, 'Copy reply'),
-      copyButton(markdown, 'Copy markdown'),
-      el('button', { class: 'btn btn-quiet', type: 'button', onClick: download }, 'Download .md')
+      copyButton(reply, 'Copy reply')
     ]),
     el('p', { class: 'hint muted' },
-      'A neutral draft for any audience — refine before sending. Nothing is stored or transmitted.')
+      'Requester-facing draft — refine before sending. Nothing is stored or transmitted.')
   ]);
 }
 
@@ -557,6 +575,7 @@ export function renderResult(container, result, options = {}) {
           'Ignored about ' + result.strippedChars.toLocaleString() +
           ' characters of email signatures, disclaimers and image references.')
       : null,
+    panel('Triage Handoff', handoffSection(result), 'panel-handoff'),
     // Eight questions panel — the framework, visible on every result
     panel('8 Questions — Impact vs Urgency', eightQuestionsPanel(result), 'panel-eight'),
     panel('Suggested reply (draft)', replySection(result), 'panel-reply'),

@@ -1120,6 +1120,8 @@ summary::marker { color: var(--muted); }
 .facet-quote { font-size: 0.82rem; font-style: italic; color: var(--muted); margin-top: 0.15rem; background: var(--surface-3); border-radius: 4px; padding: 0 0.25rem; display: inline-block; }
 .facet-hint { font-size: 0.78rem; margin-top: 0.2rem; line-height: 1.4; }
 .panel-eight h3 { color: var(--accent); }
+.panel-handoff { border-left: 4px solid var(--accent); margin-top: 1rem; }
+.panel-handoff h3 { color: var(--accent); }
 
 .q-tag {
   display: inline-block;
@@ -1149,6 +1151,19 @@ summary::marker { color: var(--muted); }
   margin: 0 0 0.6rem;
   user-select: all;
 }
+.handoff-box {
+  font-family: "Cascadia Mono", Consolas, "SF Mono", Menlo, monospace;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  background: var(--surface-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.7rem 0.85rem;
+  margin: 0 0 0.6rem;
+  user-select: all;
+}
+.panel-handoff .actions { margin-top: 0.15rem; }
 .panel-reply h3 { color: var(--down); }
 
 .refined-line {

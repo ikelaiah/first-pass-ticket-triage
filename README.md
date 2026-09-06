@@ -2,12 +2,13 @@
 
 > Local-first, explainable P1–P4 suggestions for IT and application support.
 
-v0.9.0: **Safe Next Action**.
+v0.10.0: **Triage Handoff MVP**.
 
 Paste a messy ticket, email or work request. Get a suggested priority, the evidence
 behind it, the facts that are missing, and the questions worth asking next.
 v0.8 answers priority and reasoning; v0.9 also recommends the safest useful
-next step from defensible evidence.
+next step from defensible evidence; v0.10 adds a concise internal handoff that
+summarises those existing decisions without making new ones.
 
 Built for an Application Specialist / IT support role servicing multiple schools and
 internal business teams. Plain HTML, CSS and vanilla JavaScript — no framework, no
@@ -80,7 +81,8 @@ See [PRIVACY.md](PRIVACY.md) for how to verify this yourself in about a minute.
 - **Explicit abstention** — unassessed input has no actionable suggested priority; the
   internal matrix result remains visible only to explain why the engine abstained
 - **Ranked follow-up questions** — diagnostic first, then *would change priority* (verified by re-running the scoring with each hypothetical answer), then *raises confidence*; capped at six
-- **Suggested reply (draft)** — a polite, short, audience-neutral draft ("what we understood / suggested priority / what we still need"), plus Copy markdown and Download .md for handoff
+- **Triage Handoff** — a compact internal/onward-facing Known · Unknown · Ask summary with the existing Priority, Impact, Urgency and Safe Next Action, plus Copy handoff, Copy Markdown and Download .md
+- **Suggested reply (draft)** — a polite, short, requester-facing draft ("what we understood / suggested priority / what we still need"), with Copy reply
 - **Share link** — `#t=` URL fragment carries the ticket (2000-char cap); fragments are
   not sent to the server, nothing is stored, and the link *is* the ticket
 - **Inline relevance nudge** — urgency or blocked wording without a recognised system/symptom gets a hint before analysis
@@ -154,6 +156,11 @@ P1 / P2 / P3 / P4  + Assessment confidence · Evidence completeness · Reasoning
 Safe Next Action runs in parallel from structured evidence after this path. It
 cannot feed back into Impact, Urgency, policy calibration, the matrix, or P1–P4.
 See [the Safe Next Action contract](docs/safe-next-action.md).
+
+The result also offers a [Triage Handoff](docs/triage-handoff.md): a deterministic,
+channel-neutral plain-text or Markdown projection for internal comments and onward
+messages. It summarizes what the existing analysis already knows, what remains
+unknown, and the existing follow-up questions. It never changes the analysis.
 
 The eight questions are not eight regexes or eight raw signals. Multiple structured
 evidence signals can contribute to one Decision Question—for example, symptom,

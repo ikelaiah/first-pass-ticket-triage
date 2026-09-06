@@ -1,5 +1,20 @@
 # v0.5.0 reliability, privacy, and safety checklist
 
+## v0.10.0 Triage Handoff MVP
+
+- [x] Confirm remote `main` matches released v0.9.1 and record baseline gates.
+- [x] Read the handoff-related source, UI, tests, and normative docs.
+- [x] Add failing pure formatter and UI contract tests.
+- [x] Implement deterministic plain-text/Markdown handoff projection.
+- [x] Add the dedicated Triage Handoff panel and move Markdown controls out of
+  Suggested Reply; retain Copy reply.
+- [x] Add README, changelog, normative handoff doc, version metadata, and task notes.
+- [x] Run full tests and the complete v0.9.1 semantic comparison with zero
+  triage/Safe Next Action divergences.
+- [x] Run locked validator, syntax/privacy/diff checks, and final browser qualification.
+- [x] Complete browser qualification and final code review.
+- [ ] Complete remote PR, CI, merge, tag, release, and Pages operations.
+
 ## v0.9.1 Eight-Question Model Consistency
 
 - [x] Confirm `main` matches the v0.9.0 release and record baseline gates.
