@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.10.0] - 2026-09-07 — Triage Handoff MVP
+
+### Added
+
+- Added a deterministic, local-only Triage Handoff projection with plain-text and
+  Markdown output for internal/onward-facing comments, messages, email, and docs.
+- Added Known, Unknown, and Ask sections sourced only from existing result fields,
+  including the existing Safe Next Action and ranked follow-up questions.
+- Added a dedicated result panel with Copy handoff, Copy Markdown, and Download `.md`.
+
+### Changed
+
+- Kept Suggested Reply requester-facing with Copy reply only; internal Markdown
+  controls now live in the Triage Handoff panel.
+
+### Unchanged
+
+- Evidence extraction, Eight Questions, Impact, Urgency, policy calibration, the
+  priority matrix, P1–P4, and Safe Next Action make no new decisions for this release.
+- No dependencies, backend, API, integration, persistence, telemetry, or AI/LLM
+  summarization were added.
+
 ## [0.9.1] - 2026-09-06 — Eight-Question Model Consistency
 
 ### Clarified

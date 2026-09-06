@@ -60,7 +60,7 @@ export function buildReply(result) {
   return lines.join('\n');
 }
 
-/** Markdown triage slip for handoff into tickets, docs or email. */
+/** Legacy eight-question Markdown slip retained for compatibility tests. */
 export function buildMarkdown(result) {
   if (!result || result.empty) return '';
   const assessed = result.assessmentStatus === 'assessed' && Boolean(result.suggestedPriority);

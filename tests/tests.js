@@ -20,6 +20,7 @@ import { registerFacetTests } from './facet-tests.js';
 import { registerPolicyTests } from './policy-tests.js';
 import { registerNextActionTests } from './next-action-tests.js';
 import { registerEightQuestionContractTests } from './eight-question-contract-tests.js';
+import { registerHandoffTests } from './handoff-tests.js';
 import { legacyRegressionCases } from './fixtures/legacy-regressions.js';
 import {
   encodeTicket, decodeTicket, tooLongForShare, readTicketFromLocation,
@@ -2599,6 +2600,7 @@ registerFacetTests(test, ok);
 registerPolicyTests(test, ok);
 registerNextActionTests(test, ok);
 registerEightQuestionContractTests(test, ok);
+registerHandoffTests(test, ok);
 
 function legacyFacetState(result, facet) {
   if (facet === 'i1') return result.eightFacets.i1Scope.value;
