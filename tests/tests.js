@@ -5,7 +5,8 @@
  * (tests/run.mjs). No framework, no build step, no network.
  */
 import { analyse } from '../js/engine/analyzer.js';
-import { createDocument, isNegated, normalise } from '../js/engine/negation.js';
+import { createDocument, isNegated, normalise, scan } from '../js/engine/negation.js';
+import { createEvidenceLedger } from '../js/engine/evidence.js';
 import { detectScope } from '../js/engine/scope.js';
 import { detectWorkaround } from '../js/engine/workaround.js';
 import { detectDeadline } from '../js/engine/deadline.js';
@@ -70,6 +71,62 @@ function risk(text, key, expected) {
   const actual = Boolean(result.risks[key]);
   return ok(actual === expected, 'risks.' + key + ' = ' + actual);
 }
+
+/* ---------------------------------------------------------- evidence -- */
+
+test('Evidence', 'clause facts retain current and historical context', () => {
+  const doc = createDocument('Payments are currently failing. Last term, payments failed after the cutoff.');
+  const ledger = createEvidenceLedger(doc);
+  const hits = scan(doc, [{ m: 'payments are currently failing' }, { m: 'payments failed' }]);
+  const current = ledger.addFromHit({ type: 'harm-state', value: 'active', hit: hits[0] });
+  const historical = ledger.addFromHit({ type: 'harm-state', value: 'active', hit: hits[1] });
+  return ok(current.temporal === 'current' && historical.temporal === 'historical' &&
+    current.clauseIndex === 0 && historical.clauseIndex === 1,
+  JSON.stringify({ current, historical }));
+});
+
+test('Evidence', 'negated and hypothetical facts remain non-current', () => {
+  const negatedDoc = createDocument('No payments are failing.');
+  const negatedHit = scan(negatedDoc, [{ m: 'payments are failing' }])[0];
+  const negated = createEvidenceLedger(negatedDoc)
+    .addFromHit({ type: 'harm-state', value: 'active', hit: negatedHit });
+  const hypotheticalDoc = createDocument('Payments will fail tomorrow if the certificate is not renewed.');
+  const hypothetical = createEvidenceLedger(hypotheticalDoc).add({
+    type: 'harm-state', value: 'active', quote: 'payments will fail tomorrow', clauseIndex: 0
+  });
+  return ok(negated.polarity === 'negated' && hypothetical.temporal === 'hypothetical',
+    JSON.stringify({ negated, hypothetical }));
+});
+
+test('Evidence', 'authority and comparator context survive normalization', () => {
+  const doc = createDocument('The previous message says every campus failed; today one student is affected.');
+  const ledger = createEvidenceLedger(doc);
+  const quoted = ledger.add({
+    type: 'scope', value: 'all-schools', quote: 'every campus failed', clauseIndex: 0,
+    context: 'quoted', role: 'comparator'
+  });
+  const inferred = ledger.add({
+    type: 'workaround', value: 'yes', quote: 'derived alternative', clauseIndex: 1,
+    authority: 'inferred'
+  });
+  const confirmed = ledger.add({
+    type: 'scope', value: 'individual', quote: 'manual input',
+    authority: 'analyst-confirmed', temporal: 'current', role: 'primary'
+  });
+  return ok(quoted.context === 'quoted' && quoted.role === 'comparator' &&
+    inferred.authority === 'inferred' && confirmed.authority === 'analyst-confirmed',
+  JSON.stringify({ quoted, inferred, confirmed }));
+});
+
+test('Evidence', 'projection candidates exclude historical, negated, hypothetical and comparator facts', () => {
+  const doc = createDocument('Last term every campus failed, but today two students are affected.');
+  const ledger = createEvidenceLedger(doc);
+  ledger.add({ type: 'scope', value: 'all-schools', quote: 'every campus', clauseIndex: 0 });
+  ledger.add({ type: 'scope', value: 'few-users', quote: 'two students', clauseIndex: 1 });
+  ledger.add({ type: 'scope', value: 'corporation-wide', quote: 'comparison only', clauseIndex: 1, role: 'comparator' });
+  const candidates = ledger.currentPrimary('scope');
+  return ok(candidates.length === 1 && candidates[0].value === 'few-users', JSON.stringify(candidates));
+});
 
 /* --------------------------------------------------------- 1. the matrix -- */
 
