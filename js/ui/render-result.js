@@ -224,6 +224,46 @@ function missingSection(result) {
   return el('div', {}, nodes);
 }
 
+function nextActionSection(result) {
+  const next = result.nextAction;
+  if (!next) return null;
+  const names = {
+    clarify: 'Clarify', verify: 'Verify', investigate: 'Investigate',
+    contain: 'Contain', escalate: 'Escalate', plan: 'Plan'
+  };
+  const icons = { clarify: '❓', verify: '✓', investigate: '🔎', contain: '⛔', escalate: '↑', plan: '□' };
+  const evidence = (next.evidenceUsed || []).map((item) => item.quote || item.value || item.kind)
+    .filter(Boolean);
+  const nodes = [
+    el('p', { class: 'next-action-name' }, [
+      el('span', { 'aria-hidden': 'true' }, icons[next.action] || '•'),
+      ' ' + (names[next.action] || next.action)
+    ]),
+    el('p', {}, next.reason)
+  ];
+  if (evidence.length) {
+    nodes.push(el('h4', {}, 'Evidence used'));
+    nodes.push(el('ul', { class: 'evidence' }, evidence.map((item) =>
+      el('li', {}, [el('span', { class: 'tick', 'aria-hidden': 'true' }, '✓'), item]))));
+  }
+  if (next.blockers?.length) {
+    nodes.push(el('h4', {}, 'Still unknown'));
+    nodes.push(el('ul', { class: 'missing' }, next.blockers.map((item) => el('li', {}, item))));
+  }
+  if (next.clarificationQuestions?.length) {
+    nodes.push(el('h4', {}, 'Confirm'));
+    nodes.push(el('ul', { class: 'questions' }, next.clarificationQuestions.map((item) => el('li', {}, item))));
+  }
+  nodes.push(el('details', { class: 'next-action-diagnostic' }, [
+    el('summary', {}, 'Diagnostic rule'),
+    el('code', {}, next.ruleId)
+  ]));
+  return el('section', { class: 'panel panel-next-action' }, [
+    el('h3', {}, 'Safe Next Action'),
+    el('div', {}, nodes)
+  ]);
+}
+
 function confidenceSection(result) {
   const nodes = [
     el('p', { class: 'confidence-line' }, [
@@ -470,6 +510,7 @@ export function renderResult(container, result, options = {}) {
 
   replace(container, el('div', { class: 'result' }, [
     banner,
+    nextActionSection(result),
     result.knownAnswer
       ? el('section', { class: 'known-answer' }, [
           el('h3', {}, 'This may already be answered'),

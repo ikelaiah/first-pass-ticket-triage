@@ -1,5 +1,9 @@
 # Priority Framework
 
+> Safe Next Action is a separate advisory output documented in
+> [docs/safe-next-action.md](docs/safe-next-action.md). It does not change any
+> Impact, Urgency, policy, matrix, or P1–P4 rule in this framework.
+
 The canonical description of how First Pass decides what it suggests.
 
 This document is written for humans first. The implementation in `js/engine/` follows

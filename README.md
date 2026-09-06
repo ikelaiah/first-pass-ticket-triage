@@ -2,10 +2,12 @@
 
 > Local-first, explainable P1–P4 suggestions for IT and application support.
 
-v0.8.0: **Triage Policy Calibration**.
+v0.9.0: **Safe Next Action**.
 
 Paste a messy ticket, email or work request. Get a suggested priority, the evidence
 behind it, the facts that are missing, and the questions worth asking next.
+v0.8 answers priority and reasoning; v0.9 also recommends the safest useful
+next step from defensible evidence.
 
 Built for an Application Specialist / IT support role servicing multiple schools and
 internal business teams. Plain HTML, CSS and vanilla JavaScript — no framework, no
@@ -70,6 +72,8 @@ See [PRIVACY.md](PRIVACY.md) for how to verify this yourself in about a minute.
 - **IT-domain classification** — identity, integration, SQL, data pipeline, Power BI, payroll, and more
 - **Critical-risk flags** — payroll, payments, security, privacy, student/staff safety, WWCC/safeguarding, compliance, data integrity, critical integration
 - **Explainable decisions** — evidence → impact → urgency → matrix → priority, shown in full
+- **Safe Next Action** — a separate Clarify / Verify / Investigate / Contain /
+  Escalate / Plan advisory; it never changes the suggested priority
 - **8 Questions — Impact vs Urgency** — I1 Who/how many? · I2 Blocked process? · I3 Wrong/exposed/lost/unsafe? · I4 Contained or spreading? · U5 When needed? · U6 Deadline driver (requirement vs preference)? · U7 Workaround daily cost? · U8 Harm now or waiting? — each shown as Answered/Inferred/Unknown with row-aligned cards, and *key driver* badges on the unknowns that could flip the cell
 - **Assessment confidence and evidence completeness** — heuristic evidence coverage,
   clearly labelled as not a probability
@@ -145,6 +149,10 @@ Impact + Urgency  (weighted, then critical-risk modifiers)
    ↓
 P1 / P2 / P3 / P4  + Assessment confidence · Evidence completeness · Reasoning · Missing info
 ```
+
+Safe Next Action runs in parallel from structured evidence after this path. It
+cannot feed back into Impact, Urgency, policy calibration, the matrix, or P1–P4.
+See [the Safe Next Action contract](docs/safe-next-action.md).
 
 The natural-language engine never picks a priority. It establishes **Impact** and
 **Urgency** from evidence; critical-risk modifiers may raise or lower those two values;

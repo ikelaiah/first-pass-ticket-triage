@@ -24,6 +24,7 @@ import { detectRisks, emptyRisks, RISK_LABELS } from './risks.js';
 import { assessImpact } from './impact.js';
 import { assessUrgency } from './urgency.js';
 import { applyTriagePolicy } from './policy.js';
+import { recommendNextAction } from './next-action.js';
 import { detectRecoverability } from './recoverability.js';
 import { assessConfidence } from './confidence.js';
 import {
@@ -290,6 +291,58 @@ function policyEvidence(context) {
     technicalDomain: domainResult?.domain || 'unknown',
     accessibilityIssue: domainResult?.domain === 'accessibility',
     containment: containment || {}
+  };
+}
+
+function latestCurrentFact(facts, type, value = null) {
+  return facts.find((fact) => fact.type === type &&
+    (value === null || fact.value === value) && fact.temporal === 'current' &&
+    fact.polarity === 'positive' && fact.context === 'primary' && fact.role !== 'comparator') || null;
+}
+
+/** Map existing projections into the independent Safe Next Action contract. */
+function nextActionEvidence(context) {
+  const { assessmentStatus, workTypeResult, blockedProcess, deadlineResult,
+    workaroundResult, containment, harmTiming, symptom, risks, modifiers,
+    riskResult, sourceOfTruth, urgencyResult, evidenceFacts, applied, decisionContext, decisionText } = context;
+  const facts = evidenceFacts || [];
+  const authorityFor = (type, value, fallback = 'unknown') =>
+    latestCurrentFact(facts, type, value)?.authority || fallback;
+  const selected = (value, authority, quote = null) => ({ value, authority, quote });
+  const riskAuthority = (key) => {
+    if (applied.risks && Object.prototype.hasOwnProperty.call(applied.risks, key)) return 'analyst-confirmed';
+    return riskResult.evidence.some((item) => item.key === key) ? 'explicit' : 'unknown';
+  };
+  const currentHarm = latestCurrentFact(facts, 'harm-timing', 'active');
+  const eventAuthority = currentHarm?.authority || 'inferred';
+  const events = [];
+  if (modifiers.exposureActive) events.push({ kind: 'active-exposure', authority: eventAuthority, temporal: 'current', quote: currentHarm?.quote || null });
+  // A direct observed-disclosure phrase is still insufficient to infer its
+  // extent or current status. Preserve it as inferred action evidence so the
+  // policy asks for confirmation rather than planning around a possible breach.
+  if (!modifiers.exposureActive && /\bvisible\s+to\s+(?:the\s+)?wrong\s+(?:user|users|person|people)\b/i.test(decisionText || '')) {
+    events.push({ kind: 'active-exposure', authority: 'inferred', temporal: 'current' });
+  }
+  if (modifiers.propagating) events.push({ kind: 'propagation', authority: applied.contained === 'spreading' ? 'analyst-confirmed' : 'explicit', temporal: 'current' });
+  if (modifiers.immediateSafeguarding && currentHarm) events.push({ kind: 'safeguarding-consequence', authority: eventAuthority, temporal: 'current', quote: currentHarm.quote });
+  if (risks.safety && currentHarm) events.push({ kind: 'safety-consequence', authority: eventAuthority, temporal: 'current', quote: currentHarm.quote });
+  if (modifiers.unpaidRisk && currentHarm) events.push({ kind: 'material-financial-consequence', authority: eventAuthority, temporal: 'current', quote: currentHarm.quote });
+  return {
+    assessmentStatus,
+    workType: workTypeResult.workType,
+    businessConsequence: selected(blockedProcess?.level || 'unknown', applied.consequence ? 'analyst-confirmed' : blockedProcess?.source === 'explicit' ? 'explicit' : 'inferred', blockedProcess?.label || null),
+    deadline: selected(deadlineResult.deadline, applied.deadline ? 'analyst-confirmed' : deadlineResult.committed ? 'explicit' : authorityFor('deadline', deadlineResult.deadline)),
+    deadlineRelationship: deadlineResult.deadline !== 'unknown' && deadlineResult.deadline !== 'none' && !deadlineResult.committed ? 'unknown' : 'known',
+    workaround: selected(workaroundResult.workaround, applied.workaround ? 'analyst-confirmed' : authorityFor('workaround', workaroundResult.workaround)),
+    containment: selected(containment.propagating ? 'spreading' : containment.contained ? 'contained' : 'unknown', applied.contained ? 'analyst-confirmed' : containment.containedEvidence || containment.propagatingEvidence ? 'explicit' : 'unknown'),
+    harm: selected(harmTiming.timing, currentHarm?.authority || 'unknown'),
+    currentFailure: selected(Boolean(symptom.hasFailure), symptom.hasFailure ? 'explicit' : 'unknown', symptom.hasFailure ? 'Current technical failure' : null),
+    risks: Object.fromEntries(Object.keys(risks).map((key) => [key, selected(Boolean(risks[key]), riskAuthority(key))])),
+    events,
+    verification: sourceOfTruth || /\bwhat happened\b/i.test(decisionText || '') ? 'source' : null,
+    canWait: Boolean(urgencyResult.lowUrgencySignal),
+    temporalState: decisionContext.status === 'resolved' ? 'resolved' :
+      harmTiming.timing === 'pending' ? 'ambiguous' : 'current'
   };
 }
 
@@ -1219,6 +1272,13 @@ export function analyse(rawText, overrides = {}) {
     recurring, undetected, inScope, containment, driver, harmTiming, blockedProcess,
     simulate, currentPriority: priority, currentImpact: impact
   });
+  // Advisory-only: this is downstream of the frozen v0.8 scoring path.
+  const nextAction = recommendNextAction(nextActionEvidence({
+    assessmentStatus, workTypeResult, blockedProcess, deadlineResult,
+    workaroundResult, containment, harmTiming, symptom, risks, modifiers,
+    riskResult, sourceOfTruth, urgencyResult, evidenceFacts: evidenceLedger.all(),
+    applied, decisionContext, decisionText
+  }));
 
   const rules = modified.rules.slice();
   if (applied.impact) {
@@ -1275,6 +1335,7 @@ export function analyse(rawText, overrides = {}) {
     priority,
     suggestedPriority,
     assessmentStatus,
+    nextAction,
     justification: buildJustification({
       scopeResult, workaroundResult, deadlineResult, symptom,
       riskFlags: Object.entries(risks).filter(([, v]) => v)
