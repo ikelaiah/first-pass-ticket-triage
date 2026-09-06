@@ -11,6 +11,7 @@ import { detectScope } from '../js/engine/scope.js';
 import { detectWorkaround } from '../js/engine/workaround.js';
 import { detectDeadline } from '../js/engine/deadline.js';
 import { detectDriver } from '../js/engine/driver.js';
+import { detectHarmTiming } from '../js/engine/harm-timing.js';
 import { priorityFor, matrixCells } from '../js/engine/priority-matrix.js';
 import { EXAMPLES } from '../js/data/examples.js';
 import { buildReply, buildMarkdown } from '../js/ui/reply.js';
@@ -2079,6 +2080,27 @@ test('Harm timing', 'a currently blocked business operation is active harm', () 
   const result = analyse('Tutors cannot submit grades and there is no workaround.');
   return ok(result.businessConsequence.level === 'blocked' && result.harmTiming.timing === 'active',
     JSON.stringify({ consequence: result.businessConsequence, harmTiming: result.harmTiming }));
+});
+
+test('Harm timing', 'current pending harm outranks a historical active statement', () => {
+  const result = detectHarmTiming(createDocument(
+    'Last term, families were currently exposed. The proposed export could expose records if approval is granted.'
+  ), { symptom: 'unknown' });
+  return ok(result.timing === 'pending', JSON.stringify(result));
+});
+
+test('Harm timing', 'the month May is not a hypothetical modal', () => {
+  const result = detectHarmTiming(createDocument(
+    'The compliance certificate expired in May.'
+  ), { symptom: 'expired-credential', evidence: [{ quote: 'certificate expired' }] });
+  return ok(result.timing === 'active', JSON.stringify(result));
+});
+
+test('Harm timing', 'explicit unrecoverable data loss remains active', () => {
+  const result = detectHarmTiming(createDocument(
+    'A student account was deleted and cannot be recovered; all assessment submissions are lost.'
+  ), { symptom: 'data-loss', evidence: [{ quote: 'was deleted' }] });
+  return ok(result.timing === 'active', JSON.stringify(result));
 });
 
 test('Harm timing', 'a blocked report step without active harm remains unknown', () => {

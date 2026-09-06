@@ -23,6 +23,12 @@ function oneOf(value, values, fallback) {
   return values.has(value) ? value : fallback;
 }
 
+function isHypothetical(text) {
+  // Normalization lowercases the month name, so distinguish "in May" from
+  // the modal verb before retaining a hypothetical temporal qualifier.
+  return HYPOTHETICAL.test(text) && !/\bin may\b/i.test(text);
+}
+
 /** Classify a clause conservatively; callers can always provide a known value. */
 export function temporalForClause(doc, clauseIndex) {
   const clause = Number.isInteger(clauseIndex) ? doc?.clauses?.[clauseIndex] : null;
@@ -30,11 +36,12 @@ export function temporalForClause(doc, clauseIndex) {
   // "using paper until the system is fixed" describes a current workaround,
   // not a resolution. A resolved word must itself state the clause outcome.
   const conditionalResolution = /\b(?:until|if|unless|before)\b/i.test(text);
-  if (RESOLVED.test(text) && !HYPOTHETICAL.test(text) && !conditionalResolution) return 'resolved';
-  if (HYPOTHETICAL.test(text)) return 'hypothetical';
-  if (HISTORICAL.test(text) && !/\b(?:today|currently|right now|at present|still)\b/i.test(text)) {
-    return 'historical';
-  }
+  if (RESOLVED.test(text) && !isHypothetical(text) && !conditionalResolution) return 'resolved';
+  if (isHypothetical(text)) return 'hypothetical';
+  // An explicit historical anchor governs its clause even when the quoted
+  // statement uses a present-state word ("last term ... currently exposed").
+  // A genuine current update is normally a separate contrast clause.
+  if (HISTORICAL.test(text)) return 'historical';
   if (FUTURE.test(text)) return 'future';
   return 'current';
 }

@@ -38,7 +38,7 @@ import {
 } from '../data/phrases.js';
 import { detectContainment } from './containment.js';
 import { detectDriver } from './driver.js';
-import { detectHarmTiming } from './harm-timing.js';
+import { extractHarmTimingEvidence, projectHarmTiming } from './harm-timing.js';
 import { prepareDecisionContext } from './context.js';
 import { detectExplicitSupportContext } from './support-context.js';
 
@@ -871,11 +871,12 @@ export function analyse(rawText, overrides = {}) {
   let containment = detectContainment(doc, risks);
   let driver = detectDriver(doc);
   let blockedProcess = detectBlockedProcess(doc, domainResult, symptom, systemResult);
-  let harmTiming = detectHarmTiming(doc, symptom, {
+  const harmTimingEvidence = extractHarmTimingEvidence(doc, symptom, {
     modifiers,
     blockedProcess,
     workaround: workaroundResult.workaround
-  });
+  }, evidenceLedger);
+  let harmTiming = projectHarmTiming(harmTimingEvidence);
   // Facet overrides — analyst confirmed values
   if (applied.contained) {
     if (applied.contained === 'contained') containment = { ...containment, contained: true, propagating: false, recurring: false, undetected: false, summary: 'appears contained (manually confirmed)' };
@@ -892,6 +893,12 @@ export function analyse(rawText, overrides = {}) {
     if (applied.harm !== 'auto') {
       const labelMap = { active: 'harm is happening now', pending: 'harm is waiting to happen', unknown: null };
       harmTiming = { timing: applied.harm, label: labelMap[applied.harm], quote: applied.harm === 'unknown' ? null : 'manual input', source: 'manual' };
+      if (applied.harm !== 'unknown') {
+        evidenceLedger.add({
+          type: 'harm-timing', value: applied.harm, quote: 'manual input',
+          authority: 'analyst-confirmed', temporal: 'current'
+        });
+      }
     }
   }
   if (applied.consequence) {
