@@ -303,35 +303,36 @@ function inferStatusConsequence(doc, systemResult, symptom) {
   return null;
 }
 
-function detectBlockedProcess(doc, domainResult, symptom, systemResult) {
-  const hit = scanPositive(doc, BLOCKED_PROCESS_PHRASES);
-  if (hit.length) return {
-    level: 'blocked', process: hit[0].entry.process, label: hit[0].entry.label,
-    quote: hit[0].quote, source: 'explicit', hit: hit[0],
-    evidence: [{ quote: hit[0].quote, meaning: hit[0].entry.label, source: 'consequence' }]
+function detectBlockedProcess(doc, domainResult, symptom, systemResult, ledger) {
+  const candidates = [];
+  const add = (level, hit, source = 'explicit', extra = {}) => {
+    const clause = Number.isInteger(hit.clauseIndex) ? doc.clauses[hit.clauseIndex]?.text || '' : '';
+    const temporal = /\b(?:yesterday|last\s+(?:term|week|month)|previous|earlier)\b/i.test(clause) ? 'historical' :
+      /\b(?:if|unless|planned|proposed|queued)\b/i.test(clause) ? 'hypothetical' : 'current';
+    const fact = ledger?.addFromHit({ type: 'process-consequence', value: level, hit,
+      authority: source === 'explicit' ? 'explicit' : 'inferred', temporal, ...extra });
+    candidates.push({ level, hit, source, fact, ...extra });
   };
-  const impairedHit = scanPositive(doc, IMPAIRED_PROCESS_PHRASES);
-  if (impairedHit.length) return {
-    level: 'impaired', process: impairedHit[0].entry.process, label: impairedHit[0].entry.label,
-    quote: impairedHit[0].quote, source: 'explicit', hit: impairedHit[0],
-    evidence: [{ quote: impairedHit[0].quote, meaning: impairedHit[0].entry.label, source: 'consequence' }]
-  };
-  if (has(doc, BLOCKED_PROCESS_PHRASES)) return null;
+  for (const hit of scanPositive(doc, BLOCKED_PROCESS_PHRASES)) add('blocked', hit);
+  for (const hit of scanPositive(doc, IMPAIRED_PROCESS_PHRASES)) add('impaired', hit);
   const statusConsequence = inferStatusConsequence(doc, systemResult, symptom);
   if (statusConsequence) {
-    return {
-      level: 'blocked', process: statusConsequence.blockedProcess,
-      label: statusConsequence.blockedProcess, quote: statusConsequence.quote,
-      source: 'inferred', inferred: true,
-      note: statusConsequence.note,
-      followUpQuestion: statusConsequence.followUpQuestion,
-      evidence: [{ quote: statusConsequence.quote, meaning: statusConsequence.blockedProcess,
-        source: 'consequence-inferred' }]
-    };
+    const start = doc.text.indexOf(statusConsequence.quote);
+    add('blocked', { quote: statusConsequence.quote, start, end: start + statusConsequence.quote.length,
+      clauseIndex: start < 0 ? null : doc.clauses.findIndex((c) => start >= c.start && start < c.end),
+      entry: { process: statusConsequence.blockedProcess, label: statusConsequence.blockedProcess } }, 'inferred',
+    { note: statusConsequence.note, followUpQuestion: statusConsequence.followUpQuestion });
   }
-  // Fallback: infer blocked process from domain + symptom when explicit BLOCKED phrase present
-  // but no named process — the panel will show symptom label instead.
-  return null;
+  const usable = candidates.filter((candidate) => !candidate.fact ||
+    (candidate.fact.temporal === 'current' && candidate.fact.polarity === 'positive' && candidate.fact.context === 'primary'));
+  const chosen = usable.find((candidate) => candidate.source === 'explicit' && candidate.level === 'blocked') ||
+    usable.find((candidate) => candidate.source === 'explicit') || usable[0];
+  if (!chosen) return null;
+  return { level: chosen.level, process: chosen.hit.entry.process, label: chosen.hit.entry.label,
+    quote: chosen.hit.quote, source: chosen.source, hit: chosen.hit, inferred: chosen.source === 'inferred',
+    note: chosen.note, followUpQuestion: chosen.followUpQuestion,
+    evidence: usable.map((candidate) => ({ quote: candidate.hit.quote, meaning: candidate.hit.entry.label,
+      source: candidate.source === 'explicit' ? 'consequence' : 'consequence-inferred' })) };
 }
 
 function buildMissingInformation(context) {
@@ -871,7 +872,7 @@ export function analyse(rawText, overrides = {}) {
   const undetected = has(doc, UNDETECTED_PHRASES);
   let containment = detectContainment(doc, risks);
   let driver = detectDriver(doc);
-  let blockedProcess = detectBlockedProcess(doc, domainResult, symptom, systemResult);
+  let blockedProcess = detectBlockedProcess(doc, domainResult, symptom, systemResult, evidenceLedger);
   const harmTimingEvidence = extractHarmTimingEvidence(doc, symptom, {
     modifiers,
     blockedProcess,

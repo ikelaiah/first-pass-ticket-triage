@@ -2096,6 +2096,22 @@ test('Harm timing', 'a currently blocked business operation is active harm', () 
     JSON.stringify({ consequence: result.businessConsequence, harmTiming: result.harmTiming }));
 });
 
+test('Process consequence', 'explicit blocked evidence outranks separate impaired evidence', () => {
+  const result = analyse('Staff cannot submit claims. The export also skips some rows.');
+  return ok(result.businessConsequence.level === 'blocked' && result.businessConsequence.evidence.length === 2,
+    JSON.stringify(result.businessConsequence));
+});
+
+test('Process consequence', 'a technical symptom alone does not invent a blocked process', () => {
+  const result = analyse('The claims application shows an error.');
+  return ok(result.businessConsequence.level === 'unknown', JSON.stringify(result.businessConsequence));
+});
+
+test('Process consequence', 'current blocked evidence outranks historical impaired evidence', () => {
+  const result = analyse('Yesterday the report skipped rows. Staff cannot submit claims today.');
+  return ok(result.businessConsequence.level === 'blocked', JSON.stringify(result.businessConsequence));
+});
+
 test('Harm timing', 'current pending harm outranks a historical active statement', () => {
   const result = detectHarmTiming(createDocument(
     'Last term, families were currently exposed. The proposed export could expose records if approval is granted.'
