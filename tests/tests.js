@@ -18,6 +18,7 @@ import { buildReply, buildMarkdown } from '../js/ui/reply.js';
 import { statusSentence } from '../js/ui/render-result.js';
 import { registerFacetTests } from './facet-tests.js';
 import { registerPolicyTests } from './policy-tests.js';
+import { registerNextActionTests } from './next-action-tests.js';
 import { legacyRegressionCases } from './fixtures/legacy-regressions.js';
 import {
   encodeTicket, decodeTicket, tooLongForShare, readTicketFromLocation,
@@ -72,6 +73,30 @@ function risk(text, key, expected) {
   const actual = Boolean(result.risks[key]);
   return ok(actual === expected, 'risks.' + key + ' = ' + actual);
 }
+
+/* ------------------------------------------------ safe next action -- */
+
+const nextActionAdversarialCases = [
+  ['future meeting is not inferred as a deadline', 'The panel meets next Friday. The report has a formatting issue.', ['clarify', 'plan']],
+  ['observed exposure does not prove total containment', 'Three student plans were visible to the wrong users.', ['clarify']],
+  ['successful payroll does not create escalation', 'Payroll completed successfully. The reconciliation report has the wrong column order.', ['investigate', 'plan']],
+  ['historical resolved outage is not containment work', 'Yesterday users could not log in. Access is working now. We want to know what happened.', ['verify', 'investigate']],
+  ['hypothetical privacy risk is not active exposure', 'If we implement this design, carers may be able to see another household.', ['clarify', 'plan']],
+  ['spreadsheet mention does not prove an equivalent workaround', 'Staff are using a spreadsheet for now.', ['clarify']]
+];
+
+for (const [name, text, expected] of nextActionAdversarialCases) {
+  test('Safe Next Action — adversarial', name, () => {
+    const result = analyse(text);
+    return ok(expected.includes(result.nextAction.action), result.nextAction.action + ' / ' + result.nextAction.ruleId);
+  });
+}
+
+test('Safe Next Action — non-interference', 'advisory output does not alter the established priority result', () => {
+  const result = analyse('Canvas is failing and teachers cannot mark the roll. There is no workaround.');
+  return ok(result.priority === 'P2' && result.impact === 'medium' && result.urgency === 'high' &&
+    result.nextAction.action === 'investigate', JSON.stringify({ priority: result.priority, impact: result.impact, urgency: result.urgency, nextAction: result.nextAction.action }));
+});
 
 /* ---------------------------------------------------------- evidence -- */
 
@@ -2571,6 +2596,7 @@ for (const example of EXAMPLES) {
 
 registerFacetTests(test, ok);
 registerPolicyTests(test, ok);
+registerNextActionTests(test, ok);
 
 function legacyFacetState(result, facet) {
   if (facet === 'i1') return result.eightFacets.i1Scope.value;

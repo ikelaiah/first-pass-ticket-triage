@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.9.0] - 2026-09-06 — Safe Next Action
+
+### Added
+
+- Added a deterministic, local-only Safe Next Action layer with exactly six
+  advisory actions: Clarify, Verify, Investigate, Contain, Escalate, and Plan.
+- Added structured provenance, stable rule IDs, uncertainty blockers, and
+  clarification questions; inferred-only evidence cannot trigger Contain or
+  Escalate.
+- Added a separate result card and direct/adversarial Node/browser tests.
+
+### Unchanged
+
+- The v0.8 evidence, Impact, Urgency, policy, priority matrix, and P1–P4 path
+  remain unchanged. No dependency, backend, network call, AI, telemetry,
+  persistence, framework, or build system was added.
+
 ## [0.8.0] - 2026-08-30 — Triage Policy Calibration
 
 ### Added

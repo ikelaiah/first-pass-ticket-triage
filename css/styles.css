@@ -755,6 +755,12 @@ select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in s
   border-left: 4px solid var(--accent);
   margin-top: 1rem;
 }
+.panel-next-action { border-left: 4px solid var(--down); margin-top: 1rem; }
+.panel-next-action h3 { color: var(--down); }
+.next-action-name { font-size: 1.25rem; font-weight: 750; margin-bottom: 0.35rem; }
+.panel-next-action h4 { margin: 0.85rem 0 0.35rem; font-size: 0.78rem; }
+.next-action-diagnostic { margin-top: 0.85rem; font-size: 0.8rem; color: var(--muted); }
+.next-action-diagnostic code { display: inline-block; margin-top: 0.35rem; }
 .panel-chain .chain-split { gap: clamp(1rem, 4vw, 3rem); }
 .panel h3 {
   margin: 0 0 0.6rem;

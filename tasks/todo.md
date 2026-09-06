@@ -1,5 +1,19 @@
 # v0.5.0 reliability, privacy, and safety checklist
 
+## v0.9.0 Safe Next Action
+
+- [x] Record the v0.8.0 `main` baseline and preserve the locked validator.
+- [x] Add a normative Safe Next Action contract and ADR.
+- [x] Add pure structured, transition, uncertainty, adversarial, and
+  non-interference tests before the advisory engine.
+- [x] Add a downstream deterministic action engine and existing-evidence adapter.
+- [x] Render a separate card using the existing analyst refinement lifecycle.
+- [x] Complete Node, catalogue, evaluator, locked-validator, syntax, privacy,
+  and diff-check qualification.
+- [x] Complete browser runtime verification with an isolated disposable
+  profile, localhost server, CDP console/network inspection, and visual check.
+- [ ] Complete remote release operations.
+
 - [x] Add red regressions for fragments, legacy links, storage, matrix inputs,
   assessed suggestions, scheduled times, and evaluator safety metrics.
 - [x] Implement and verify fragment sharing with legacy cleanup.

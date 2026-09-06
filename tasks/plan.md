@@ -1,5 +1,27 @@
 # Implementation Plan: v0.5.0 reliability, privacy, and safety pass
 
+## v0.9.0 Safe Next Action
+
+Add a separate, pure advisory layer after the frozen v0.8 priority path. It
+uses only structured evidence and returns Clarify, Verify, Investigate, Contain,
+Escalate, or Plan. It must not change evidence extraction, Impact, Urgency,
+policy calibration, the priority matrix, or P1–P4.
+
+1. Define the normative contract, provenance boundary, uncertainty precedence,
+   and ADR before production code.
+2. Add direct structured-input tests for every action, uncertainty class,
+   provenance transition, non-interference, and destructive-instruction guard.
+3. Implement the standalone policy and a downstream analyzer adapter using
+   existing evidence/refinement state only.
+4. Render a separate accessible result card and retain the existing refinement
+   lifecycle.
+5. Qualify with Node/browser tests, frozen validation, privacy/static scan,
+   syntax, diff review, browser runtime, and metadata checks.
+
+Deferred: assignment, routing, execution, notifications, workflow state, SLA,
+remote integrations, retrieval, LLMs, backend, telemetry, persistence,
+dependencies, and broad v0.8 NLP capability expansion.
+
 ## Overview
 
 Deliver a focused release pass while preserving the local-first deterministic
