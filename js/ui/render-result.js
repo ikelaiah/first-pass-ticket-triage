@@ -317,7 +317,9 @@ function eightQuestionsPanel(result) {
   const i2State = f.i2Blocked.blockedProcess
     ? (f.i2Blocked.blockedProcess.inferred ? 'inferred' : 'answered')
     : (f.i2Blocked.quote ? 'inferred' : 'unknown');
-  const i3 = f.i3Irreversibility; const hasIrrev = i3.risks.length > 0 || i3.modifiers.exposureActive || i3.modifiers.propagating;
+  const i3 = f.i3Irreversibility;
+  const recoveryKnown = i3.recoverability?.value && i3.recoverability.value !== 'unknown';
+  const hasIrrev = i3.risks.length > 0 || i3.modifiers.exposureActive || i3.modifiers.propagating || recoveryKnown;
   const i3State = hasIrrev ? 'answered' : 'unknown';
   const i3Ans = i3.answer;
   const c = f.i4Containment.containment; const i4State = c.contained || c.propagating || c.recurring || c.undetected ? 'answered' : 'unknown';
@@ -329,7 +331,9 @@ function eightQuestionsPanel(result) {
   const impactList = el('ul', { class: 'facet-list' }, [
     row('I1', 'Who & how many?', f.i1Scope.answer + (f.i1Scope.quote ? '' : ''), i1State, f.i1Scope.quote, i1State === 'unknown' ? 'Ask: one person / team / cohort / one school / several / all 19?' : null),
     row('I2', 'What can they not do (blocked process)?', f.i2Blocked.answer, i2State, f.i2Blocked.quote, i2State === 'unknown' ? 'Not the symptom — the business process. "Canvas is slow" vs "cannot mark the roll".' : null),
-    row('I3', 'Wrong / exposed / lost / unsafe vs unavailable?', i3Ans, i3State, null, hasIrrev ? 'Irreversibility test: bad data, money, privacy, safeguarding.' : 'No wrong/exposed/lost/unsafe flag — merely unavailable?'),
+    row('I3', 'Wrong / exposed / lost / unsafe — and recoverable?', i3Ans, i3State,
+      i3.recoverability?.quote || null,
+      hasIrrev ? 'Data integrity, privacy, safety, loss, and whether the harm can be reversed or restored.' : 'No wrong/exposed/lost/unsafe flag — merely unavailable?'),
     row('I4', 'Contained or spreading / recurring / unknown?', f.i4Containment.answer, i4State, f.i4Containment.containment.containedEvidence?.quote || f.i4Containment.containment.propagatingEvidence?.quote || null, c.summary.includes('no evidence') ? 'Recurring but corrected = high impact, low urgency (P2 latent).' : null)
   ]);
   const urgencyList = el('ul', { class: 'facet-list' }, [

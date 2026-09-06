@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.9.1] - 2026-09-06 — Eight-Question Model Consistency
+
+### Clarified
+
+- Standardized the analyst-facing model as exactly eight Decision Questions: I1–I4
+  and U5–U8, with multiple internal evidence signals allowed to support each one.
+- Removed fixed-count internal-signal wording and distinguished decision evidence from
+  context/provenance gates and policy metadata.
+- Placed explicit recoverability under I3, alongside wrong/exposed/lost/unsafe
+  consequence evidence; no ninth question was added.
+- Updated the I3 result and reply wording so known recoverability is visible without
+  changing scoring semantics.
+
+### Unchanged
+
+- The v0.8/v0.9 evidence extraction, Impact, Urgency, policy, 3×3 matrix, P1–P4,
+  Safe Next Action, dependencies, backend, and deployment model remain unchanged.
+
 ## [0.9.0] - 2026-09-06 — Safe Next Action
 
 ### Added

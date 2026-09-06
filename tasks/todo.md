@@ -1,5 +1,17 @@
 # v0.5.0 reliability, privacy, and safety checklist
 
+## v0.9.1 Eight-Question Model Consistency
+
+- [x] Confirm `main` matches the v0.9.0 release and record baseline gates.
+- [x] Audit evidence extraction, eight-question projections, policy metadata,
+  recoverability, and the result/reply presentations.
+- [x] Document the eight-question model and evidence/context boundaries.
+- [x] Add contract tests for exactly I1–I4/U5–U8 and recoverability under I3.
+- [x] Expose existing recoverability evidence in the I3 projection/UI only.
+- [x] Update terminology, version metadata, and changelog without scoring changes.
+- [x] Complete v0.9.0 behavioral comparison and local release gates.
+- [ ] Complete remote release operations.
+
 ## v0.9.0 Safe Next Action
 
 - [x] Record the v0.8.0 `main` baseline and preserve the locked validator.
