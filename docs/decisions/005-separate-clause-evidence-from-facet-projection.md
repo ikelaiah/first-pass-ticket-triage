@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed
+Accepted; bounded migrations complete and further v0.8 NLP expansion frozen.
 
 ## Date
 
@@ -111,15 +111,18 @@ safety metrics as meaningful measurements.
 
 ## Consequences
 
-- The remaining 26-case release gate stays blocking; no release workflow is
-  authorised.
-- The next implementation unit is an evidence-model migration, not a broad
-  fixture or vocabulary rewrite.
+- Clause-level evidence has been introduced for I1, I2, U7, and U8. The I1/I2
+  experiment did not reduce the locked case count; the bounded Category-A pass
+  reduced unreviewed exact divergences from 26 to 24 without safety regression.
+- Further Category B/C/D NLP expansion is frozen for v0.8. Exact divergences
+  are instead individually adjudicated under the documented safety contract.
+- The release validator must report raw exact divergences separately from
+  adjudicated capability boundaries and safety blockers; it must not rename or
+  suppress an exact difference.
 - Tests must first cover provenance equivalence and clause role before moving
   any existing detector to the new records.
 - Migration must keep the 3x3 priority matrix as the sole priority authority
   and preserve the current zero values for unsafe under-prioritisation, severe
   unsafe under-prioritisation, and assessed-ticket abstentions.
-- Once the representation exists, attack the ranked mechanisms in this order:
-  primary-operation/continuity/harm state; affected-population scope; risk
-  state; then time/containment projection.
+- v0.9 may consider a clarification-first Next Action, using only explicit
+  current primary or analyst-confirmed evidence and never changing P1–P4.

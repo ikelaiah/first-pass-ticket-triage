@@ -28,6 +28,18 @@
 - Complete 81-case evaluator: 75/79 exact Priority, 75/79 Impact, 74/79
   Urgency, zero unreviewed mismatches, zero severe under-prioritisation.
 
+### Evidence-reliability qualification
+
+- Added a bounded Category-A evidence pass for historical explanatory requests,
+  explicit population versus organisational actors, and observation/event versus
+  required-by timing; no policy, scoring, matrix, or fixture changed.
+- The frozen 36-case release validator now reports raw exact divergences apart
+  from adjudicated capability boundaries: 25 exact differences, 24 documented
+  boundaries, one reviewed ambiguity, and zero unadjudicated or safety-blocking
+  cases.
+- Documented the deterministic evidence boundary and a v0.9 clarification-first
+  Next Action direction that never changes P1–P4.
+
 ## [0.7.1] - 2026-08-29 — NLP Evaluation Integrity & Regression Hardening
 
 ### Added

@@ -11,6 +11,12 @@ see [`docs/triage-policy.md`](docs/triage-policy.md) and
 This framework remains the broader explanatory guide; the matrix below is
 unchanged.
 
+The v0.8 release contract reports exact semantic differences separately from
+release-blocking safety evidence. The engine intentionally does not infer a
+business consequence, required-by relation, or equivalent workaround from
+multi-clause implication alone; unknown evidence should trigger clarification,
+not a hidden priority change. See the [capability-boundary qualification](docs/260906-v0.8-capability-boundary-qualification.md).
+
 ---
 
 ## 1. The core principle

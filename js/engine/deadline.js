@@ -44,6 +44,8 @@ const OBSERVATION_RE = new RegExp(
  */
 const COUNTERFACTUAL_RE = /\b(?:would have|could have|might have|would be|should have)\b/;
 const QUESTION_ABOUT_RE = /\b(?:a |the )?(?:question|enquiry|inquiry)\s+about\b/;
+const OBSERVED_STATE_RE = /\b(?:was|were|is|are)\s+(?:used|checked|observed)\b|\b(?:has|have)\s+happened\b/;
+const EXPLICIT_NO_REQUIREMENT_RE = /\b(?:no\s+(?:required[- ]by|requirement|deadline|due date)|nobody\s+has\s+(?:given|supplied|provided)(?:\s+\w+){0,2}\s+(?:a\s+)?required[- ]by\s+date)\b/i;
 
 /**
  * "Today we discover..." and "three schools logged this this morning" state
@@ -53,14 +55,16 @@ const QUESTION_ABOUT_RE = /\b(?:a |the )?(?:question|enquiry|inquiry)\s+about\b/
 function isObservationOnly(clauseText) {
   if (COMMITMENT_RE.test(clauseText)) return false;
   if (QUESTION_ABOUT_RE.test(clauseText)) return true;
-  return OBSERVATION_RE.test(clauseText) || COUNTERFACTUAL_RE.test(clauseText);
+  return OBSERVATION_RE.test(clauseText) || COUNTERFACTUAL_RE.test(clauseText) ||
+    OBSERVED_STATE_RE.test(clauseText);
 }
 
 /** Clause indices where the requester said it is NOT needed yet. */
 function findNotNeededClauses(doc) {
   const indices = new Set();
   doc.clauses.forEach((clause, index) => {
-    if (NOT_NEEDED_PATTERNS.some((re) => re.test(clause.text))) indices.add(index);
+    if (NOT_NEEDED_PATTERNS.some((re) => re.test(clause.text)) ||
+        EXPLICIT_NO_REQUIREMENT_RE.test(clause.text)) indices.add(index);
   });
   return indices;
 }
@@ -82,6 +86,8 @@ function bucketOfFragment(fragment) {
  */
 export function detectDeadline(doc) {
   const notNeeded = findNotNeededClauses(doc);
+  const explicitNoRequirement = doc.clauses.some((clause) =>
+    EXPLICIT_NO_REQUIREMENT_RE.test(clause.text));
   const candidates = [];
 
   // "not needed until next week" - the tail carries the real deadline.
@@ -123,8 +129,8 @@ export function detectDeadline(doc) {
   const pickSoonest = (list) => list.reduce((a, b) => (!a || b.rank > a.rank ? b : a), null);
 
   if (committed.length) chosen = pickSoonest(committed);
-  else if (bare.length) chosen = pickSoonest(bare);
   else if (none.length) chosen = none[0];
+  else if (bare.length && !explicitNoRequirement) chosen = pickSoonest(bare);
   else if (notNeeded.size) {
     chosen = {
       bucket: 'none',
@@ -148,6 +154,7 @@ export function detectDeadline(doc) {
     asserted,
     label: deadlineLabel(deadline),
     committed: Boolean(chosen && chosen.committed),
+    explicitNoRequirement,
     notNeededNow: notNeeded.size > 0,
     candidates,
     evidence: chosen

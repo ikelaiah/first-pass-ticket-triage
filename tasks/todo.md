@@ -129,6 +129,19 @@
   the final diff.
 ## v0.8.0 semantic mismatch burn-down
 
+## v0.8.0 bounded Category A qualification
+
+- [x] Audit Category A candidates and add independent red/contrast tests only
+  for defensible semantic families.
+- [x] Apply the smallest proven context/detector correction and verify focused
+  tests before full-suite measurement.
+- [x] Measure the immutable validator and adjudicate every remaining divergence
+  without hiding exact failures.
+- [x] Document boundaries, limitations, residual B/C/D cases, and the v0.9
+  manual-confirmation-only direction.
+- [x] Create a final candidate only after the documented qualification contract
+  passes; remote operations remain separately gated on exact-SHA verification.
+
 - [ ] Resolve documentation and healthy-state context family.
 - [ ] Resolve historical, corrected, negated, and pending context family.
 - [ ] Resolve explicit scope/process/workaround/deadline evidence families.

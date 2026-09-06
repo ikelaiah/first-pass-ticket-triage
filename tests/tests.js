@@ -199,6 +199,20 @@ test('Scope', 'current narrow scope outranks historical broad scope', () => {
   return ok(result.scope === 'individual', JSON.stringify(result));
 });
 
+test('Scope', 'a current stale display keeps its stated people population', () => {
+  const result = detectScope(createDocument(
+    "The display is showing yesterday's arrival times for twelve pupils, but the live page is current."
+  ));
+  return ok(result.scope === 'team', JSON.stringify(result));
+});
+
+test('Scope', 'an explicit affected count outranks an organisational deadline actor', () => {
+  const result = detectScope(createDocument(
+    'Four casual employees are absent from the current pay run. The payroll team has two hours before the bank cutoff.'
+  ));
+  return ok(result.scope === 'few-users', JSON.stringify(result));
+});
+
 test('Scope', 'an unaffected comparison population does not become the affected scope', () => {
   const result = detectScope(createDocument(
     'One registrar cannot submit claims. All other schools are working normally.'
@@ -294,6 +308,27 @@ test('Deadline', 'a time mention is not a deadline when it is not needed today',
     'One student hasn’t appeared in Canvas this morning and does not require Canvas today.'
   )).deadline;
   return ok(actual === 'none', actual);
+});
+
+test('Deadline', 'a resolved historical incident can have an explanatory timing preference', () => {
+  const result = analyse(
+    'Last year, an export displayed a legacy category. The current entry is correct and the overnight job completed. Can we document why?'
+  );
+  return ok(result.priority === 'P4' && result.driver.driver === 'preference',
+    JSON.stringify({ priority: result.priority, driver: result.driver, workType: result.workType }));
+});
+
+test('Deadline', 'an active failure is not downgraded by a documentation question', () => {
+  const result = analyse('The archive job is still failing. Can we document the cause?');
+  return ok(result.driver.driver !== 'preference', JSON.stringify(result.driver));
+});
+
+test('Deadline', 'an explicit absent requirement also answers the deadline driver', () => {
+  const result = analyse(
+    'The export is usable. The committee review is next month, but nobody has given the team a required-by date.'
+  );
+  return ok(result.deadline === 'none' && result.driver.driver === 'none',
+    JSON.stringify({ deadline: result.deadline, driver: result.driver }));
 });
 
 test('Deadline', '"immediately" without a consequence is asserted, not committed', () => {

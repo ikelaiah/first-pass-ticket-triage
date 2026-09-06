@@ -120,8 +120,19 @@ function isHistoricalOnlyHit(doc, start) {
   if (!clause) return false;
   const before = clause.text.slice(0, start - clause.start);
   if (!HISTORICAL_SCOPE_MARKER.test(before)) return false;
+  // A current display can show yesterday's values.  The possessive timestamp
+  // qualifies the displayed data, not when the stated population is affected.
+  if (/\b(?:is|are|remain|remains|still)\s+(?:showing|displaying|listing)\b/i.test(before)) return false;
   const current = clause.text.search(CURRENT_SCOPE_MARKER);
   return current < 0 || current > before.length;
+}
+
+function isDeadlineActorOnly(doc, hit) {
+  if (hit.entry.v !== 'team') return false;
+  const clause = doc.clauses[hit.clauseIndex];
+  if (!clause) return false;
+  const after = clause.text.slice(hit.end - clause.start);
+  return /^\s+has\s+(?:\w+\s+){0,4}(?:before|until|by)\b/i.test(after);
 }
 
 function scopeTemporal(doc, start) {
@@ -185,6 +196,10 @@ export function extractScopeEvidence(doc, ledger = createEvidenceLedger(doc)) {
     }
     if (isIndividualLocationDescriptor(doc, hit)) continue;
     if (isValueNotPopulation(doc, hit.quote, hit.start, hit.end)) continue;
+    if (isDeadlineActorOnly(doc, hit)) {
+      ledger.addFromHit({ type: 'scope', value: hit.entry.v, hit, role: 'observation' });
+      continue;
+    }
 
     if (isUnaffectedComparison(doc, hit.end)) {
       addCandidate({

@@ -13,6 +13,7 @@ import { fileURLToPath } from 'node:url';
 import { allFacetCases } from './fixtures/facets/index.js';
 import { analyse } from '../js/engine/analyzer.js';
 import { evaluateCases, normaliseEvaluationText, printReport, validateCorpus } from './evaluate.mjs';
+import { adjudicateDivergences } from './release-validation-adjudication.mjs';
 
 const ROOT = dirname(fileURLToPath(import.meta.url));
 const FIXTURE_PATH = join(ROOT, 'fixtures', 'accuracy-release-validation-v0.8.0.json');
@@ -60,6 +61,16 @@ const report = evaluateCases(corpus.cases, (text) => {
 assert.equal(analyzerCalls, corpus.cases.length, 'each validation ticket must be analysed exactly once');
 assert.equal(capturedResults.size, corpus.cases.length);
 
+const exactDivergenceIds = new Set([
+  ...report.mismatches,
+  ...report.facetMismatches,
+  ...report.eightFacetMismatches
+].map((mismatch) => mismatch.id));
+const adjudication = adjudicateDivergences(exactDivergenceIds);
+assert.equal(adjudication.capability.length + adjudication.ambiguity.length +
+  adjudication.unadjudicated.length, exactDivergenceIds.size,
+  'every exact release divergence must have one release adjudication');
+
 const persisted = {
   validation: {
     title: 'v0.8.0 — Triage Policy Calibration & Semantic Evidence Resolution',
@@ -72,6 +83,13 @@ const persisted = {
     releaseStatus: null
   },
   report,
+  adjudication: {
+    exactSemanticDivergences: exactDivergenceIds.size,
+    adjudicatedCapabilityBoundaries: adjudication.capability,
+    reviewedAmbiguities: adjudication.ambiguity,
+    unadjudicatedDivergences: adjudication.unadjudicated,
+    categories: adjudication.categories
+  },
   cases: corpus.cases.map((item) => ({
     id: item.id,
     text: item.text,
@@ -85,7 +103,9 @@ const blockingFailures = {
   unsafeUnderPrioritisation: report.unsafeUnderPrioritisation,
   severeUnsafeUnderPrioritisation: report.severeUnsafeUnderPrioritisation,
   abstentionsOnAssessed: report.abstentionsOnAssessed,
-  unreviewedMismatches: report.unreviewedMismatchCount
+  severeUnderPrioritisation: report.severeUnderPrioritisation,
+  p1FalseNegatives: report.p1.falseNegative,
+  unadjudicatedDivergences: adjudication.unadjudicated.length
 };
 const releaseReady = Object.values(blockingFailures).every((value) => value === 0);
 persisted.validation.releaseStatus = releaseReady ? 'PASS' : 'BLOCKING FAILURE';
@@ -94,6 +114,16 @@ mkdirSync(dirname(RESULT_PATH), { recursive: true });
 writeFileSync(RESULT_PATH, JSON.stringify(persisted, null, 2) + '\n', 'utf8');
 
 printReport(report);
+console.log('Release adjudication');
+console.log('Locked cases: ' + corpus.cases.length);
+console.log('Exact semantic divergences: ' + exactDivergenceIds.size);
+console.log('Adjudicated capability-boundary divergences: ' + adjudication.capability.length);
+console.log('Reviewed ambiguities: ' + adjudication.ambiguity.length);
+console.log('Unadjudicated divergences: ' + adjudication.unadjudicated.length);
+console.log('Capability-boundary categories: B=' + adjudication.categories.B +
+  ', C=' + adjudication.categories.C + ', D=' + adjudication.categories.D);
+console.log('Safety blockers: ' + Object.values(blockingFailures).filter((value) => value !== 0).length);
+console.log('Release safety gate: ' + (releaseReady ? 'PASS' : 'BLOCKING FAILURE'));
 console.log(JSON.stringify({
   validation: persisted.validation,
   resultPath: RESULT_PATH,

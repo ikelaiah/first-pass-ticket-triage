@@ -11,6 +11,22 @@ Built for an Application Specialist / IT support role servicing multiple schools
 internal business teams. Plain HTML, CSS and vanilla JavaScript — no framework, no
 build step, no backend, no dependencies.
 
+## Evidence boundary and release qualification
+
+First Pass uses deterministic local evidence extraction; it does **not** claim
+general natural-language understanding. It is deliberately conservative when a
+ticket implies relationships across clauses. State who is affected, what business
+operation is blocked or impaired, when work is required, what creates that
+deadline, whether a usable path remains, whether harm is current or pending, and
+whether the problem is contained or spreading.
+
+The v0.8 locked release measurement reports exact Priority, Impact, Urgency, and
+facet differences separately from safety blockers. The current qualification has
+25 exact semantic divergences, all individually adjudicated (24 capability
+boundaries and one reviewed ambiguity), with zero unsafe under-prioritisation,
+severe unsafe under-prioritisation, assessed-ticket abstentions, and P1 false
+negatives. See [the capability-boundary qualification](docs/260906-v0.8-capability-boundary-qualification.md).
+
 ---
 
 ## 🔒 Privacy
@@ -491,6 +507,9 @@ authoritative matrix out of facet detectors; changes to those are separate decis
 
 - 🤖 **This is not AI.** It is a deterministic phrase and weighting engine. It does not
   understand your ticket; it recognises wording.
+- 🧭 **Clarification is a safety feature.** Implied deadline relationships,
+  workaround equivalence, and multi-clause business consequences can remain
+  Unknown; confirm them with the analyst instead of treating inference as fact.
 - 💬 **Natural-language understanding is imperfect.** Sarcasm, unusual phrasing, heavy
   abbreviation and pasted log dumps will all reduce accuracy.
 - 🧑‍⚖️ **It is advisory.** Human judgement, local policy and agreed service levels always

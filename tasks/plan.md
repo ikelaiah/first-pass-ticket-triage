@@ -666,6 +666,57 @@ policy to its labels.
 | Recoverability is confused with data loss | Medium | Add explicit recoverability evidence and direct tests for recoverable/unrecoverable states. |
 ## v0.8.0 Semantic Mismatch Burn-Down
 
+## v0.8.0 bounded Category A qualification
+
+### Scope and decision
+
+Freeze broad deterministic-NLP remediation.  This pass may change only a
+directly supported Category A interpretation, must not alter fixtures, policy,
+scoring, or the priority matrix, and must stop after measuring the bounded
+work.  The user-supplied release direction is the approval for this plan.
+
+### Ordered tasks
+
+1. **Audit and red tests (small).** Classify the seven Category A candidates.
+   Add only independent positive/contrast regressions for (a) a resolved
+   historical incident followed by an explanatory request, (b) explicit current
+   numeric population versus organisational context, and (c) observed time
+   versus a stated required-by time.  Reclassify any candidate that does not
+   state the required fact instead of matching its locked wording.
+2. **Minimal implementation (small).** Make only the smallest detector/context
+   correction proven by the red tests; preserve explicit current evidence and
+   conservative unknowns.
+3. **Measure (small).** Run focused tests, `npm test`, and immutable locked
+   validation.  Confirm the safety gates and individually adjudicate all
+   remaining divergences into exact, capability-boundary, reviewed ambiguity,
+   or safety-blocker categories.
+4. **Qualification documentation (medium).** Document the deterministic
+   evidence boundary, residual Category B/C/D cases, the v0.9 manual
+   confirmation-only direction, and the exact candidate measurements.  Do not
+   claim general natural-language understanding.
+5. **Candidate gate (small).** Only if every documented qualification condition
+   passes, create an immutable candidate and re-run all gates at that SHA;
+   otherwise stop without remote release operations.
+
+### Acceptance criteria
+
+- No locked fixture changes, new facet migration, broad vocabulary expansion,
+  policy/scoring/matrix change, or Next Action implementation.
+- Each retained Category A behavior change has a red test and a nearby contrast.
+- Unsafe and severe unsafe under-prioritisation, assessed abstentions, and P1
+  false negatives remain zero.
+- Every residual divergence is individually adjudicated and the limitations are
+  prominent in release documentation.
+
+### Risks and mitigations
+
+| Risk | Mitigation |
+| --- | --- |
+| Fitting to locked prose | Use independently worded tests and reclassify unsupported candidates. |
+| Time observations become deadlines | Require an explicit requirement/commitment in the same evidence context. |
+| Organisation nouns override explicit population | Retain the current explicit numeric affected group. |
+| Exact-match work masks safety loss | Gate every slice on the locked safety metrics. |
+
 ### Baseline
 
 The immutable release validator at `85c0dc8` has 36 mismatch cases: 35

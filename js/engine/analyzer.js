@@ -303,6 +303,14 @@ function inferStatusConsequence(doc, systemResult, symptom) {
   return null;
 }
 
+function isResolvedReferenceRequest(doc, symptom) {
+  if (symptom.hasFailure) return false;
+  const historical = /\b(?:last|previous|earlier)\s+(?:year|term|week|month|incident|issue)\b/i;
+  const healthyNow = /\b(?:is|are)\s+(?:correct|working|usable)|\bcompleted\s+successfully\b/i;
+  const request = /\b(?:can|could|would|should)\s+(?:we\s+)?(?:document|record|reference|plan)\b/i;
+  return historical.test(doc.text) && healthyNow.test(doc.text) && request.test(doc.text);
+}
+
 function detectBlockedProcess(doc, domainResult, symptom, systemResult, ledger) {
   const candidates = [];
   const add = (level, hit, source = 'explicit', extra = {}) => {
@@ -1020,6 +1028,27 @@ export function analyse(rawText, overrides = {}) {
         committed: false
       };
     }
+  }
+  if (!applied.driver && driver.driver === 'unknown' && deadlineResult.explicitNoRequirement) {
+    driver = {
+      driver: 'none',
+      label: 'no deadline driver was stated',
+      quote: 'explicitly no required-by date',
+      actor: null,
+      committed: false
+    };
+  }
+  // A current request to document a resolved historical incident is planning
+  // context, not a new operational deadline.  Require all three signals so a
+  // documentation question beside an active failure remains authoritative.
+  if (!applied.driver && driver.driver === 'unknown' && isResolvedReferenceRequest(doc, symptom)) {
+    driver = {
+      driver: 'preference',
+      label: 'an explanatory documentation preference drives timing',
+      quote: 'current reference request about resolved history',
+      actor: null,
+      committed: false
+    };
   }
   const knownAnswer = findKnownAnswer(doc, isQuestion);
   const sourceOfTruth = findSourceOfTruth(systemResult, symptom, organisationConfig, doc);
