@@ -86,7 +86,7 @@ export function buildMarkdown(result) {
   out.push('| -------- | ------ |');
   out.push(facet('i1Scope', 'I1 Who & how many?'));
   out.push(facet('i2Blocked', 'I2 Blocked process'));
-  out.push(facet('i3Irreversibility', 'I3 Wrong/exposed/lost/unsafe?'));
+  out.push(facet('i3Irreversibility', 'I3 Wrong/exposed/lost/unsafe — recoverable?'));
   out.push(facet('i4Containment', 'I4 Contained or spreading?'));
   out.push(facet('u5Deadline', 'U5 When needed?'));
   out.push(facet('u6Driver', 'U6 Requirement or preference?'));

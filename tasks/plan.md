@@ -1,5 +1,35 @@
 # Implementation Plan: v0.5.0 reliability, privacy, and safety pass
 
+## v0.9.1 Eight-Question Model Consistency
+
+Clarify that the eight Decision Questions are the analyst-facing model built
+from many structured evidence signals. Keep all v0.9.0 scoring, policy, matrix,
+and Safe Next Action semantics unchanged; expose already-detected recoverability
+under I3 without adding a ninth row or new recognition rules.
+
+### Ordered tasks
+
+1. Audit the v0.9.0 `main` baseline and record exact test/release metrics.
+2. Document the evidence-versus-question model, including decision evidence,
+   context/provenance gates, and policy metadata.
+3. Add failing contract tests for exactly I1–I4/U5–U8 and recoverability under
+   I3, then make the existing projection expose that evidence.
+4. Update the I3 wording and recoverability presentation in the result card and
+   generated triage slip without changing scoring.
+5. Update release metadata, changelog, task records, and add a v0.9.0-to-v0.9.1
+   behavioral comparison using the existing deterministic corpus.
+6. Run local, browser, review, PR, CI, merge, tag, release, and Pages gates.
+
+### Acceptance criteria
+
+- The UI and docs describe exactly eight analyst-facing Decision Questions.
+- Multiple evidence signals can contribute to one question; context/provenance
+  gates are not counted as questions.
+- Recoverability is visible under I3 only when explicitly known and remains
+  absent/unknown otherwise.
+- v0.9.0 results, Safe Next Action behavior, and all locked safety metrics are
+  unchanged.
+
 ## v0.9.0 Safe Next Action
 
 Add a separate, pure advisory layer after the frozen v0.8 priority path. It

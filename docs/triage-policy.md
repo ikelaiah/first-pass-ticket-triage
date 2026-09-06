@@ -19,6 +19,14 @@ reliable process keeps work moving. A one-person problem can have high urgency
 when a serious consequence arrives today. Neither a risk noun, requester
 seniority, platform category, nor a requested priority can name a P1.
 
+The analyst-facing model has exactly eight Decision Questions: I1–I4 for Impact
+and U5–U8 for Urgency. These are projections over many structured evidence signals;
+they are not eight raw detectors. Input relevance, current/historical/hypothetical
+context, provenance and authority, expected behaviour, work type, and configuration
+knowledge are context or gating evidence. Policy modifiers are metadata applied after
+the projections. Explicit recoverability is evidence for I3 (wrong/exposed/lost/unsafe
+and recoverable), not a ninth question.
+
 The authoritative matrix is unchanged:
 
 |                    | Low impact | Medium impact | High impact |

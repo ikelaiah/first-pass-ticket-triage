@@ -46,11 +46,11 @@ Ticket text
    ↓  normalise (lowercase, expand contractions, unify spelling)
    ↓  split into clauses (. ; ! ? and "but" / "however")
    ↓  match phrase dictionaries, honouring negation
-Evidence — 9 signals
-   ↓  Scope · Workaround (+daily cost) · Deadline · Symptom · Domain · Risks
-   ↓  + Containment · Driver (requirement vs preference) · Harm timing (now vs pending)
-   ↓  viewed as 8 Questions — Impact I1–I4 vs Urgency U5–U8
-   ↓  I1 Scope  I2 Blocked process (Symptom+Domain)  I3 Wrong/exposed  I4 Contained?
+Structured evidence
+   ↓  Scope · system/domain · symptom · consequence · risk · recoverability
+   ↓  Containment · deadline · driver · workaround/cost · harm timing · ...
+   ↓  viewed as 8 Decision Questions — Impact I1–I4 vs Urgency U5–U8
+   ↓  I1 Scope  I2 Blocked process  I3 Wrong/exposed/lost/unsafe — recoverable?  I4 Contained?
    ↓  U5 When?  U6 Requirement vs preference?  U7 Daily cost?  U8 Now vs pending?
    ↓  weighted scoring
 Impact  +  Urgency
@@ -101,9 +101,11 @@ Note what the table refuses to do:
 
 ---
 
-## 4. The eight questions — Impact vs Urgency
+## 4. The eight Decision Questions — Impact vs Urgency
 
-Priority is not judged from a symptom alone. It is judged from eight evidence questions, grouped under the two matrix inputs. The result card surfaces all eight in the **8 Questions — Impact vs Urgency** panel (`js/ui/render-result.js:eightQuestionsPanel`, `js/engine/analyzer.js:eightFacets`), the engine detects each one, and follow-up questions are limited to the unknowns that would actually change the priority.
+Priority is not judged from a symptom alone. It is judged from eight analyst-facing Decision Questions, grouped under the two matrix inputs. The result card surfaces all eight in the **8 Questions — Impact vs Urgency** panel (`js/ui/render-result.js:eightQuestionsPanel`, `js/engine/analyzer.js:eightFacets`), and follow-up questions are limited to the unknowns that would actually change the priority.
+
+The model has exactly these eight stable IDs: I1, I2, I3, I4, U5, U6, U7, and U8. They are projections over structured evidence, not a fixed list of raw detectors. Several internal signals may support one question, and context/provenance gates and policy metadata are not questions. In particular, explicit recoverability evidence belongs under I3; it does not create a ninth dimension.
 
 > **Impact** — how much of the world is affected, and how badly.
 > **Urgency** — what happens if we wait.
@@ -112,7 +114,7 @@ Priority is not judged from a symptom alone. It is judged from eight evidence qu
 |---|---|---|---|---|
 | **I1** | Who and how many are affected — one person, a team, a cohort, one school, several, or all 19? | Scope breadth. The largest single impact contributor, and the one most often left out. | `js/engine/scope.js` + `js/data/phrases.js:SCOPE_PHRASES` (`SCOPE_DEFINITIONS` rank 0–8, `impactWeight` 0–4.25). Numbers parsed (`35 casual staff` → team `scope.js:30`, `4 schools` → multiple `scope.js:37`) and broadest credible scope wins. Unknown lowers confidence `js/engine/confidence.js:61`. | Impact weight `js/engine/impact.js:61` +1.75 for `allUsers`. `Unknown → Low confidence` and first follow-up. |
 | **I2** | What can they not do right now that they could do yesterday? | The blocked business process, not the symptom. "Canvas is slow" and "teachers cannot mark the roll" are different tickets. | `js/data/phrases.js:BLOCKED_PROCESS_PHRASES` identifies a small process vocabulary and `js/engine/analyzer.js:detectBlockedProcess` returns a sourced consequence fact. Configured system-status consequences in `js/config.js:statusConsequences` remain visibly inferred — for example, an Edumate `public contact` is excluded from class rolls and downstream education-system sync. | An **explicit** or **manual** blocked process adds +0.75 Impact and up to +1.75 Urgency through `impact.js` and `urgency.js`; an impaired process adds +0.25 Impact only. An **inferred** consequence remains explanatory and asks for confirmation, so a potential billing effect is not silently scored as a financial incident. |
-| **I3** | Is anything wrong, exposed, lost, or unsafe — as opposed to merely unavailable? | The irreversibility test: bad data, money, privacy, safeguarding, safety. Evidence of a consequence, not a risk noun, determines escalation. | `js/engine/risks.js` `RISK_DEFINITIONS` (`payroll`, `financial`, `privacy`, `safety`, `safeguarding`, `compliance`, `dataIntegrity`) + risk modifiers (`exposureActive`, `propagating`, `unpaidRisk`) `js/data/phrases.js:RISK_MODIFIERS`. Gated so "contains PII" alone ≠ incident `js/engine/risks.js:111`. | Base scoring records structured evidence; `js/engine/policy.js` calibrates passive context versus confirmed harm. Active exposure, confirmed same-day processing failure, or other named consequences can raise Impact/Urgency to High. |
+| **I3** | Is anything wrong, exposed, lost, or unsafe — and can it be recovered — as opposed to merely unavailable? | The irreversibility test: bad data, money, privacy, safeguarding, safety, and whether the consequence can be restored. Recoverability belongs here, not in a separate question. | `js/engine/risks.js` `RISK_DEFINITIONS` (`payroll`, `financial`, `privacy`, `safety`, `safeguarding`, `compliance`, `dataIntegrity`) + risk modifiers (`exposureActive`, `propagating`, `unpaidRisk`) `js/data/phrases.js:RISK_MODIFIERS`, plus explicit recoverability from `js/engine/recoverability.js`. Gated so "contains PII" alone ≠ incident `js/engine/risks.js:111`. | Base scoring records structured evidence; `js/engine/policy.js` calibrates passive context versus confirmed harm. Active exposure, confirmed same-day processing failure, or other named consequences can raise Impact/Urgency to High. |
 | **I4** | Is it contained, or is it spreading, recurring, or of unknown extent? | One bad record is remediation; a trigger writing bad records across every school is high impact. Urgency still depends on a cutoff, active harm, or another time-sensitive consequence. | `js/engine/containment.js` + `js/data/phrases.js:CONTAINED_PHRASES` (`contained to one family`, `not spreading`), `RISK_MODIFIERS.propagating` (`propagat`, `spreading` `phrases.js:989`), `RECURRENCE_PHRASES` (`keeps scrambling` `phrases.js:1059`), `UNDETECTED_PHRASES` (`we do not pick up` `phrases.js:1074`). | `js/engine/impact.js` records recurrence, undetected extent, and propagation. `js/engine/policy.js` gives active propagation a Medium urgency floor, while containment preserves existing Impact. |
 | **U5** | When do you need this by? | The anchor. Everything else calibrates it. | `js/engine/deadline.js` `DEADLINE_BUCKETS` now(6,3.5) › today(5,3) › tomorrow(4,1.75) › 2–5d(3,1.25) › 1–2w(2,0.25) › none › unknown. `COMMITMENT_MARKERS` + `isObservationOnly` `deadline.js:52` separates "Today we discover…" (timestamp) from "must be rerun today" (commitment). | Urgency weight `js/engine/urgency.js:68` (`today` +3, `days-2-5` +1.25). `unknown` lowers confidence `confidence.js:65` and becomes first urgency question. |
 | **U6** | What creates the deadline — a requirement or a preference? | What actually happens if missed, and whose rule is it? Statutory (census, NAPLAN), operational (payroll cutoff, class starts, report cards out) is a deadline. "We'd like it by Friday" is a preference with a calendar attached, and scores as one. | `js/engine/driver.js` + `js/data/phrases.js:DRIVER_PHRASES` (`statutory`: census/NAPLAN/nesa, `operational`: payroll cutoff/class starts, `preference`: would like/whenever suits) + `DRIVER_ACTOR_RE` for actor. Refine `index.html:refine-driver`. | Preference reduces urgency −0.5 `js/engine/urgency.js:135`; statutory/operational with timing keeps urgency. Requester seniority scores zero `impact.js:171` — who asked does not decide priority, the event does. |

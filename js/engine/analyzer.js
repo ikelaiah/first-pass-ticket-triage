@@ -300,6 +300,32 @@ function latestCurrentFact(facts, type, value = null) {
     fact.polarity === 'positive' && fact.context === 'primary' && fact.role !== 'comparator') || null;
 }
 
+function irreversibilityAnswer(symptom, risks, modifiers, recoverability) {
+  let answer = symptom.symptom === 'data-loss'
+    ? 'Lost data'
+    : modifiers.exposureActive
+      ? 'Exposed'
+      : risks.dataIntegrity && modifiers.propagating
+        ? 'Wrong + spreading'
+        : risks.dataIntegrity
+          ? 'Wrong data'
+          : risks.privacy
+            ? 'Privacy risk'
+            : risks.safety
+              ? 'Safety'
+              : symptom.severity >= SEVERITY.FAILURE
+                ? 'Unavailable/outage'
+                : 'No irreversibility flagged';
+  if (recoverability.value === 'recoverable') {
+    if (answer === 'No irreversibility flagged') answer = 'Recovery available';
+    else answer += ' — recovery available';
+  } else if (recoverability.value === 'unrecoverable') {
+    if (answer === 'No irreversibility flagged') answer = 'Recovery unavailable';
+    else answer += ' — recovery unavailable';
+  }
+  return answer;
+}
+
 /** Map existing projections into the independent Safe Next Action contract. */
 function nextActionEvidence(context) {
   const { assessmentStatus, workTypeResult, blockedProcess, deadlineResult,
@@ -1316,7 +1342,17 @@ export function analyse(rawText, overrides = {}) {
     // I2 is the business process that cannot continue. A technical symptom can
     // identify the failure mode, but must not be relabelled as its consequence.
     i2Blocked: { question: 'What can they not do that they could do yesterday?', answer: blockedProcess ? blockedProcess.label : 'Not stated', quote: blockedProcess?.quote || null, blockedProcess },
-    i3Irreversibility: { question: 'Wrong / exposed / lost / unsafe vs merely unavailable?', answer: modifiers.exposureActive ? 'Exposed' : risks.dataIntegrity && modifiers.propagating ? 'Wrong + spreading' : risks.dataIntegrity ? 'Wrong data' : risks.privacy ? 'Privacy risk' : risks.safety ? 'Safety' : symptom.severity >= SEVERITY.FAILURE ? 'Unavailable/outage' : 'No irreversibility flagged', risks: Object.keys(risks).filter(k => risks[k]), modifiers },
+    i3Irreversibility: {
+      question: 'Is anything wrong, exposed, lost or unsafe — and can it be recovered?',
+      answer: irreversibilityAnswer(symptom, risks, modifiers, recoverability),
+      risks: Object.keys(risks).filter(k => risks[k]),
+      modifiers,
+      recoverability: {
+        value: recoverability.value,
+        quote: recoverability.quote,
+        evidence: recoverability.evidence
+      }
+    },
     i4Containment: { question: 'Contained or spreading / recurring / unknown extent?', answer: containment.summary, containment },
     u5Deadline: { question: 'When do you need this by?', answer: deadlineResult.label, value: deadlineResult.deadline, committed: deadlineResult.committed, quote: deadlineResult.evidence[0]?.quote || null },
     u6Driver: { question: 'What creates the deadline — a requirement or a preference?', answer: driver.driver === 'unknown' ? 'Not stated' : driver.label, driver },

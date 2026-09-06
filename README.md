@@ -74,7 +74,7 @@ See [PRIVACY.md](PRIVACY.md) for how to verify this yourself in about a minute.
 - **Explainable decisions** — evidence → impact → urgency → matrix → priority, shown in full
 - **Safe Next Action** — a separate Clarify / Verify / Investigate / Contain /
   Escalate / Plan advisory; it never changes the suggested priority
-- **8 Questions — Impact vs Urgency** — I1 Who/how many? · I2 Blocked process? · I3 Wrong/exposed/lost/unsafe? · I4 Contained or spreading? · U5 When needed? · U6 Deadline driver (requirement vs preference)? · U7 Workaround daily cost? · U8 Harm now or waiting? — each shown as Answered/Inferred/Unknown with row-aligned cards, and *key driver* badges on the unknowns that could flip the cell
+- **8 Questions — Impact vs Urgency** — I1 Who/how many? · I2 Blocked process? · I3 Wrong/exposed/lost/unsafe — recoverable? · I4 Contained or spreading? · U5 When needed? · U6 Deadline driver (requirement vs preference)? · U7 Workaround daily cost? · U8 Harm now or waiting? — each shown as Answered/Inferred/Unknown with row-aligned cards, and *key driver* badges on the unknowns that could flip the cell
 - **Assessment confidence and evidence completeness** — heuristic evidence coverage,
   clearly labelled as not a probability
 - **Explicit abstention** — unassessed input has no actionable suggested priority; the
@@ -136,11 +136,12 @@ a phrase to `js/data/phrases.js` and a case to the suite — no engine change.
 ```text
 Ticket
    ↓
-Natural-language evidence
-   ↓  Evidence (Scope · Workaround · Deadline · Symptom · Domain · Risk
-   ↓          · Containment · Driver · Harm timing) — 9 signals
-   ↓  viewed as 8 Questions — Impact I1–I4 vs Urgency U5–U8
-   ↓  I1 Scope  I2 Blocked process (Symptom+Domain+known status)  I3 Wrong/exposed  I4 Contained?
+Structured evidence
+   ↓  Scope · system/domain · symptom · consequence · risk · recoverability
+   ↓  Containment · deadline · driver · workaround/cost · harm timing · ...
+8 Decision Questions (analyst-facing model)
+   ↓  Impact I1–I4 vs Urgency U5–U8
+   ↓  I1 Scope  I2 Blocked process  I3 Wrong/exposed/lost/unsafe — recoverable?  I4 Contained?
    ↓  U5 When?  U6 Requirement vs preference?  U7 Daily cost?  U8 Now vs pending?
    ↓
 Impact + Urgency  (weighted, then critical-risk modifiers)
@@ -153,6 +154,15 @@ P1 / P2 / P3 / P4  + Assessment confidence · Evidence completeness · Reasoning
 Safe Next Action runs in parallel from structured evidence after this path. It
 cannot feed back into Impact, Urgency, policy calibration, the matrix, or P1–P4.
 See [the Safe Next Action contract](docs/safe-next-action.md).
+
+The eight questions are not eight regexes or eight raw signals. Multiple structured
+evidence signals can contribute to one Decision Question—for example, symptom,
+system/domain, known status, and explicit consequence evidence may all contribute to
+I2. Internal evidence signals may evolve while the eight-question model remains
+stable. Input relevance, current/historical/hypothetical context, evidence authority,
+expected behaviour, work type, and configuration knowledge are context or gating
+evidence, not extra Decision Questions. Policy modifiers calibrate Impact and Urgency
+after those projections. Recoverability is part of I3; it is not a ninth question.
 
 The natural-language engine never picks a priority. It establishes **Impact** and
 **Urgency** from evidence; critical-risk modifiers may raise or lower those two values;
