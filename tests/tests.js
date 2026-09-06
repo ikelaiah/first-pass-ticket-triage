@@ -192,6 +192,20 @@ const SCOPE_CASES = [
   ['One teacher at North Campus cannot open the learning app.', 'individual']
 ];
 
+test('Scope', 'current narrow scope outranks historical broad scope', () => {
+  const result = detectScope(createDocument(
+    'Last term every campus could not process applications. Today one registrar cannot submit claims.'
+  ));
+  return ok(result.scope === 'individual', JSON.stringify(result));
+});
+
+test('Scope', 'an unaffected comparison population does not become the affected scope', () => {
+  const result = detectScope(createDocument(
+    'One registrar cannot submit claims. All other schools are working normally.'
+  ));
+  return ok(result.scope === 'individual', JSON.stringify(result));
+});
+
 for (const [text, expected] of SCOPE_CASES) {
   test('Scope', JSON.stringify(text.slice(0, 46)) + ' -> ' + expected, () => {
     const actual = detectScope(createDocument(text)).scope;

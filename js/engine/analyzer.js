@@ -14,7 +14,7 @@ import { createDocument, has, scanPositive } from './negation.js';
 import { createEvidenceLedger } from './evidence.js';
 import { organisationConfig } from '../config.js';
 import { detectSystems, describeSystems } from '../data/systems.js';
-import { detectScope, scopeDefinition, scopeLabel } from './scope.js';
+import { extractScopeEvidence, projectScope, scopeDefinition, scopeLabel } from './scope.js';
 import { extractWorkaroundEvidence, projectWorkaround, workaroundLabel } from './workaround.js';
 import { detectDeadline, deadlineLabel } from './deadline.js';
 import { detectSymptom, SEVERITY } from './symptom.js';
@@ -805,7 +805,8 @@ export function analyse(rawText, overrides = {}) {
   const recoverability = detectRecoverability(doc);
   const domainResult = detectDomain(doc, systemResult, symptom);
 
-  const detectedScope = detectScope(doc);
+  const scopeEvidence = extractScopeEvidence(doc, evidenceLedger);
+  const detectedScope = projectScope(scopeEvidence);
   const workaroundEvidence = extractWorkaroundEvidence(doc, evidenceLedger);
   const detectedWorkaround = projectWorkaround(workaroundEvidence);
   const detectedDeadline = detectDeadline(doc);

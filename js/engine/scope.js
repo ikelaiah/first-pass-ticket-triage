@@ -4,7 +4,8 @@
  * Scope is deliberately allowed to stay "unknown". Inventing a scope is the
  * fastest way to produce a confident and wrong priority.
  */
-import { scan, scanPositive } from './negation.js';
+import { clauseIndexOf, scan, scanPositive } from './negation.js';
+import { createEvidenceLedger } from './evidence.js';
 import { SCOPE_DEFINITIONS, SCOPE_PHRASES, ALL_USERS_PHRASES } from '../data/phrases.js';
 import { organisationConfig } from '../config.js';
 
@@ -110,7 +111,7 @@ const UNAFFECTED_COMPARISON_SUFFIX =
   /^\s+else(?:['’]s)?\b[^.;!?]{0,48}\b(?:(?:is|are|was|were)\s+(?:still\s+)?(?:working|fine|ok|okay|healthy|normal|unaffected|unimpacted)|works?|can\s+(?:still\s+)?(?:work|use|access|log in|sign in|proceed))\b/;
 
 const HISTORICAL_SCOPE_MARKER =
-  /\b(?:yesterday|last\s+(?:night|evening|week|month|monday|tuesday|wednesday|thursday|friday|saturday|sunday|spring|summer|autumn|fall|winter)|previous(?:ly)?|earlier|the day before)\b/i;
+  /\b(?:yesterday|last\s+(?:term|night|evening|week|month|monday|tuesday|wednesday|thursday|friday|saturday|sunday|spring|summer|autumn|fall|winter)|previous(?:ly)?|earlier|the day before)\b/i;
 const CURRENT_SCOPE_MARKER =
   /\b(?:today|this\s+(?:morning|afternoon|evening)|currently|right now|at present|still)\b/i;
 
@@ -121,6 +122,14 @@ function isHistoricalOnlyHit(doc, start) {
   if (!HISTORICAL_SCOPE_MARKER.test(before)) return false;
   const current = clause.text.search(CURRENT_SCOPE_MARKER);
   return current < 0 || current > before.length;
+}
+
+function scopeTemporal(doc, start) {
+  const clause = doc.clauses.find((candidate) => start >= candidate.start && start < candidate.end);
+  const text = clause?.text || '';
+  if (isHistoricalOnlyHit(doc, start)) return 'historical';
+  if (/\b(?:if|unless|planned|proposed|queued)\b/i.test(text)) return 'hypothetical';
+  return 'current';
 }
 
 function isUnaffectedCount(doc, start, end) {
@@ -157,32 +166,45 @@ function isUnaffectedComparison(doc, end) {
  *   candidates: Array, evidence: Array
  * }}
  */
-export function detectScope(doc) {
+export function extractScopeEvidence(doc, ledger = createEvidenceLedger(doc)) {
   const candidates = [];
+  const addCandidate = (candidate) => {
+    const fact = ledger.addFromHit({
+      type: 'scope', value: candidate.scope, quote: candidate.quote,
+      hit: candidate.hit, start: candidate.start, end: candidate.end,
+      clauseIndex: candidate.clauseIndex, authority: candidate.authority,
+      temporal: candidate.temporal, role: candidate.role || 'primary'
+    });
+    candidates.push({ ...candidate, fact });
+  };
 
   for (const hit of scanPositive(doc, SCOPE_PHRASES)) {
-    if (isComparison(doc, hit.start, hit.end)) continue;
+    if (isComparison(doc, hit.start, hit.end)) {
+      ledger.addFromHit({ type: 'scope', value: hit.entry.v, hit, role: 'comparator' });
+      continue;
+    }
     if (isIndividualLocationDescriptor(doc, hit)) continue;
-    if (isHistoricalOnlyHit(doc, hit.start)) continue;
     if (isValueNotPopulation(doc, hit.quote, hit.start, hit.end)) continue;
 
     if (isUnaffectedComparison(doc, hit.end)) {
-      candidates.push({
+      addCandidate({
         scope: 'individual',
         rank: scopeDefinition('individual').rank,
         weight: 3,
         quote: hit.quote + ' else',
-        meaning: 'everyone except the requester is unaffected'
+        meaning: 'everyone except the requester is unaffected',
+        hit, temporal: scopeTemporal(doc, hit.start)
       });
       continue;
     }
 
-    candidates.push({
+    addCandidate({
       scope: hit.entry.v,
       rank: scopeDefinition(hit.entry.v).rank,
       weight: hit.entry.w || 1,
       quote: hit.quote,
-      meaning: hit.entry.label
+      meaning: hit.entry.label,
+      hit, temporal: scopeTemporal(doc, hit.start)
     });
   }
 
@@ -191,41 +213,44 @@ export function detectScope(doc) {
   while ((m = PEOPLE_COUNT.exec(doc.text)) !== null) {
     const count = parseInt(m[1], 10);
     if (!Number.isFinite(count) || count === 0) continue;
-    if (isHistoricalOnlyHit(doc, m.index) || isUnaffectedCount(doc, m.index, m.index + m[0].length)) continue;
+    if (isUnaffectedCount(doc, m.index, m.index + m[0].length)) continue;
     const scope = scopeForPeople(count);
-    candidates.push({
+    addCandidate({
       scope,
       rank: scopeDefinition(scope).rank,
       weight: 3,
       quote: m[0],
-      meaning: count + ' ' + m[2] + ' affected'
+      meaning: count + ' ' + m[2] + ' affected',
+      start: m.index, end: m.index + m[0].length, clauseIndex: clauseIndexOf(doc, m.index), temporal: scopeTemporal(doc, m.index)
     });
   }
 
   PEOPLE_WORD_COUNT.lastIndex = 0;
   while ((m = PEOPLE_WORD_COUNT.exec(doc.text)) !== null) {
     const count = WRITTEN_NUMBER_VALUES.get(m[1]);
-    if (!count || isHistoricalOnlyHit(doc, m.index) || isUnaffectedCount(doc, m.index, m.index + m[0].length)) continue;
+    if (!count || isUnaffectedCount(doc, m.index, m.index + m[0].length)) continue;
     const scope = scopeForPeople(count);
-    candidates.push({
+    addCandidate({
       scope,
       rank: scopeDefinition(scope).rank,
       weight: 3,
       quote: m[0],
-      meaning: count + ' ' + m[2] + ' affected'
+      meaning: count + ' ' + m[2] + ' affected',
+      start: m.index, end: m.index + m[0].length, clauseIndex: clauseIndexOf(doc, m.index), temporal: scopeTemporal(doc, m.index)
     });
   }
 
   BATCH_RECORD_COUNT.lastIndex = 0;
   while ((m = BATCH_RECORD_COUNT.exec(doc.text)) !== null) {
     const count = /^\d+$/.test(m[1]) ? parseInt(m[1], 10) : WRITTEN_NUMBER_VALUES.get(m[1]);
-    if (!count || isHistoricalOnlyHit(doc, m.index) || isUnaffectedCount(doc, m.index, m.index + m[0].length)) continue;
-    candidates.push({
+    if (!count || isUnaffectedCount(doc, m.index, m.index + m[0].length)) continue;
+    addCandidate({
       scope: 'cohort',
       rank: scopeDefinition('cohort').rank,
       weight: 3,
       quote: m[0],
-      meaning: count + ' records affected as a batch'
+      meaning: count + ' records affected as a batch',
+      start: m.index, end: m.index + m[0].length, clauseIndex: clauseIndexOf(doc, m.index), temporal: scopeTemporal(doc, m.index)
     });
   }
 
@@ -234,17 +259,27 @@ export function detectScope(doc) {
     const count = parseInt(m[1], 10);
     if (!Number.isFinite(count) || count === 0) continue;
     const scope = scopeForSchools(count);
-    candidates.push({
+    addCandidate({
       scope,
       rank: scopeDefinition(scope).rank,
       weight: 3,
       quote: m[0],
-      meaning: count + ' schools affected'
+      meaning: count + ' schools affected',
+      start: m.index, end: m.index + m[0].length, clauseIndex: clauseIndexOf(doc, m.index), temporal: scopeTemporal(doc, m.index)
     });
   }
 
-  // The broadest credible scope wins: a ticket that mentions one student *and*
-  // all schools is an all-schools ticket.
+  return { ledger, candidates, allUsersHits: scanPositive(doc, ALL_USERS_PHRASES) };
+}
+
+/** Project I1 from current, positive, primary clause evidence. */
+export function projectScope(extraction) {
+  const candidates = extraction.candidates.filter(({ fact }) =>
+    fact.temporal === 'current' && fact.polarity === 'positive' &&
+    fact.context === 'primary' && fact.role === 'primary'
+  );
+  // The broadest credible current scope wins; history and comparators are
+  // preserved in the ledger but cannot expand the current affected population.
   let chosen = null;
   for (const candidate of candidates) {
     if (!chosen || candidate.rank > chosen.rank ||
@@ -253,7 +288,7 @@ export function detectScope(doc) {
     }
   }
 
-  const allUsersHits = scanPositive(doc, ALL_USERS_PHRASES);
+  const allUsersHits = extraction.allUsersHits;
   const scope = chosen ? chosen.scope : 'unknown';
 
   const evidence = [];
@@ -272,6 +307,10 @@ export function detectScope(doc) {
     candidates,
     evidence
   };
+}
+
+export function detectScope(doc, ledger) {
+  return projectScope(extractScopeEvidence(doc, ledger));
 }
 
 /** Exported for the test suite. */
