@@ -396,7 +396,7 @@ function detectBlockedProcess(doc, domainResult, symptom, systemResult, ledger) 
     const clause = Number.isInteger(hit.clauseIndex) ? doc.clauses[hit.clauseIndex]?.text || '' : '';
     // A current board can display yesterday's values: the possessive timestamp
     // qualifies the shown data, not when the impairment exists.
-    const displayIsCurrent = /\b(?:is|are|remain|remains|still)\s+(?:showing|displaying|listing)\b[^.;!?]{0,24}\b(?:yesterday's|old|stale|outdated|previous)\b/i.test(clause);
+    const displayIsCurrent = /\b(?:is|are|remain|remains|still)\s+(?:showing|displaying|listing)\b[^.;!?]{0,24}\b(?:yesterday's|last (?:week|month|term|year)'s|old|stale|outdated|previous)\b/i.test(clause);
     const temporal = (!displayIsCurrent &&
       /\b(?:yesterday|last\s+(?:term|week|month)|previous|earlier)\b/i.test(clause)) ? 'historical' :
       /\b(?:if|unless|planned|proposed|queued)\b/i.test(clause) ? 'hypothetical' : 'current';
@@ -593,7 +593,10 @@ function buildMissingInformation(context) {
     // contained is good news — no question, but keep reasoning
   } else if (containment && !containment.propagating && !recurring && !undetected) {
     // Only ask containment if no other spread signal
-    if (['individual', 'few-users'].includes(scopeResult.scope) && symptom.isDataIssue) {
+    const modestScope = ['individual', 'few-users', 'team', 'cohort'].includes(scopeResult.scope);
+    const containmentMatters = symptom.isDataIssue || symptom.symptom === 'data-loss' ||
+      Boolean(risks.dataIntegrity || risks.privacy || modifiers.exposureActive);
+    if (containmentMatters && (modestScope || modifiers.exposureActive)) {
       addQuestion('Is this contained to one record/family, or could it be spreading?',
         pq([{ propagating: true }]));
     }
@@ -1063,12 +1066,16 @@ export function analyse(rawText, overrides = {}) {
       });
       workaroundResult = projectWorkaround(workaroundEvidence);
     }
-    if (!applied.deadline && deadlineResult.deadline === 'unknown') {
-      deadlineResult = { ...deadlineResult, deadline: 'none', label: deadlineLabel('none'),
-        evidence: [{ quote: continuityHit.quote, meaning: 'no deadline accompanies the viable alternative', source: 'context' }] };
-    }
-    if (!applied.driver && driver.driver === 'unknown') {
-      driver = { driver: 'none', label: 'no deadline driver was stated', quote: continuityHit.quote, actor: null, committed: false };
+    // A viable alternative bounds timing for a failure-grade fault. When the
+    // primary path is an outage, the time question stays open.
+    if (symptom.severity <= SEVERITY.FAILURE) {
+      if (!applied.deadline && deadlineResult.deadline === 'unknown') {
+        deadlineResult = { ...deadlineResult, deadline: 'none', label: deadlineLabel('none'),
+          evidence: [{ quote: continuityHit.quote, meaning: 'no deadline accompanies the viable alternative', source: 'context' }] };
+      }
+      if (!applied.driver && driver.driver === 'unknown') {
+        driver = { driver: 'none', label: 'no deadline driver was stated', quote: continuityHit.quote, actor: null, committed: false };
+      }
     }
     if (!applied.contained && !containment.propagating && !containment.recurring) {
       containment = { ...containment, contained: true, containedEvidence: continuityHit,

@@ -284,6 +284,15 @@ export function applyTriagePolicy(context) {
     }
   }
 
+  // Propagation-only urgency is bounded at Medium unless an independent
+  // same-day, exposure, safeguarding or safety consequence demands more.
+  const propagationOnlyHigh = modifiers.propagating && urgency === 'high' && !sameDay &&
+    !modifiers.exposureActive && !modifiers.immediateSafeguarding &&
+    !(risks.safety && symptom.severity >= 1.5);
+  if (propagationOnlyHigh) {
+    lower(null, 'medium', 'propagation.active', 'Propagation without a same-day or active-harm consequence is bounded at Medium urgency.');
+  }
+
   return { impact, urgency, rules, policyIds, floorApplied };
 }
 

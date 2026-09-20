@@ -63,8 +63,18 @@ export function extractHarmTimingEvidence(doc, symptom, context = {}, ledger = c
   const isExpiring = symptomId === 'expiring-soon';
   const isDataLoss = symptomId === 'data-loss';
 
-  const historicalResolution = /\b(?:last|previous|earlier|yesterday)\b[\s\S]{0,60}\b(?:renewed|replaced|restored|fixed|valid|resolved)\b/i.test(doc.text);
+  const historicalResolution = /\b(?:last|previous|earlier|yesterday|old)\b[\s\S]{0,60}\b(?:renewed|replaced|replacement|renewal|restored|fixed|valid|resolved)\b/i.test(doc.text);
   if (isExpired && historicalResolution) {
+    // The expired credential was replaced; if a future requirement still needs
+    // the new one, the harm is waiting rather than present.
+    const replacementNeeded =
+      /\b(?:required|needed|due)\b[^.;!?]{0,48}\b(?:in|within)\s+(?:six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty|\d{1,2})\s+days\b/i.test(doc.text);
+    if (replacementNeeded) {
+      addCandidate(extraction, {
+        timing: 'pending', label: 'harm is waiting — the replacement is required soon',
+        quote: 'required', source: 'expired-replacement', temporal: 'current', ...quoteHit(doc, 'required')
+      });
+    }
     return extraction;
   }
   if (isExpired) {

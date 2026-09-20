@@ -21,6 +21,7 @@ import { registerPolicyTests } from './policy-tests.js';
 import { registerNextActionTests } from './next-action-tests.js';
 import { registerEightQuestionContractTests } from './eight-question-contract-tests.js';
 import { registerHandoffTests } from './handoff-tests.js';
+import { registerGeneralisationTests } from './generalisation-tests.js';
 import { legacyRegressionCases } from './fixtures/legacy-regressions.js';
 import {
   encodeTicket, decodeTicket, tooLongForShare, readTicketFromLocation,
@@ -869,6 +870,95 @@ test('Stale display', 'going live with a portal is not an alternative source', (
   const result = detectWorkaround(createDocument('We go live next week with the new portal.'));
   return ok(result.workaround !== 'yes', JSON.stringify(result));
 });
+const GRANT_WINDOW_TICKET = 'The old compliance certificate expired in May. The replacement portal works now, but the new certificate is required for a grant submission in ten days.';
+const OVERWRITTEN_FORMS_TICKET = 'Nine submitted permission forms were overwritten by a second upload. The storage snapshot is unusable, and the appeal panel meets in eight days.';
+
+test('Deadline', 'a portal that works now is a state, not an immediate deadline', () =>
+  field(GRANT_WINDOW_TICKET, 'deadline', 'weeks-1-2'));
+
+test('Deadline', 'in eight days is a one-to-two-week deadline', () =>
+  field(OVERWRITTEN_FORMS_TICKET, 'deadline', 'weeks-1-2'));
+
+test('Deadline', 'the grant window case stays P3', () =>
+  priority(GRANT_WINDOW_TICKET, 'P3'));
+
+test('Clarification', 'an active exposure with unknown extent asks about containment', () => {
+  const result = analyse("The account for a volunteer who left in June still opens three students' welfare plans. The account was used this morning and access removal is still pending.");
+  return ok(result.followUpQuestions.some((q) => /contained to one record/.test(q)),
+    JSON.stringify(result.followUpQuestions));
+});
+
+test('Clarification', 'a bounded overwrite with unknown extent asks about containment', () => {
+  const result = analyse(OVERWRITTEN_FORMS_TICKET);
+  return ok(result.followUpQuestions.some((q) => /contained to one record/.test(q)),
+    JSON.stringify(result.followUpQuestions));
+});
+test('Clarification', 'a replaced certificate with a future requirement is pending harm', () => {
+  const result = analyse(GRANT_WINDOW_TICKET);
+  return ok(result.harmTiming.timing === 'pending' && result.suggestedPriority === 'P3',
+    JSON.stringify({ harm: result.harmTiming, priority: result.suggestedPriority }));
+});
+
+test('Clarification', 'an unusable storage snapshot leaves no workaround', () =>
+  field(OVERWRITTEN_FORMS_TICKET, 'workaround', 'no'));
+test('Cross-clause', 'an empty view is unavailable and an impaired process', () => {
+  const result = analyse('Last winter every campus timed out. Today only one adviser sees an empty view; the CSV download for that adviser is complete and everyone else is unaffected.');
+  return ok(result.symptom === 'unavailable' && result.businessConsequence?.level === 'impaired' && result.workaround === 'yes' && result.suggestedPriority === 'P4',
+    JSON.stringify({ symptom: result.symptom, consequence: result.businessConsequence, workaround: result.workaround, priority: result.suggestedPriority }));
+});
+
+test('Cross-clause', 'everyone else unaffected is containment evidence', () =>
+  field('Only one adviser sees an empty view and everyone else is unaffected.', 'scope', 'individual'));
+
+test('Cross-clause', 'a bad mapping still being copied is propagation', () => {
+  const result = analyse('A bad year-group mapping is still being copied into the timetable for five campuses. The job is running now, managers need tomorrow\'s schedules, and there is no alternate feed.');
+  return ok(result.eightFacets.i4Containment.containment.propagating === true && result.risks.dataIntegrity === true && result.workaround === 'no',
+    JSON.stringify({ containment: result.eightFacets.i4Containment.containment, risks: result.risks, workaround: result.workaround }));
+});
+
+test('Cross-clause', 'propagation-only urgency is bounded at Medium', () => {
+  const result = analyse('A bad year-group mapping is still being copied into the timetable for five campuses. The job is running now, managers need tomorrow\'s schedules, and there is no alternate feed.');
+  return ok(result.urgency === 'medium' && result.suggestedPriority === 'P2',
+    JSON.stringify({ urgency: result.urgency, priority: result.suggestedPriority }));
+});
+
+test('Cross-clause', 'interns are a team-scale population', () =>
+  field('Interns cannot access the shared drive.', 'scope', 'team'));
+
+test('Cross-clause', 'sensitive record types are privacy context', () => {
+  const result = analyse('A permissions change is queued for next Wednesday. If the approval goes through, interns could open examination-adjustment records; the change is not live yet.');
+  return ok(result.risks.privacy === true && result.harmTiming.timing === 'pending',
+    JSON.stringify({ privacy: result.risks.privacy, harm: result.harmTiming.timing }));
+});
+
+test('Cross-clause', 'a paper sheet covering attendance but not grades is partial', () => {
+  const result = analyse('The paper sign-in sheet covers attendance, but it cannot submit grades.');
+  return ok(result.workaround === 'partial', JSON.stringify({ workaround: result.workaround }));
+});
+
+test('Cross-clause', 'a system name containing assessment is not an imminent consequence', () => {
+  const result = analyse('The assessment portal is slow for one user today.');
+  return ok(result.detail.impactResult.seriousConsequence === false,
+    JSON.stringify(result.detail.impactResult.contributions));
+});
+
+test('Cross-clause', 'no paper route and a rejecting service leave no workaround', () => {
+  const result = analyse('The transport claim service rejects submissions from five campuses. There is no paper route.');
+  return ok(result.workaround === 'no' && result.symptom === 'action-blocked',
+    JSON.stringify({ workaround: result.workaround, symptom: result.symptom }));
+});
+test('Cross-clause', 'would like is a timing preference', () => {
+  const result = detectDriver(createDocument('The wellbeing office would like a report for planning.'));
+  return ok(result.driver === 'preference', JSON.stringify(result));
+});
+
+test('Cross-clause', 'a failing analytics job is an impaired process', () => {
+  const result = analyse('The analytics job is failing for six departments.');
+  return ok(result.businessConsequence?.level === 'impaired', JSON.stringify(result.businessConsequence));
+});
+
+test('Cross-clause', 'a CSV extract is a usable workaround', () =>
+  field('Their managers can use the CSV extract until tomorrow.', 'workaround', 'yes'));
 
 /* ------------------------------------------------- 11. auth and windows -- */
 
@@ -2871,6 +2961,7 @@ registerPolicyTests(test, ok);
 registerNextActionTests(test, ok);
 registerEightQuestionContractTests(test, ok);
 registerHandoffTests(test, ok);
+registerGeneralisationTests(test, ok);
 
 function legacyFacetState(result, facet) {
   if (facet === 'i1') return result.eightFacets.i1Scope.value;

@@ -27,6 +27,10 @@ export function deadlineLabel(id) {
 
 /** Time words that express feeling rather than a business commitment. */
 /** "Two offices now cannot lodge" states a current condition, not immediacy. */
+/** "The replacement portal works now" states a current condition, not immediacy. */
+const STATE_BEFORE_NOW_RE =
+  /\b(?:works?|working|available|valid|open|online|functional|operating|running|live)\s+$/i;
+
 const STATE_ADVERB_NOW_RE =
   /^\s+(?:can not|can|cannot|could|will|would|may|might|must|should|does|do|did|has|have|is|are|was|were)\b/i;
 
@@ -114,6 +118,8 @@ export function detectDeadline(doc) {
     const clause = doc.clauses[hit.clauseIndex];
     const clauseText = clause ? clause.text : doc.text;
     if (hit.quote === 'now' && STATE_ADVERB_NOW_RE.test(doc.text.slice(hit.end))) continue;
+    if (hit.quote === 'now' && clause &&
+        STATE_BEFORE_NOW_RE.test(doc.text.slice(clause.start, hit.start))) continue;
     const suppressed = def.id !== 'none' &&
       (notNeeded.has(hit.clauseIndex) || isObservationOnly(clauseText));
     if (suppressed) continue;

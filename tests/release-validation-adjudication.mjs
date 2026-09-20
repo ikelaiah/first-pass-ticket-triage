@@ -8,20 +8,16 @@
  * history lives in docs/260906-v0.8-capability-boundary-qualification.md.
  */
 export const capabilityBoundaries = Object.freeze({
-  'release-09-three-tutors-assessment-submit': 'C',
   'release-12-wellbeing-report-request': 'C',
   'release-13-approved-permissions-draft': 'C',
   'release-19-transport-claim-cutoff': 'C',
   'release-20-payroll-reconcile-separation': 'C',
   'release-22-corrected-pay-history': 'C',
-  'release-26-year-group-spread': 'C',
-  'release-27-current-narrow-after-history': 'C',
   'release-33-household-records-separated': 'C',
   'release-34-potential-export-and-analytics': 'C',
   'release-14-disciplinary-note-cross-department': 'D',
   'release-15-volunteer-welfare-account': 'D',
   'release-24-permission-forms-no-snapshot': 'D',
-  'release-28-certificate-grant-window': 'D',
   'release-36-submission-reference-only': 'D'
 });
 

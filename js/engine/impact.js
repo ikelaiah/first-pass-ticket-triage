@@ -196,7 +196,11 @@ export function assessImpact(doc, ctx) {
   // --- one person, serious consequence ---------------------------------
   const smallScope = ['individual', 'few-users'].includes(scopeResult.scope);
   const urgentDeadline = ['now', 'today'].includes(deadlineResult.deadline);
-  const serious = scanPositive(doc, SERIOUS_CONSEQUENCE_PHRASES);
+  // A consequence named as a system or artefact ("assessment portal") is a
+  // topic, not an imminent personal consequence.
+  const serious = scanPositive(doc, SERIOUS_CONSEQUENCE_PHRASES).filter((hit) =>
+    !/\s+(?:portals?|services?|platforms?|systems?|applications?|apps?|tools?|folders?)\b/i.test(
+      doc.text.slice(hit.end, hit.end + 24)));
   const seriousConsequence = smallScope && urgentDeadline && serious.length > 0;
   if (seriousConsequence) {
     add(1.75, 'A serious consequence for the individual is imminent', serious[0].quote);

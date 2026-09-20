@@ -13,6 +13,8 @@ const UNRECOVERABLE = [
 ];
 
 const RECOVERABLE = [
+  /\bcan\s+be\s+rebuilt\b/i,
+  /\b(?:rebuilt|recreated|reconstructed)\b[^.;!?]{0,45}\b(?:backup|snapshot|export)\b/i,
   /\bcan\s+be\s+restored\b/i,
   /\brecoverable\b/i,
   /\b(?:restore|restored)\b[^.;!?]{0,45}\bbackup\b/i,

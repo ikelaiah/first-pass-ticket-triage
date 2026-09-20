@@ -36,6 +36,12 @@ const NEGATION_LINKERS = new Set([
 ]);
 
 /** Cancels a preceding phrase: "<phrase> is not affected". */
+/**
+ * "everyone else is unaffected" names an unaffected comparison group, not a
+ * cancellation of the matched phrase's subject.
+ */
+const COMPARATOR_UNAFFECTED = /\b(?:everyone|all|the rest|others?)\b[^.;!?]{0,24}\belse\b[^.;!?]{0,24}\b(?:is|are|was|were)\s+(?:still\s+)?unaffected\b/i;
+
 const FORWARD_CANCEL = new RegExp(
   '^[^.;!?]{0,44}?\\b(?:' +
     'not (?:affected|impacted|involved|broken|down|failing|at risk|an issue|a problem|a concern|the issue|the problem|the cause)' +
@@ -244,7 +250,7 @@ export function isNegated(doc, start, end) {
   }
 
   // Forward: "<phrase> ... is not affected".
-  return FORWARD_CANCEL.test(after);
+  return FORWARD_CANCEL.test(after) && !COMPARATOR_UNAFFECTED.test(after);
 }
 
 /** Negation specific to current-state evidence such as "no one currently...". */

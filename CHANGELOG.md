@@ -11,6 +11,12 @@
   under-prioritisation, severe under-prioritisation, P1 false negative, or
   assessed-ticket abstention now fails the gate, with evaluator self-tests for
   the blocker list.
+- Added `tests/generalisation-tests.js`, a Phase 4 suite of unseen-paraphrase,
+  invariant, and adversarial assertions: every accuracy fix in this release is
+  re-tested with wording that is not in any locked fixture, alongside urgency
+  monotonicity, comparator/history scope, clause-local negation, screaming
+  without consequence, resolved-then-live wording, UAT test cases, pasted logs,
+  and quoted history.
 
 ### Changed
 
@@ -84,15 +90,39 @@
   as a reviewed scope-band label defect (twelve pupils is `team` per the
   counting band and three checked-in fixtures, while the frozen label says
   `few-users`).
+- Deadline parsing now treats a state "works now" as a current condition rather
+  than an immediate deadline, and reads "in eight/ten days" as a one-to-two-week
+  deadline. A replaced certificate with a future requirement is pending harm
+  rather than active harm, and an unusable storage snapshot leaves no
+  workaround. The unique extent question now also covers active exposure and
+  explicit loss at cohort scale. This resolves locked D case
+  `release-28-certificate-grant-window` and adds tested clarification paths for
+  `release-14`, `release-15`, `release-24`, and `release-36`.
+- Phase 3 composition pass resolves locked C cases `release-09`, `release-26`,
+  and `release-27`: "covers X but cannot do Y" is a partial workaround; a
+  consequence word inside a system name is no longer an imminent-consequence
+  escalation; "still being copied" is active propagation with Medium-bounded
+  urgency; a bad mapping is a data-integrity risk; an empty view is unavailable
+  and impaired; "everyone else is unaffected" is comparator containment; a
+  complete CSV extract is a workaround; and the continuity deadline demotion no
+  longer applies to outage-grade symptoms. Also adds `would like` as a
+  preference driver, a failing analytics job as impaired, "can use the CSV
+  extract" as a workaround, and a comparator guard for forward negation. The
+  seven remaining C cases are documented policy/label boundaries with
+  clarification coverage tested.
+- Phase 4 generalisation fixes from the new suite: an omitted sync batch is an
+  impaired process, "can be rebuilt from a backup" is a recovery path,
+  "displaying last week's" is a stale display, written-number manual durations
+  are costs, and "stopped again" reopens a resolved incident.
 
 ### Verified
 
-- 1008 behavioural assertions pass, and the checked-in corpus reads 78/79 exact
+- 1049 behavioural assertions pass, and the checked-in corpus reads 78/79 exact
   priority with zero unsafe under-prioritisation, zero severe
   under-prioritisation, zero P1 false negatives, and zero assessed-ticket
   abstentions.
-- The locked v0.8.0 validator now reports 17 exact semantic divergences: 15
-  capability boundaries (B=0, C=10, D=5), one acceptable ambiguity, and one
+- The locked v0.8.0 validator now reports 13 exact semantic divergences: 11
+  capability boundaries (B=0, C=7, D=4), one acceptable ambiguity, and one
   reviewed scope-band label defect, with zero unadjudicated divergences and zero
   safety blockers.
 
