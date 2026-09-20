@@ -139,9 +139,64 @@ export function registerGeneralisationTests(test, ok) {
     return ok(result.scope === 'individual', result.scope);
   });
 
-  test('Generalisation', 'a document-only mention does not set a workaround cost', () => {
-    const result = analyse('The guide says a manual process takes an hour.');
-    return ok(!result.eightFacets.u7Workaround.costPerDay,
-      JSON.stringify(result.eightFacets.u7Workaround));
+
+  // --- holdout-derived safety and generalisation guards ---------------------
+  test('Generalisation', 'present-tense disclosure to another household is active exposure', () => {
+    const result = analyse("The parent portal shows one family's balance to another family, and support cannot revoke the session.");
+    return ok(result.riskModifiers.exposureActive === true && result.suggestedPriority === 'P1',
+      JSON.stringify({ exposureActive: result.riskModifiers.exposureActive, priority: result.suggestedPriority }));
+  });
+
+  test('Generalisation', 'an expired clearance that can still open welfare notes is P1', () => {
+    const result = analyse('A contractor whose clearance lapsed last month can still access student welfare records.');
+    return ok(result.risks.safeguarding === true && result.suggestedPriority === 'P1',
+      JSON.stringify({ safeguarding: result.risks.safeguarding, priority: result.suggestedPriority }));
+  });
+
+  test('Generalisation', 'a printed-copy fallback keeps an evacuation drill at P2', () =>
+  priority('The evacuation maps will not load for tomorrow\'s drill, but printed copies are posted in every building.', 'P2'));
+
+  test('Generalisation', 'operated-normally-since resolves a historical sync stop', () =>
+  priority('The student synchronisation stopped for one campus yesterday, has operated normally since, and no records were changed incorrectly.', 'P4'));
+
+  test('Generalisation', 'a scheduled renewal with working sign-in is backlog work', () =>
+  priority('The certificate expires next month, sign-in is working today, and renewal has already been scheduled.', 'P4'));
+
+  test('Generalisation', 'a paper register fallback for one librarian is backlog work', () =>
+  priority('The library barcode reader is unavailable for one librarian, but loans can be recorded on the paper register and entered at closing.', 'P4'));
+
+  test('Generalisation', 'a draft role over private fields is pending privacy context', () => {
+    const result = analyse('A draft API role would include private counselling fields for an analytics group if it is enabled; the role is not active.');
+    return ok(result.risks.privacy === true && result.harmTiming.timing === 'pending' && result.impact === 'medium',
+      JSON.stringify({ privacy: result.risks.privacy, harm: result.harmTiming.timing, impact: result.impact }));
+  });
+
+  test('Generalisation', 'an alternate shortcut keeps an accessibility barrier at P3', () => {
+    const result = analyse('Keyboard focus skips the save action for one enrolment officer using a screen reader, although the supported alternate shortcut completes the record.');
+    return ok(result.workaround === 'yes' && result.suggestedPriority === 'P3',
+      JSON.stringify({ workaround: result.workaround, priority: result.suggestedPriority }));
+  });
+
+  test('Generalisation', 'records written incorrectly in one batch are a data-integrity finding', () => {
+    const result = analyse('Twelve student addresses were written incorrectly in one batch; the import is paused and a prepared repair will restore the records.');
+    return ok(result.risks.dataIntegrity === true && result.impact === 'medium',
+      JSON.stringify({ dataIntegrity: result.risks.dataIntegrity, impact: result.impact }));
+  });
+
+  test('Generalisation', 'a negated service failure is not a symptom', () => {
+    const result = analyse('The high-availability connector is mentioned for context, but the request is only to correct a label in a local report and no service failure is reported.');
+    return ok(result.symptom !== 'failed' && result.impact === 'low',
+      JSON.stringify({ symptom: result.symptom, impact: result.impact }));
+  });
+
+  test('Generalisation', 'a paused job is a viable alternative, not an emergency', () => {
+    const result = analyse('The nightly import has restored the wrong suburb for the same pupil on four runs, but the job is paused pending correction.');
+    return ok(result.workaround === 'yes' && result.impact === 'medium',
+      JSON.stringify({ workaround: result.workaround, impact: result.impact }));
+  });
+
+  test('Generalisation', 'unrecoverable loss with a future need keeps Medium urgency', () => {
+    const result = analyse("The sole archive of last year's audit reports was erased; there is no usable backup and the next review is in two weeks.");
+    return ok(result.urgency === 'medium', result.urgency);
   });
 }

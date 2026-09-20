@@ -32,6 +32,8 @@ const NEGATION_LINKERS = new Set([
   'those', 'our', 'their', 'its', 'his', 'her', 'my', 'your', 'other',
   'apparent', 'known', 'evidence', 'sign', 'signs', 'indication', 'indications',
   'report', 'reports', 'further', 'more', 'real', 'actual', 'data', 'information', 'records', 'in',
+  'service', 'services', 'system', 'systems', 'application', 'applications', 'platform', 'job', 'jobs',
+  'process', 'processes', 'integration', 'integrations', 'sync', 'submission', 'submissions', 'transaction', 'transactions',
   'have', 'has', 'had', 'got', 'get'
 ]);
 

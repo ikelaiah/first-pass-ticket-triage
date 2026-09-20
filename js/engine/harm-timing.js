@@ -100,8 +100,8 @@ export function extractHarmTimingEvidence(doc, symptom, context = {}, ledger = c
   const pendingHit = matchesAny(doc, HARM_TIMING_PHRASES.pending);
   if (pendingHit) addCandidate(extraction, { timing: 'pending', label: 'harm is waiting to happen', source: 'harm-phrase', ...pendingHit });
 
-  const pendingChange = /\b(?:proposed|queued|planned)\b[\s\S]{0,120}\b(?:could|may|might|would)\b/i.test(doc.text) &&
-    /\b(?:if\s+(?:the\s+)?approval|not\s+(?:live|enabled)|has not been enabled)\b/i.test(doc.text);
+  const pendingChange = /\b(?:proposed|queued|planned|draft)\b[\s\S]{0,120}\b(?:could|may|might|would)\b/i.test(doc.text) &&
+    /\b(?:if\s+(?:the\s+)?approval|if\s+(?:it|the change|the role|this)\s+is\s+(?:enabled|approved)|not\s+(?:live|enabled|active)|has not been enabled)\b/i.test(doc.text);
   if (pendingChange) {
     const start = doc.text.search(/\b(?:proposed|queued|planned)\b/i);
     addCandidate(extraction, {

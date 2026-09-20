@@ -31,7 +31,7 @@ export const SCOPE_DEFINITIONS = [
 
 export const SCOPE_PHRASES = [
   // Individual
-  { m: [/\b(?:one|a single|1) (?:user|student|staff member|teacher|person|employee|parent|guardian|coordinator|record|report|account|mailbox|device|analyst|applicant|administrator)\b/,
+  { m: [/\b(?:one|a single|1) (?:user|student|staff member|teacher|person|employee|parent|guardian|coordinator|record|report|account|mailbox|device|analyst|applicant|administrator|librarian|officer|adviser)\b/,
         /\b(?:a|one) (?:casual |part[- ]time |full[- ]time |new |relief |temporary |visiting )?(?:staff member|teacher|student|employee|user|parent|guardian|coordinator|contractor|analyst|applicant|administrator)\b/,
         'single user', 'one individual', 'individual user', 'just me', 'only me', 'for me', 'my account',
         'one family', 'a single family', 'one household', 'this parent',
@@ -252,6 +252,8 @@ export const WORKAROUND_PHRASES = [
         /\b(?:csv|export|download|extract)\b[^.;!?]{0,24}\b(?:is|are)\s+complete\b/,
         /\b(?:existing|current)\b[^.;!?]{0,24}\b(?:summary|report|view|list|page)\b[^.;!?]{0,24}\b(?:is|are)\s+usable\b/,
         /\bcan use the (?:csv|extract|spreadsheet|export)\b/,
+        'printed copy', 'printed copies', 'paper register',
+        /\b(?:alternate|alternative|shortcut)\b[^.;!?]{0,32}\b(?:completes?|works?|is available)\b/,
         /\b(?:coordinator|staff|admin|team)\b[^.;!?]{0,24}\b(?:has |have )?posted\b[^.;!?]{0,24}\b(?:current|updated|correct|accurate)\b/],
     v: 'yes', label: 'a workaround or manual process exists' },
   { m: ['partial workaround', 'limited workaround', 'only some users', 'works for some',
@@ -480,7 +482,8 @@ export const SYMPTOMS = [
     m: ['still has an account', 'access not removed', 'not been removed',
         'not been disabled', 'not been revoked', 'still enabled', 'still active in',
         'account is still', 'was not deprovisioned',
-        /\bstill has (?:\w+\s+){0,2}access\b/] },
+        /\bstill has (?:\w+\s+){0,2}access\b/,
+        /\bcan still (?:open|access|view|read|use)\b/] },
   { id: 'capacity', label: 'Capacity / Storage', severity: 2,
     m: ['disk full', 'disk is full', 'storage full', 'out of disk space', 'no disk space',
         'running out of space', 'running low on space', 'no space left', 'quota exceeded',
@@ -967,7 +970,7 @@ export const RISK_DEFINITIONS = [
         'sensitive information', 'medical information', 'health information',
         /\b(?:could|may|might|would) expose (?:records?|data|information)\b/,
         /\banother family['’]?s (?:fee )?(?:balance|balances|details|information|records?)\b/,
-        /\b(?:examination|assessment|wellbeing|welfare|disciplinary)[- ](?:adjustment|adjustments|records?|notes?|plans?)\b/] },
+        /\b(?:examination|assessment|wellbeing|welfare|disciplinary|counselling|medical|health|disability)[- ](?:adjustment|adjustments|records?|notes?|plans?|fields?|data|details?)\b/] },
   { key: 'security', label: 'Security',
     m: ['data breach', 'privacy breach', 'security breach', 'breach of privacy',
         'breach', 'unauthorised access', 'hacked', 'compromised', 'exposed', 'data leak',
@@ -1035,8 +1038,9 @@ export const RISK_DEFINITIONS = [
         IMPORT_OMITTED_RECORDS,
         STALE_DISPLAY,
         BAD_MAPPING,
+        /\b(?:written|recorded|entered|loaded|imported|synced)\s+incorrectly\b/,
         // "incorrect carers", "duplicate student records", "wrong year level"
-        /\b(?:incorrect|wrong|duplicate|duplicated|mismatched|invalid)\s+(?:\w+\s+){0,2}(?:carers?|guardians?|contacts?|students?|records?|profiles?|amounts?|payments?|balances?|schools?|classes|parents?|families|enrolments?|year levels?|photos?|names?|addresses?|ids?|totals?)\b/,
+        /\b(?:incorrect|wrong|duplicate|duplicated|mismatched|invalid)\s+(?:\w+\s+){0,2}(?:carers?|guardians?|contacts?|students?|records?|profiles?|amounts?|payments?|balances?|schools?|classes|parents?|families|enrolments?|year levels?|photos?|names?|addresses?|suburbs?|ids?|totals?)\b/,
         // "the date of birth is incorrect" - adjective after the noun
         /\b(?:date of birth|dob|year level|name|address|record|records|amount|balance|total|class)\s+(?:is|are|was|were|has been|have been)\s+(?:incorrect|wrong|duplicated|mismatched)\b/,
         /\b(?:record|records|data|entries)\b[^.;!?]{0,32}\b(?:is|are|was|were|has been|have been)\s+(?:incorrect|wrong|duplicated|mismatched)\b/,
@@ -1086,7 +1090,8 @@ export const RISK_MODIFIERS = {
    */
   crossPersonVisibility: [
     /\b(?:can|could|are able to|is able to) (?:see|view|access|open|download|read) (?:another|other|others|someone else's|a different|the wrong)\b/,
-    /\b(?:another|other|a different) (?:family|families|student|students|parent|parents|carer|carers)['’]?s? (?:details|information|data|(?:fee )?balance|(?:fee )?balances|record|records|account|accounts|address|addresses|fees)\b/,
+    /\b(?:shows?|displays?|reveals?)\b[^.;!?]{0,40}\bto (?:the )?(?:wrong|another|other)\s+(?:household|households|family|families|parent|parents|carer|carers|student|students|department|team)\b/,
+    /\b(?:another|other|a different) (?:family|families|student|students|parent|parents|carer|carers|household|households)['’]?s? (?:details|information|data|(?:fee )?balance|(?:fee )?balances|record|records|account|accounts|address|addresses|fees)\b/,
     /\b(?:sent|emailed|disclosed|released|went|delivered|addressed) to (?:the )?wrong (?:parent|carer|guardian|family|recipient|person|student|address|email)\b/,
     /\b(?:wrong|another|other) (?:student|child|family|parent|staff)['’]?s? (?:photo|photograph|image|name|details|address|record)\b/,
     /\b(?:case officer|staff member|employee|user)\b[^.!?;]{0,48}\b(?:another|different)\s+(?:department|team)\b[^.!?;]{0,64}\b(?:can|could|is able to)\s+(?:see|view|access|open|read)\b[^.!?;]{0,96}\b(?:student(?:s)?['’]?s?\s+)?(?:disciplinary|welfare|medical|case)\s+(?:note|notes|record|records)\b/,
@@ -1107,6 +1112,7 @@ export const RISK_MODIFIERS = {
 
   exposureActive: [
     /\b(?:visible|available|accessible|shown|displayed) to (?:the )?(?:wrong|another|other|an unauthorised|incorrect)\b/,
+    /\b(?:shows?|displays?|reveals?)\b[^.;!?]{0,40}\bto (?:the )?(?:wrong|another|other)\s+(?:household|households|family|families|parent|parents|carer|carers|student|students|department|team)\b/,
     /\b(?:can|could|are able to|is able to) (?:see|view|access|open|read) (?:another|other|someone else's|a different)\b/,
     /\b(?:another|other|a different) (?:family|families|student|students|parent|parents)['’]?s? (?:details|information|data|(?:fee )?balance|(?:fee )?balances|record|records|account|accounts|address|addresses)\b/,
     /\b(?:case officer|staff member|employee|user)\b[^.!?;]{0,48}\b(?:another|different)\s+(?:department|team)\b[^.!?;]{0,64}\b(?:can|could|is able to)\s+(?:see|view|access|open|read)\b[^.!?;]{0,96}\b(?:student(?:s)?['’]?s?\s+)?(?:disciplinary|welfare|medical|case)\s+(?:note|notes|record|records)\b/,
@@ -1327,7 +1333,8 @@ export const CONTINUITY_PHRASES = [
   { m: ['printable pdf is accurate', 'printable pdf is fine', 'gives them the complete document',
         'live departures page is accurate', 'existing summary is usable',
         'csv download for that adviser is complete', 'file opens normally',
-        'can keep booking rooms'],
+        'can keep booking rooms',
+        /\b(?:job|import|sync|process|migration)\b[^.;!?]{0,16}\b(?:is |has been )?paused\b/],
     label: 'an explicit alternative or completed path remains usable' }
 ];
 

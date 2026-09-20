@@ -223,6 +223,10 @@ export function applyTriagePolicy(context) {
   if (evidence.recoverability === 'unrecoverable') {
     raise('high', null, 'loss.unrecoverable', 'Material data loss is not recoverable.');
   }
+  if (evidence.recoverability === 'unrecoverable' &&
+      !['unknown', 'none'].includes(evidence.deadline)) {
+    minimumUrgency('medium', 'loss.unrecoverable', 'Permanent loss with a stated future need cannot wait indefinitely.');
+  }
 
   if (risks.safety && symptom.severity >= 1.5) {
     raise('high', null, 'safety.active', 'Safety-critical information or equipment is affected.');
