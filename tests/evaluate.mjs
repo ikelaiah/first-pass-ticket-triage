@@ -89,6 +89,28 @@ export function normaliseEvaluationText(text) {
   return text.trim().toLowerCase().replace(/\s+/g, ' ');
 }
 
+/**
+ * Safety-first release gate for the checked-in corpus.
+ *
+ * Exact priority accuracy, impact/urgency accuracy, and the reviewed acceptable
+ * ambiguities stay informational. Any unsafe under-prioritisation, severe
+ * under-prioritisation, P1 false negative, or assessed-ticket abstention fails
+ * the gate so a new safety regression cannot ship silently.
+ */
+export function safetyBlockers(report) {
+  return [
+    ['unsafe under-prioritisation', report.unsafeUnderPrioritisation],
+    ['severe unsafe under-prioritisation', report.severeUnsafeUnderPrioritisation],
+    ['severe under-prioritisation', report.severeUnderPrioritisation],
+    ['P1 false negatives', report.p1.falseNegative],
+    ['abstentions on assessed tickets', report.abstentionsOnAssessed]
+  ].filter(([, value]) => value > 0);
+}
+
+export function formatSafetyBlockers(blockers) {
+  return blockers.map(([name, value]) => name + '=' + value).join(', ');
+}
+
 export function validateCorpus(corpus) {
   assert(corpus && Array.isArray(corpus.cases), 'top-level `cases` must be an array');
   assert(corpus.cases.length > 0, '`cases` must not be empty');
@@ -613,6 +635,10 @@ if (invokedPath === import.meta.url) {
           ' mismatch(es) lack an explicit review classification');
       }
       printReport(report);
+      const blockers = safetyBlockers(report);
+      if (blockers.length) {
+        throw new Error('Safety gate failed: ' + formatSafetyBlockers(blockers));
+      }
     } catch (error) {
       console.error(error.message);
       process.exitCode = 1;

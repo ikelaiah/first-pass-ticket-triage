@@ -170,6 +170,20 @@ export function registerPolicyTests(test, ok) {
     return ok(result.impact === 'high' && result.urgency === 'high', JSON.stringify(result));
   });
 
+  test('v0.8.0 policy', 'an uncontained payroll data issue against today raises both dimensions', () => {
+    const result = policy({
+      deadline: 'today',
+      deadlineCommitted: true,
+      deadlineDriver: 'operational',
+      scope: 'team',
+      risks: { ...EMPTY_RISKS, payroll: true },
+      symptom: { id: 'missing-data', severity: 1.5, hasFailure: false, isDataIssue: true }
+    });
+    return ok(result.impact === 'high' && result.urgency === 'high' &&
+      result.policyIds.includes('financial.confirmed'),
+    JSON.stringify({ impact: result.impact, urgency: result.urgency, ids: result.policyIds }));
+  });
+
   test('v0.8.0 policy', 'contained duplicate charges remain contextual despite a same-day correction', () => {
     const result = applyTriagePolicy({
       impact: 'medium', urgency: 'high',
@@ -189,6 +203,76 @@ export function registerPolicyTests(test, ok) {
       impact: 'medium', urgency: 'high', evidence: { ...BASE_EVIDENCE, recoverability: 'recoverable' }
     });
     return ok(result.impact === 'medium', result.impact);
+  });
+
+  test('v0.8.0 policy', 'a recoverable loss cannot keep High impact', () => {
+    const result = applyTriagePolicy({
+      impact: 'high', urgency: 'medium',
+      evidence: {
+        ...BASE_EVIDENCE, recoverability: 'recoverable',
+        symptom: { id: 'data-loss', severity: 3, hasFailure: true, isDataIssue: true }
+      }
+    });
+    return ok(result.impact === 'medium' && result.policyIds.includes('loss.recoverable'),
+      JSON.stringify({ impact: result.impact, ids: result.policyIds }));
+  });
+
+  test('v0.8.0 policy', 'an explicit loss with a near restoration need is High urgency', () => {
+    const result = applyTriagePolicy({
+      impact: 'medium', urgency: 'low',
+      evidence: {
+        ...BASE_EVIDENCE, recoverability: 'recoverable', deadline: 'tomorrow',
+        symptom: { id: 'data-loss', severity: 3, hasFailure: true, isDataIssue: true }
+      }
+    });
+    return ok(result.urgency === 'high', result.urgency);
+  });
+
+  test('v0.8.0 policy', 'a soft restoration timeline does not raise urgency', () => {
+    const result = applyTriagePolicy({
+      impact: 'medium', urgency: 'low',
+      evidence: {
+        ...BASE_EVIDENCE, recoverability: 'recoverable', deadline: 'tomorrow',
+        lowUrgencySignal: true,
+        symptom: { id: 'data-loss', severity: 3, hasFailure: true, isDataIssue: true }
+      }
+    });
+    return ok(result.urgency === 'low', result.urgency);
+  });
+
+  test('v0.8.0 policy', 'an unstated loss event does not raise restoration urgency', () => {
+    const result = applyTriagePolicy({
+      impact: 'medium', urgency: 'medium',
+      evidence: {
+        ...BASE_EVIDENCE, recoverability: 'recoverable', deadline: 'days-2-5',
+        deadlineCommitted: true, deadlineDriver: 'operational'
+      }
+    });
+    return ok(result.urgency === 'medium', result.urgency);
+  });
+
+  test('v0.8.0 policy', 'costly manual work on a failing finance process before a close is High urgency', () => {
+    const result = applyTriagePolicy({
+      impact: 'medium', urgency: 'low',
+      evidence: {
+        ...BASE_EVIDENCE, deadline: 'tomorrow', deadlineDriver: 'operational',
+        workaround: 'yes', workaroundCost: 'nearly an hour', consequence: 'impaired',
+        risks: { ...EMPTY_RISKS, financial: true }
+      }
+    });
+    return ok(result.urgency === 'high' && result.policyIds.includes('financial.confirmed'),
+      JSON.stringify({ urgency: result.urgency, ids: result.policyIds }));
+  });
+
+  test('v0.8.0 policy', 'costly manual work without a near close does not raise urgency', () => {
+    const result = applyTriagePolicy({
+      impact: 'medium', urgency: 'low',
+      evidence: {
+        ...BASE_EVIDENCE, workaround: 'yes', workaroundCost: 'nearly an hour', consequence: 'impaired',
+        risks: { ...EMPTY_RISKS, financial: true }
+      }
+    });
+    return ok(result.urgency === 'medium', result.urgency);
   });
 
   test('v0.8.0 policy', 'unrecoverable material loss cannot lower Impact', () => {

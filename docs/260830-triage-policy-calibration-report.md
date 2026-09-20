@@ -92,3 +92,20 @@ committed after the final gates passed:
 
 The remaining remote steps require the repository's normal GitHub permissions
 and should occur only after review and merge.
+
+## Erratum — 2026-09-19
+
+The evaluator table above was captured before the v0.8.0 Category-A evidence
+pass and before later adjudication. Scoring, the evaluator, and the checked-in
+corpus are unchanged since the v0.8.0 tag, so re-running
+`node tests/evaluate.mjs tests/fixtures/accuracy-corpus.json` on v0.10.0 `main`
+is a re-run of the released v0.8.0 engine; it reports **74/79 exact priority**
+(not 75/79), **one unsafe under-prioritisation** (not zero), and one deferred
+policy disagreement. The difference is a stale report, not an engine
+regression.
+
+Four disputed cases were subsequently adjudicated in
+[the 2026-09-19 safety-boundary adjudication](260919-safety-boundary-adjudication.md):
+two labels were corrected as ground-truth defects and two mismatches were
+reclassified as engine defects. Treat that memo and the current evaluator output
+as authoritative; this release report remains a historical v0.8.0 record.

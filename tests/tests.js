@@ -275,6 +275,27 @@ test('Scope', 'everyone else remains broad scope when they are also unable to wo
   field('My Outlook is not working, and everyone else cannot use Outlook either.',
     'scope', 'corporation-wide'));
 
+test('Scope', '"if possible" is a preference hedge, not a hypothetical scope', () =>
+  field('Could you add a dashboard button for all schools before the next term, if possible?',
+    'scope', 'all-schools'));
+
+test('Scope', '"if you can" is a preference hedge, not a hypothetical scope', () =>
+  field('Please add the group for all schools if you can.', 'scope', 'all-schools'));
+
+test('Scope', 'a real conditional keeps its population hypothetical', () => {
+  const result = detectScope(createDocument(
+    'If the record is missing from Edumate, all schools will be affected.'
+  ));
+  return ok(result.scope === 'unknown', JSON.stringify(result));
+});
+
+test('Scope', 'a future approval condition keeps its population hypothetical', () => {
+  const result = detectScope(createDocument(
+    'All schools are affected if the change is approved.'
+  ));
+  return ok(result.scope === 'unknown', JSON.stringify(result));
+});
+
 /* -------------------------------------------------------- 3. workaround -- */
 
 const WORKAROUND_CASES = [
@@ -549,6 +570,21 @@ test('Payroll', '35 casual staff unpaid before cutoff -> P1', () =>
 test('Payroll', 'employees missing from a current pay run before a bank-file cutoff -> P1', () =>
   priority('Four casual employees are absent from the current pay run. The payroll team has two hours before the bank file cutoff and cannot regenerate the file from this screen.', 'P1'));
 
+test('Payroll', 'payroll file not produced before a same-day cutoff -> P1', () =>
+  priority('The casual staff payroll file was not produced for 42 employees and the payroll cutoff is this afternoon.', 'P1'));
+
+test('Payroll', 'a not-produced payroll file is detected as missing data', () =>
+  field('The casual staff payroll file was not produced for 42 employees and the payroll cutoff is this afternoon.', 'symptom', 'missing-data'));
+
+test('Payroll', 'a missing non-payroll file does not escalate to P1', () => {
+  const result = analyse('The timetable draft file was not produced for the office team and there is no deadline.');
+  return ok(result.priority !== 'P1',
+    result.priority + ' / risks.payroll=' + result.risks.payroll + ' / symptom=' + result.symptom);
+});
+
+test('Payroll', 'a produced payroll file is not a failure', () =>
+  priority('The payroll file is produced every Tuesday at 4pm; what time does the next run happen?', ['P3', 'P4']));
+
 test('Payroll', 'payroll question with no deadline -> P3 or P4', () =>
   priority('I have a general question about how payroll records are stored.', ['P3', 'P4']));
 
@@ -643,6 +679,48 @@ test('Data integrity', 'propagation is detected', () => {
   return ok(result.riskModifiers.propagating === true,
     'propagating = ' + result.riskModifiers.propagating);
 });
+const SKIPPED_IMPORT_TICKET = 'The absence import skipped seven pupils in one year group. The attendance clerk can enter them manually, and the register closes in two days.';
+
+test('Data integrity', 'an import that skipped records raises the data-integrity risk', () => {
+  const result = analyse(SKIPPED_IMPORT_TICKET);
+  return ok(result.risks.dataIntegrity === true, JSON.stringify(result.risks));
+});
+
+test('Data integrity', 'a skipped process step is not a data-integrity finding', () => {
+  const result = analyse('The import skipped the validation step before the sync.');
+  return ok(result.risks.dataIntegrity === false, JSON.stringify(result.risks));
+});
+
+test('Data integrity', 'a bounded skipped import stays Medium impact and P3', () =>
+  priority(SKIPPED_IMPORT_TICKET, 'P3'));
+
+test('Containment', 'a skipped import bounded to one year group appears contained', () => {
+  const result = analyse(SKIPPED_IMPORT_TICKET);
+  return ok(result.eightFacets.i4Containment.containment.contained === true,
+    JSON.stringify(result.eightFacets.i4Containment.containment));
+});
+
+test('Containment', 'a bounded skipped import that is spreading is not contained', () => {
+  const result = analyse('The import skipped pupils in one year group, and the wrong values are now spreading to other year groups.');
+  return ok(result.eightFacets.i4Containment.containment.contained === false &&
+    result.eightFacets.i4Containment.containment.propagating === true,
+  JSON.stringify(result.eightFacets.i4Containment.containment));
+});
+
+test('Driver', 'a register close is an operational deadline driver', () => {
+  const result = detectDriver(createDocument('The register closes in two days.'));
+  return ok(result.driver === 'operational', JSON.stringify(result));
+});
+
+test('Harm timing', 'a skipped import leaves records missing now', () => {
+  const result = detectHarmTiming(createDocument('The absence import skipped seven pupils in one year group.'), { symptom: 'unknown' });
+  return ok(result.timing === 'active', JSON.stringify(result));
+});
+
+test('Harm timing', 'a historical skipped import is not active harm', () => {
+  const result = detectHarmTiming(createDocument('Last week the import skipped seven pupils in one year group.'), { symptom: 'unknown' });
+  return ok(result.timing !== 'active', JSON.stringify(result));
+});
 
 /* ------------------------------------------------------ 10a. recoverability -- */
 
@@ -661,6 +739,136 @@ test('Recoverability', 'an unusable storage snapshot is not a recovery path', ()
 test('Recoverability', 'temporary unavailability is not inferred to be lost', () =>
   field('The assessment folder is temporarily unavailable while the server is restarted.',
     'recoverability', 'unknown'));
+const RESTORABLE_LOSS_TICKET = 'Eighteen enrolment rows disappeared after a cleanup job. They can be rebuilt from Tuesday\'s snapshot, but the term-start roster locks tomorrow morning.';
+
+test('Recoverability', 'a disappeared batch is data loss', () =>
+  field('Eighteen enrolment rows disappeared after a cleanup job.', 'symptom', 'data-loss'));
+
+test('Recoverability', 'a non-data disappearance is not data loss', () => {
+  const result = analyse('The error message disappeared after the update.');
+  return ok(result.symptom !== 'data-loss', result.symptom);
+});
+
+test('Recoverability', 'a recovery path is a workaround for an explicit loss', () => {
+  const result = analyse(RESTORABLE_LOSS_TICKET);
+  return ok(result.workaround === 'yes',
+    JSON.stringify({ workaround: result.workaround, recoverability: result.eightFacets.i3Irreversibility.recoverability }));
+});
+
+test('Recoverability', 'a recoverable loss stays medium impact at cohort scope', () => {
+  const result = analyse(RESTORABLE_LOSS_TICKET);
+  return ok(result.impact === 'medium' && result.suggestedPriority === 'P2',
+    JSON.stringify({ impact: result.impact, urgency: result.urgency, priority: result.suggestedPriority }));
+});
+
+test('Recoverability', 'a disappeared batch is active harm and an impaired process', () => {
+  const result = analyse(RESTORABLE_LOSS_TICKET);
+  return ok(result.harmTiming.timing === 'active' && result.businessConsequence?.level === 'impaired',
+    JSON.stringify({ harm: result.harmTiming, consequence: result.businessConsequence }));
+});
+const RECURRING_DROP_TICKET = 'Every Monday the timetable import drops the same three bus routes at East Campus. Staff repair the entries before classes and the next import is Friday.';
+
+test('Recurrence', 'a weekly dropped-batch cadence is a recurring pattern', () => {
+  const result = analyse(RECURRING_DROP_TICKET);
+  return ok(result.eightFacets.i4Containment.containment.recurring === true,
+    JSON.stringify(result.eightFacets.i4Containment.containment));
+});
+
+test('Recurrence', 'a weekly cadence alone does not add cumulative impact', () => {
+  const result = analyse(RECURRING_DROP_TICKET);
+  return ok(result.impact === 'medium' && result.suggestedPriority === 'P3',
+    JSON.stringify({ impact: result.impact, urgency: result.urgency, priority: result.suggestedPriority }));
+});
+
+test('Recurrence', 'dropped import records raise the data-integrity risk', () => {
+  const result = analyse(RECURRING_DROP_TICKET);
+  return ok(result.risks.dataIntegrity === true, JSON.stringify(result.risks));
+});
+
+test('Recurrence', 'a repair-before-classes routine is operational with a full workaround', () => {
+  const driver = detectDriver(createDocument('Staff repair the entries before classes.'));
+  const workaround = detectWorkaround(createDocument('Staff repair the entries before classes.'));
+  return ok(driver.driver === 'operational' && workaround.workaround === 'yes',
+    JSON.stringify({ driver, workaround }));
+});
+
+test('Recurrence', 'a next scheduled run is not a deadline', () =>
+  field(RECURRING_DROP_TICKET, 'deadline', 'none'));
+
+test('Recurrence', 'a weekly schedule with no failure is not a recurrence', () => {
+  const result = analyse('Every Monday the scheduled sync runs at 6am.');
+  return ok(result.eightFacets.i4Containment.containment.recurring === false,
+    JSON.stringify(result.eightFacets.i4Containment.containment));
+});
+const RETIRED_ROUTE_TICKET = 'The phone route we used last term was retired by the supplier. Two offices now cannot lodge attendance adjustments before close of business today, and the web form rejects every attempt.';
+
+test('Retired route', 'two offices are a team-scale population', () =>
+  field(RETIRED_ROUTE_TICKET, 'scope', 'team'));
+
+test('Retired route', 'lodgement refusal is a blocked process and action-blocked symptom', () => {
+  const result = analyse(RETIRED_ROUTE_TICKET);
+  return ok(result.businessConsequence?.level === 'blocked' && result.symptom === 'action-blocked',
+    JSON.stringify({ consequence: result.businessConsequence, symptom: result.symptom }));
+});
+
+test('Retired route', 'a rejected web form leaves no workaround', () =>
+  field(RETIRED_ROUTE_TICKET, 'workaround', 'no'));
+
+test('Retired route', 'state-adverb now before a modal is not an immediate deadline', () =>
+  field('Two offices now cannot lodge attendance adjustments before close of business today.', 'deadline', 'today'));
+
+test('Retired route', 'the retired route ticket is P2 with active harm', () => {
+  const result = analyse(RETIRED_ROUTE_TICKET);
+  return ok(result.suggestedPriority === 'P2' && result.harmTiming.timing === 'active',
+    JSON.stringify({ priority: result.suggestedPriority, impact: result.impact, urgency: result.urgency, harm: result.harmTiming }));
+});
+
+test('Retired route', 'the blocked-action symptom is not double-counted with the blocked process', () => {
+  const result = analyse(RETIRED_ROUTE_TICKET);
+  return ok(result.impact === 'medium',
+    JSON.stringify({ impact: result.impact, contributions: result.detail.impactResult.contributions }));
+});
+
+test('Retired route', 'a state now with no failure stays unknown', () =>
+  field('The team now can access the shared drive.', 'deadline', 'unknown'));
+const INVOICE_COST_TICKET = 'The invoice queue for the north office will not send to Finance. We can retype each invoice by hand, although the 18 items already take nearly an hour and the month-end close is tomorrow.';
+
+test('Costly workaround', 'manual effort measured in hours is a cost signal', () => {
+  const result = analyse(INVOICE_COST_TICKET);
+  return ok(Boolean(result.eightFacets.u7Workaround.costPerDay), JSON.stringify(result.eightFacets.u7Workaround));
+});
+
+test('Costly workaround', 'a costly finance failure before a committed close is P2 with active harm', () => {
+  const result = analyse(INVOICE_COST_TICKET);
+  return ok(result.suggestedPriority === 'P2' && result.urgency === 'high' && result.harmTiming.timing === 'active',
+    JSON.stringify({ priority: result.suggestedPriority, urgency: result.urgency, harm: result.harmTiming }));
+});
+
+test('Costly workaround', 'a duration with no manual work is not a workaround cost', () => {
+  const result = analyse('The overnight report takes an hour to run.');
+  return ok(!result.eightFacets.u7Workaround.costPerDay, JSON.stringify(result.eightFacets.u7Workaround));
+});
+const STALE_BOARD_TICKET = 'The arrival board is showing yesterday\'s bus times for twelve pupils, but the live departures page is accurate and the coordinator has posted the current times.';
+
+test('Stale display', 'a board showing yesterday values is incorrect-data and an impaired process', () => {
+  const result = analyse(STALE_BOARD_TICKET);
+  return ok(result.risks.dataIntegrity === true && result.businessConsequence?.level === 'impaired',
+    JSON.stringify({ dataIntegrity: result.risks.dataIntegrity, consequence: result.businessConsequence }));
+});
+
+test('Stale display', 'a live accurate source and posted current times are a full workaround', () =>
+  field(STALE_BOARD_TICKET, 'workaround', 'yes'));
+
+test('Stale display', 'twelve pupils remain a team-scale population per the counting band', () =>
+  field(STALE_BOARD_TICKET, 'scope', 'team'));
+
+test('Stale display', 'the stale board stays P3', () =>
+  priority(STALE_BOARD_TICKET, 'P3'));
+
+test('Stale display', 'going live with a portal is not an alternative source', () => {
+  const result = detectWorkaround(createDocument('We go live next week with the new portal.'));
+  return ok(result.workaround !== 'yes', JSON.stringify(result));
+});
 
 /* ------------------------------------------------- 11. auth and windows -- */
 
@@ -1395,6 +1603,32 @@ test('School systems', 'a screen reader ticket routes to Accessibility', () =>
   field('A vision impaired staff member cannot use the enrolment form with her screen reader.',
     'technicalDomain', 'accessibility'));
 
+test('Accessibility', 'a keyboard-only barrier is an action-blocked symptom', () => {
+  const result = analyse('A staff member who navigates by keyboard cannot land on the approval control in the leave form.');
+  return ok(result.symptom === 'action-blocked', result.symptom);
+});
+
+test('Accessibility', 'a keyboard-only barrier routes to Accessibility', () =>
+  field('A staff member who navigates by keyboard cannot land on the approval control in the leave form.',
+    'technicalDomain', 'accessibility'));
+
+test('Accessibility', 'a non-equivalent assisted path is a partial workaround', () => {
+  const result = detectWorkaround(createDocument('A colleague can click it for now, but that is not an equivalent way for them to work.'));
+  return ok(result.workaround === 'partial', JSON.stringify(result));
+});
+
+test('Accessibility', 'the keyboard barrier ticket is P3 with impaired process and active harm', () => {
+  const result = analyse('A staff member who navigates by keyboard cannot land on the approval control in the leave form. A colleague can click it for now, but that is not an equivalent way for them to work.');
+  return ok(result.suggestedPriority === 'P3' && result.harmTiming.timing === 'active' &&
+    result.businessConsequence?.level === 'impaired',
+  JSON.stringify({ priority: result.suggestedPriority, harm: result.harmTiming.timing, consequence: result.businessConsequence }));
+});
+
+test('Accessibility', 'a working form is not an action-blocked barrier', () => {
+  const result = analyse('The leave form works normally and the approval control can be clicked.');
+  return ok(result.symptom !== 'action-blocked', result.symptom);
+});
+
 test('School systems', 'an expiring certificate is not the same symptom as an expired one', () => {
   const soon = analyse('The SSL certificate for the Laserfiche web client expires in three days.');
   const gone = analyse('The SSL certificate for Laserfiche expired this morning and nobody can log in.');
@@ -1587,6 +1821,29 @@ test('Safety and continuity', 'missing safety information is not an ordinary dat
 
 test('Safety and continuity', 'a dry eyewash control in an occupied lab is P1', () =>
   priority('The eyewash station valve is dry while students are using the lab this afternoon.', ['P1']));
+test('Safety and continuity', 'students using the affected space are a cohort', () =>
+  field('The eyewash station valve is dry while students are using the lab this afternoon.', 'scope', 'cohort'));
+
+test('Safety and continuity', 'a failed safety control blocks safe use of the space', () => {
+  const result = analyse('The eyewash station valve is dry while students are using the lab this afternoon.');
+  return ok(result.businessConsequence?.level === 'blocked', JSON.stringify(result.businessConsequence));
+});
+
+test('Safety and continuity', 'no replacement unit on site is no workaround', () => {
+  const result = analyse('The lab safety panel says the eyewash station passed, but the valve is dry and students are using the room this afternoon. Facilities has no replacement unit on site.');
+  return ok(result.workaround === 'no', result.workaround);
+});
+
+test('Safety and continuity', 'the occupied lab with a dry control is active harm', () => {
+  const result = analyse('The lab safety panel says the eyewash station passed, but the valve is dry and students are using the room this afternoon. Facilities has no replacement unit on site.');
+  return ok(result.harmTiming.timing === 'active' && result.suggestedPriority === 'P1',
+    JSON.stringify({ harm: result.harmTiming, priority: result.suggestedPriority }));
+});
+
+test('Safety and continuity', 'students without a space reference do not set scope', () => {
+  const result = analyse('Students cannot log in to the enrolment portal.');
+  return ok(result.scope !== 'cohort', result.scope);
+});
 
 test('Safety and continuity', 'a court order plus retained access escalates', () => {
   const result = analyse('A court order says the non-custodial parent must not see the student record, but he still has portal access.');
@@ -2186,6 +2443,19 @@ test('Harm timing', 'the month May is not a hypothetical modal', () => {
     'The compliance certificate expired in May.'
   ), { symptom: 'expired-credential', evidence: [{ quote: 'certificate expired' }] });
   return ok(result.timing === 'active', JSON.stringify(result));
+});
+test('Harm timing', 'absence from a current pay run is active harm', () => {
+  const result = detectHarmTiming(createDocument(
+    'Four casual employees are absent from the current pay run.'
+  ), { symptom: 'missing-data' });
+  return ok(result.timing === 'active', JSON.stringify(result));
+});
+
+test('Harm timing', 'a historical absence is not current harm', () => {
+  const result = detectHarmTiming(createDocument(
+    'Three casual employees were absent from the current pay run last month; this month completed successfully.'
+  ), { symptom: 'unknown' });
+  return ok(result.timing !== 'active', JSON.stringify(result));
 });
 
 test('Harm timing', 'explicit unrecoverable data loss remains active', () => {

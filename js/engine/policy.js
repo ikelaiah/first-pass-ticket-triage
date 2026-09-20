@@ -171,7 +171,8 @@ export function applyTriagePolicy(context) {
   const modifiers = evidence.modifiers;
   const symptom = evidence.symptom;
   const broad = (SCOPE_RANK[evidence.scope] || 0) >= SCOPE_RANK['multiple-schools'];
-  const activeFailure = symptom.hasFailure || evidence.consequence === 'blocked' || modifiers.systemicJobs;
+  const activeFailure = symptom.hasFailure || evidence.consequence === 'blocked' ||
+    evidence.consequence === 'impaired' || modifiers.systemicJobs;
   const contained = Boolean(evidence.containment?.contained);
   const financialProcessingFailure =
     (risks.financial || risks.payroll) &&
@@ -191,6 +192,13 @@ export function applyTriagePolicy(context) {
   // escalation needs a blocked/failed processing path or confirmed harm.
   if (sameDay && (financialProcessingFailure || confirmedFinancialHarm)) {
     raise('high', 'high', 'financial.confirmed', 'Payroll or payment processing is failing against a same-day deadline.');
+  }
+  const costlyFinancialProcess = (risks.financial || risks.payroll) &&
+    evidence.workaroundCost && evidence.consequence === 'impaired' &&
+    ['now', 'today', 'tomorrow'].includes(evidence.deadline) &&
+    (evidence.deadlineCommitted || ['statutory', 'operational'].includes(evidence.deadlineDriver));
+  if (costlyFinancialProcess) {
+    raise(null, 'high', 'financial.confirmed', 'A failing finance process with costly manual work cannot wait past its committed close.');
   }
   if (modifiers.unpaidRisk && (risks.payroll || risks.financial)) {
     raise('high', null, 'financial.confirmed', 'People may not be paid.');
@@ -261,6 +269,19 @@ export function applyTriagePolicy(context) {
   if ((evidence.accessibilityIssue || evidence.technicalDomain === 'accessibility') &&
       evidence.workaround === 'yes') {
     minimumUrgency('medium', 'safeguarding.pending', 'A workaround preserves operations but not equivalent accessibility.');
+  }
+
+  if (evidence.recoverability === 'recoverable') {
+    // A usable recovery path reduces irreversibility but not time pressure.
+    if (impact === 'high') {
+      lower('medium', null, 'loss.recoverable', 'A usable recovery path removes the permanent-loss dimension from Impact.');
+    }
+    const imminentLossRestoration = evidence.symptom.id === 'data-loss' &&
+      !softTiming &&
+      ['now', 'today', 'tomorrow', 'days-2-5'].includes(evidence.deadline);
+    if (imminentLossRestoration) {
+      raise(null, 'high', 'loss.recoverable', 'An explicit loss with a usable recovery path still cannot wait past its committed restoration deadline.');
+    }
   }
 
   return { impact, urgency, rules, policyIds, floorApplied };

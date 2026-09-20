@@ -75,7 +75,8 @@ export function extractHarmTimingEvidence(doc, symptom, context = {}, ledger = c
     const quote = symptom.evidence[0]?.quote || 'expiring';
     addCandidate(extraction, { timing: 'pending', label: 'harm is waiting — expiring soon', quote, source: 'symptom', ...quoteHit(doc, quote) });
   }
-  if (isDataLoss && /\b(?:already(?:\s+been)?|has been|have been|was|were)\s+(?:deleted|wiped|lost|overwritten)\b/i.test(doc.text)) {
+  const disappearedLoss = /\b(?:rows?|records?|entries|files?|data|documents?|forms?|enrolments?)\s+(?:have |has |had )?(?:disappeared|vanished)\b/.test(doc.text);
+  if (isDataLoss && (/\b(?:already(?:\s+been)?|has been|have been|was|were)\s+(?:deleted|wiped|lost|overwritten)\b/i.test(doc.text) || disappearedLoss)) {
     const quote = symptom.evidence[0]?.quote || 'deleted';
     addCandidate(extraction, {
       timing: 'active', label: 'harm is happening now — data was lost', quote,
@@ -111,10 +112,20 @@ export function extractHarmTimingEvidence(doc, symptom, context = {}, ledger = c
     const quote = context.blockedProcess?.quote || 'active exposure';
     addCandidate(extraction, { timing: 'active', label: 'harm is happening now — exposure is active', quote, source: 'risk-modifier', authority: 'inferred', temporal: 'current', ...quoteHit(doc, quote) });
   }
-  if (context.blockedProcess?.level === 'blocked' &&
+  // A blocked process with no usable path is current harm; so is an impaired
+  // process when the only remaining path is partial, because the shortfall is
+  // being felt now. A full workaround does not qualify.
+  if (['blocked', 'impaired'].includes(context.blockedProcess?.level) &&
       (context.workaround === 'no' || context.workaround === 'partial')) {
     const quote = context.blockedProcess.quote;
     addCandidate(extraction, { timing: 'active', label: 'harm is happening now — work is currently affected', quote, source: 'business-consequence', authority: 'inferred', temporal: 'current', ...quoteHit(doc, quote) });
+  }
+
+  // Material manual effort already under way means the shortfall is present,
+  // even when a full workaround still keeps the process moving.
+  if (context.workaroundCost && ['blocked', 'impaired'].includes(context.blockedProcess?.level)) {
+    const quote = context.blockedProcess.quote;
+    addCandidate(extraction, { timing: 'active', label: 'harm is happening now — manual effort is under way', quote, source: 'workaround-cost', authority: 'inferred', temporal: 'current', ...quoteHit(doc, quote) });
   }
 
   return extraction;

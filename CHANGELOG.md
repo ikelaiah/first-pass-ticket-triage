@@ -1,5 +1,101 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- Added `docs/260919-safety-boundary-adjudication.md`, which resolves four
+  disputed evaluation cases against the written policy before safety metrics
+  become release-blocking.
+- Added a safety release gate to `node tests/evaluate.mjs`: any unsafe
+  under-prioritisation, severe under-prioritisation, P1 false negative, or
+  assessed-ticket abstention now fails the gate, with evaluator self-tests for
+  the blocker list.
+
+### Changed
+
+- Corrected two evaluation labels under the written payroll and safeguarding
+  rules: a same-day payment processing failure is P1, and potential harm without
+  active access is P2. Added an erratum to the v0.8.0 calibration report.
+
+### Fixed
+
+- A payroll/payment file reported as "not produced" is now missing-data
+  evidence, so a same-day processing failure escalates through the existing
+  `financial.confirmed` policy instead of stopping at P2.
+- Politeness hedges such as "if possible" and "if you can" no longer mark a
+  stated population as hypothetical, so an explicit "all schools" scope survives
+  into I1; real conditionals such as "if the change is approved" remain
+  hypothetical.
+- U8 harm timing now reads absence from a *current* process ("absent from the
+  current pay run") as active harm, while historical and future clauses stay
+  filtered by the clause temporal classifier. This resolves locked capability
+  boundary `release-21-casual-pay-missing`; the case was removed from the
+  ledger so a regression becomes an unadjudicated divergence and blocks again.
+- A record-skipping import or job now feeds three dimensions from one shared
+  pattern: data-integrity risk (I3), bounded containment when the skip is
+  limited to one named group (I4), and active harm for records missing now
+  (U8). A register close is an operational deadline driver (U6). This resolves
+  locked capability boundary `release-35-small-group-absence-import`; a skipped
+  process *step* is not a record-skip, and a spreading skip is not contained.
+- An accessibility barrier where a keyboard user cannot land on a form control
+  is now an action-blocked symptom (I3 unavailable) and an impaired process
+  (I2); a non-equivalent assisted path is a partial workaround (U7); and an
+  impaired process with only a partial path is active harm (U8). The ticket
+  routes to the Accessibility domain. This resolves locked capability boundary
+  `release-07-keyboard-accommodation`; a working form is not a barrier.
+- A disappeared data batch is now data-loss (I3), an impaired process (I2), and
+  active harm (U8); an explicit loss with a usable recovery path is a full
+  workaround (U7). The written `loss.recoverable` policy is now implemented: a
+  recovery path caps Impact at Medium but does not stop the clock, so a near
+  restoration need that is not marked soft keeps High Urgency, while an
+  unstated loss event does not raise restoration urgency. This resolves locked
+  capability boundary `release-23-enrolment-restore-lock`.
+- A weekly cadence that drops the same records is now an I4 recurrence without
+  extra cumulative weight (Impact now uses the strongest recurrence evidence),
+  and dropped records raise the data-integrity risk (I3). A repair-before-classes
+  routine is an operational driver (U6) and a full workaround (U7), while the
+  next scheduled run stays a schedule rather than a required-by (U5 none). This
+  resolves locked capability boundary `release-25-timetable-repeating-campus`.
+- Counted offices are now a team-scale population (I1); a refusal to lodge
+  attendance adjustments is a blocked process (I2) and an action-blocked symptom
+  (I3 unavailable); "rejects every attempt" leaves no workaround (U7), so the
+  blocked process is active harm (U8). A state-adverb "now" before a modal is no
+  longer an immediate deadline (U5 today), and the blocked-action symptom is no
+  longer double-counted with the blocked process in Impact. This resolves locked
+  capability boundary `release-32-retired-phone-workaround`.
+- Students using the affected room, lab or space are now a cohort-scale
+  population (I1); a dry or failed eyewash or safety control blocks safe use of
+  that space (I2), and "no replacement unit on site" leaves no workaround (U7),
+  so the blocked safety process is active harm (U8). This resolves locked
+  capability boundary `release-17-lab-eyewash-control`.
+- Manual effort measured in hours, in a manual-work context, is now a
+  workaround cost (U7). A failing finance process with costly manual work before
+  a committed operational close is High urgency and active harm, because the
+  work is already under way, while Impact stays Medium. An impaired process now
+  counts as an active failure for the costly-workaround floor. This resolves
+  locked capability boundary `release-10-invoice-entry-cost`.
+- A board or display still showing yesterday's values is now stale-display
+  evidence: an impaired process (I2) and a data-integrity risk (I3
+  incorrect-data), with a current board no longer classified as historical. A
+  live accurate page or coordinator-posted current times is a full workaround
+  (U7). This closes the remaining engine gaps in locked case
+  `release-11-stale-bus-arrivals`; its residual I1 divergence is re-adjudicated
+  as a reviewed scope-band label defect (twelve pupils is `team` per the
+  counting band and three checked-in fixtures, while the frozen label says
+  `few-users`).
+
+### Verified
+
+- 1008 behavioural assertions pass, and the checked-in corpus reads 78/79 exact
+  priority with zero unsafe under-prioritisation, zero severe
+  under-prioritisation, zero P1 false negatives, and zero assessed-ticket
+  abstentions.
+- The locked v0.8.0 validator now reports 17 exact semantic divergences: 15
+  capability boundaries (B=0, C=10, D=5), one acceptable ambiguity, and one
+  reviewed scope-band label defect, with zero unadjudicated divergences and zero
+  safety blockers.
+
 ## [0.10.0] - 2026-09-07 — Triage Handoff MVP
 
 ### Added

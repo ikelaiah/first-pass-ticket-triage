@@ -108,7 +108,7 @@
       "id": "casual-payroll-cutoff",
       "text": "The casual staff payroll file was not produced for 42 employees and the payroll cutoff is this afternoon.",
       "expected": { "assessmentStatus": "assessed", "priority": "P1", "impact": "high", "urgency": "high", "scope": "team", "i3": "financial-harm", "deadline": "today", "u5": "today", "u6": "operational" },
-      "review": { "classification": "acceptable ambiguity", "acceptablePriorities": ["P2"], "note": "Payroll failure is implied by the missing file but unpaid harm is not explicit." }
+      "review": { "classification": "engine defect", "note": "Policy financial.confirmed already covers an actual same-day processing failure: the payroll file was not produced for a named population and the cutoff is today. The symptom detector misses 'was not produced', so I3 evidence extraction must be fixed; the P2 alternative was a workaround for that gap." }
     },
     {
       "id": "isolated-canvas-can-wait",
@@ -167,8 +167,8 @@
     {
       "id": "team-pay-run-today",
       "text": "The payment service is down for the finance team, there is no workaround, and the pay run is due today.",
-      "expected": { "assessmentStatus": "assessed", "priority": "P2", "impact": "medium", "urgency": "high", "scope": "team", "u7": "no", "deadline": "today", "u5": "today", "u6": "operational" },
-      "review": { "classification": "acceptable ambiguity", "acceptablePriorities": ["P1"], "note": "The payment failure consequence is plausible but not explicit." }
+      "expected": { "assessmentStatus": "assessed", "priority": "P1", "impact": "high", "urgency": "high", "scope": "team", "u7": "no", "deadline": "today", "u5": "today", "u6": "operational" },
+      "review": { "classification": "ground-truth defect", "note": "Label corrected to P1. Policy financial.confirmed applies the same same-day processing-failure rule as casual-payroll-cutoff: a payroll/payment service is down, no workaround exists, and the pay run is due today. The old P2 label required unpaid harm to be explicit, which the written rule does not require." }
     },
     {
       "id": "compass-timetable-howto",
@@ -179,7 +179,7 @@
       "id": "all-school-dashboard-request",
       "text": "Could you add a dashboard button for all schools before the next term, if possible?",
       "expected": { "assessmentStatus": "assessed", "priority": "P2", "impact": "high", "urgency": "low", "scope": "all-schools", "deadline": "weeks-1-2", "u5": "weeks-1-2", "u6": "preference" },
-      "review": { "classification": "policy disagreement deferred", "note": "v0.8.0 treats the explicit preference as soft timing; the future date does not set a Medium floor." }
+      "review": { "classification": "engine defect", "note": "I1 defect, not a policy disagreement: the explicit all-school scope is marked hypothetical because the clause contains 'if possible', so the broadest current scope is lost. Manual scope confirmation reproduces the expected P2; 'if possible' is a preference marker, not a real conditional." }
     },
     {
       "id": "unnamed-investigation",
@@ -261,8 +261,8 @@
     {
       "id": "wrong-guardian-court-order",
       "text": "Wrong guardian details are being sent to all schools and could affect court orders.",
-      "expected": { "assessmentStatus": "assessed", "priority": "P1", "impact": "high", "urgency": "high", "scope": "all-schools", "i3": "safeguarding", "i4": "unknown" },
-      "review": { "classification": "acceptable ambiguity", "acceptablePriorities": ["P2"], "note": "Potential court-order harm is serious, but the wording does not state an active consequence or deadline." }
+      "expected": { "assessmentStatus": "assessed", "priority": "P2", "impact": "high", "urgency": "medium", "scope": "all-schools", "i3": "safeguarding", "i4": "unknown" },
+      "review": { "classification": "ground-truth defect", "note": "Label corrected to P2. Safeguarding escalation requires a stated restriction and current excluded-person access; 'could affect court orders' is potential harm with neither. High impact with Medium urgency and a clarification question is the policy-correct outcome." }
     },
     {
       "id": "backup-fails-five-nights",

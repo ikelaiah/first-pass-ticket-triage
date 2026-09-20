@@ -394,7 +394,11 @@ function detectBlockedProcess(doc, domainResult, symptom, systemResult, ledger) 
   const candidates = [];
   const add = (level, hit, source = 'explicit', extra = {}) => {
     const clause = Number.isInteger(hit.clauseIndex) ? doc.clauses[hit.clauseIndex]?.text || '' : '';
-    const temporal = /\b(?:yesterday|last\s+(?:term|week|month)|previous|earlier)\b/i.test(clause) ? 'historical' :
+    // A current board can display yesterday's values: the possessive timestamp
+    // qualifies the shown data, not when the impairment exists.
+    const displayIsCurrent = /\b(?:is|are|remain|remains|still)\s+(?:showing|displaying|listing)\b[^.;!?]{0,24}\b(?:yesterday's|old|stale|outdated|previous)\b/i.test(clause);
+    const temporal = (!displayIsCurrent &&
+      /\b(?:yesterday|last\s+(?:term|week|month)|previous|earlier)\b/i.test(clause)) ? 'historical' :
       /\b(?:if|unless|planned|proposed|queued)\b/i.test(clause) ? 'hypothetical' : 'current';
     const fact = ledger?.addFromHit({ type: 'process-consequence', value: level, hit,
       authority: source === 'explicit' ? 'explicit' : 'inferred', temporal, ...extra });
@@ -963,7 +967,8 @@ export function analyse(rawText, overrides = {}) {
   const harmTimingEvidence = extractHarmTimingEvidence(doc, symptom, {
     modifiers,
     blockedProcess,
-    workaround: workaroundResult.workaround
+    workaround: workaroundResult.workaround,
+    workaroundCost: workaroundResult.costPerDay
   }, evidenceLedger);
   let harmTiming = projectHarmTiming(harmTimingEvidence);
   // Facet overrides — analyst confirmed values
@@ -1069,6 +1074,24 @@ export function analyse(rawText, overrides = {}) {
       containment = { ...containment, contained: true, containedEvidence: continuityHit,
         summary: 'appears contained' };
     }
+  }
+
+  // A recoverable data loss has a real restoration path. Treat it as the U7
+  // workaround so the panel shows it and the policy can price the time
+  // pressure explicitly: a usable path does not stop the clock.
+  if (!applied.workaround && workaroundResult.workaround === 'unknown' &&
+      symptom.symptom === 'data-loss' && recoverability.value === 'recoverable') {
+    workaroundResult = {
+      ...workaroundResult,
+      workaround: 'yes',
+      label: workaroundLabel('yes'),
+      evidence: [...workaroundResult.evidence, {
+        quote: recoverability.quote || 'a recovery path is available',
+        meaning: 'a recovery path exists',
+        source: 'recoverability',
+        value: 'yes'
+      }]
+    };
   }
 
   // A non-incident how-to concerns the requester unless it names a broader

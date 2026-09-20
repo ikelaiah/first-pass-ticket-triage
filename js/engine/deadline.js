@@ -26,6 +26,10 @@ export function deadlineLabel(id) {
 }
 
 /** Time words that express feeling rather than a business commitment. */
+/** "Two offices now cannot lodge" states a current condition, not immediacy. */
+const STATE_ADVERB_NOW_RE =
+  /^\s+(?:can not|can|cannot|could|will|would|may|might|must|should|does|do|did|has|have|is|are|was|were)\b/i;
+
 const ASSERTED_TIME_WORDS = [
   'now', 'right now', 'immediately', 'straight away', 'this minute', 'any minute'
 ];
@@ -109,6 +113,7 @@ export function detectDeadline(doc) {
     const def = deadlineDefinition(hit.entry.v);
     const clause = doc.clauses[hit.clauseIndex];
     const clauseText = clause ? clause.text : doc.text;
+    if (hit.quote === 'now' && STATE_ADVERB_NOW_RE.test(doc.text.slice(hit.end))) continue;
     const suppressed = def.id !== 'none' &&
       (notNeeded.has(hit.clauseIndex) || isObservationOnly(clauseText));
     if (suppressed) continue;

@@ -2,17 +2,12 @@
  * Release-only capability-boundary ledger. This is deliberately separate from
  * the frozen labelled corpus: it documents exact evaluator differences without
  * changing a label, an expected priority, or the evaluator's raw metrics.
+ *
+ * Resolved cases are removed from this ledger so that a regression reappears as
+ * an unadjudicated divergence and blocks the release gate again. Burn-down
+ * history lives in docs/260906-v0.8-capability-boundary-qualification.md.
  */
 export const capabilityBoundaries = Object.freeze({
-  'release-07-keyboard-accommodation': 'B',
-  'release-10-invoice-entry-cost': 'B',
-  'release-11-stale-bus-arrivals': 'B',
-  'release-17-lab-eyewash-control': 'B',
-  'release-21-casual-pay-missing': 'B',
-  'release-23-enrolment-restore-lock': 'B',
-  'release-25-timetable-repeating-campus': 'B',
-  'release-32-retired-phone-workaround': 'B',
-  'release-35-small-group-absence-import': 'B',
   'release-09-three-tutors-assessment-submit': 'C',
   'release-12-wellbeing-report-request': 'C',
   'release-13-approved-permissions-draft': 'C',
@@ -31,7 +26,8 @@ export const capabilityBoundaries = Object.freeze({
 });
 
 export const reviewedAmbiguities = Object.freeze({
-  'release-18-campus-drill-roster': 'acceptable ambiguity'
+  'release-18-campus-drill-roster': 'acceptable ambiguity',
+  'release-11-stale-bus-arrivals': 'reviewed scope-band label defect: twelve pupils is team per the counting band and three checked-in fixtures (tests.js stale-display scope, facet i1-spelled-number-team, corpus realistic-wrong-year-level-live-register); the frozen locked label says few-users'
 });
 
 export function adjudicateDivergences(ids) {
