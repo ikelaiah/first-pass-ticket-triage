@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [0.11.0] - 2026-09-20 — Capability-Boundary Burn-Down, Generalisation, and Holdout Unseal
 
 ### Added
 
@@ -114,17 +114,32 @@
   impaired process, "can be rebuilt from a backup" is a recovery path,
   "displaying last week's" is a stale display, written-number manual durations
   are costs, and "stopped again" reopens a resolved incident.
+- Unsealed the frozen 24-case final holdout once and recorded the honest
+  first-look verdict: 11/24 exact priority, two P1 false negatives and one
+  severe under-prioritisation, failing the safety gate. Fourteen mismatches were
+  adjudicated as engine defects and fixed (active disclosure to another
+  household, access-not-revoked wording, printed-copy and shortcut workarounds,
+  resolved-since and scheduled-renewal context, pending privacy drafts,
+  data-integrity wording, negated service failures, paused-job continuity, and
+  an unrecoverable-loss urgency floor); one remains a deferred policy
+  question. The post-fix regression reads 23/24 with P1 precision and recall
+  4/4 and zero safety blockers. The consumed fixture keeps its first-look
+  metadata and checksum; a replacement holdout is required before the next
+  release measurement. See
+  [the holdout qualification](docs/260920-final-holdout-qualification.md).
 
 ### Verified
 
-- 1049 behavioural assertions pass, and the checked-in corpus reads 78/79 exact
+- 1060 behavioural assertions pass, and the checked-in corpus reads 78/79 exact
   priority with zero unsafe under-prioritisation, zero severe
   under-prioritisation, zero P1 false negatives, and zero assessed-ticket
   abstentions.
-- The locked v0.8.0 validator now reports 13 exact semantic divergences: 11
+- The locked v0.8.0 validator reports 13 exact semantic divergences: 11
   capability boundaries (B=0, C=7, D=4), one acceptable ambiguity, and one
   reviewed scope-band label defect, with zero unadjudicated divergences and zero
   safety blockers.
+- The consumed final holdout records an 11/24 first look and a 23/24 post-fix
+  regression; the first look remains the out-of-sample verdict.
 
 ## [0.10.0] - 2026-09-07 — Triage Handoff MVP
 

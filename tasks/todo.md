@@ -1,5 +1,21 @@
 # v0.5.0 reliability, privacy, and safety checklist
 
+## v0.11.0 capability-boundary burn-down, generalisation, and holdout unseal
+
+- [x] Adjudicate the disputed safety-boundary labels and correct the stale v0.8.0
+  calibration report.
+- [x] Make unsafe/severe under-prioritisation, P1 false negatives, and assessed
+  abstentions release-blocking in the offline evaluator.
+- [x] Burn down all nine Category B capability boundaries.
+- [x] Resolve Category C cases `release-09`, `release-26`, `release-27` and D
+  case `release-28`; document the seven remaining C boundaries.
+- [x] Add the Phase 4 generalisation and adversarial suite with unseen
+  paraphrases for every accuracy fix.
+- [x] Unseal the final holdout once, fix the fourteen exposed engine defects,
+  and record both the first-look verdict and the post-fix regression.
+- [x] Update README, CHANGELOG, release report, and version metadata to 0.11.0.
+- [ ] Complete remote PR, CI, merge, tag, release, and Pages operations.
+
 ## v0.10.0 Triage Handoff MVP
 
 - [x] Confirm remote `main` matches released v0.9.1 and record baseline gates.
