@@ -75,7 +75,13 @@ export function assessImpact(doc, ctx) {
   }
 
   // --- technical symptom ----------------------------------------------
-  if (symptom.severity) {
+  // When the action-blocked symptom and the blocked business process quote
+  // the same wording, they are one piece of evidence, not two.
+  const symptomQuote = symptom.evidence[0] ? symptom.evidence[0].quote : '';
+  const blockedIsSameEvidence = symptom.symptom === 'action-blocked' &&
+    consequence?.level === 'blocked' && Boolean(symptomQuote) && Boolean(consequence.quote) &&
+    (consequence.quote.includes(symptomQuote) || symptomQuote.includes(consequence.quote));
+  if (symptom.severity && !blockedIsSameEvidence) {
     add(
       SEVERITY_IMPACT.get(symptom.severity) || 0,
       'Symptom: ' + symptom.label,
@@ -98,7 +104,8 @@ export function assessImpact(doc, ctx) {
   // reach nobody knows.
   const recurrence = scanPositive(doc, RECURRENCE_PHRASES);
   if (recurrence.length) {
-    add(recurrence[0].entry.w, recurrence[0].entry.label, recurrence[0].quote);
+    const strongest = recurrence.reduce((best, hit) => (hit.entry.w > best.entry.w ? hit : best));
+    add(strongest.entry.w, strongest.entry.label, strongest.quote);
   }
   const undetected = scanPositive(doc, UNDETECTED_PHRASES);
   if (undetected.length) {
@@ -189,7 +196,11 @@ export function assessImpact(doc, ctx) {
   // --- one person, serious consequence ---------------------------------
   const smallScope = ['individual', 'few-users'].includes(scopeResult.scope);
   const urgentDeadline = ['now', 'today'].includes(deadlineResult.deadline);
-  const serious = scanPositive(doc, SERIOUS_CONSEQUENCE_PHRASES);
+  // A consequence named as a system or artefact ("assessment portal") is a
+  // topic, not an imminent personal consequence.
+  const serious = scanPositive(doc, SERIOUS_CONSEQUENCE_PHRASES).filter((hit) =>
+    !/\s+(?:portals?|services?|platforms?|systems?|applications?|apps?|tools?|folders?)\b/i.test(
+      doc.text.slice(hit.end, hit.end + 24)));
   const seriousConsequence = smallScope && urgentDeadline && serious.length > 0;
   if (seriousConsequence) {
     add(1.75, 'A serious consequence for the individual is imminent', serious[0].quote);

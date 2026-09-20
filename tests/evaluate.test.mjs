@@ -1,8 +1,10 @@
 import assert from 'node:assert/strict';
 import {
   evaluateCases,
+  formatSafetyBlockers,
   normaliseEvidenceAuthority,
   printReport,
+  safetyBlockers,
   validateCorpus
 } from './evaluate.mjs';
 
@@ -239,6 +241,18 @@ assert.equal(safetyMetrics.abstentionsOnAssessed, 1,
   'a high-risk abstention remains visible through the separate abstention metric');
 assert.equal(safetyMetrics.safety.expectedHighConsequence, 2);
 assert.equal(safetyMetrics.safety.actionableHighConsequence, 1);
+
+const blockers = safetyBlockers(safetyMetrics);
+assert.deepEqual(blockers.map(([name]) => name), [
+  'unsafe under-prioritisation',
+  'severe unsafe under-prioritisation',
+  'severe under-prioritisation',
+  'P1 false negatives',
+  'abstentions on assessed tickets'
+], 'every safety regression must be release-blocking');
+assert.match(formatSafetyBlockers(blockers), /unsafe under-prioritisation=1/);
+assert.deepEqual(safetyBlockers(evaluateCases([cases[0]], (text) => actual[text])), [],
+  'a clean corpus must not trigger the safety gate');
 
 const eightCase = {
   id: 'eight-facet-labelled',

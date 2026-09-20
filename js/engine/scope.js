@@ -127,6 +127,14 @@ function isHistoricalOnlyHit(doc, start) {
   return current < 0 || current > before.length;
 }
 
+/**
+ * "if possible", "if you can" and similar are politeness or preference hedges,
+ * not conditional populations. They must not mark an explicitly named scope as
+ * hypothetical; a real condition ("if the change is approved") still does.
+ */
+const POLITENESS_HEDGE =
+  /\bif\s+(?:possible|you can|you are able|able|(?:it|that) is possible|convenient|practicable|time permits|there is time)\b/g;
+
 function isDeadlineActorOnly(doc, hit) {
   if (hit.entry.v !== 'team') return false;
   const clause = doc.clauses[hit.clauseIndex];
@@ -137,7 +145,7 @@ function isDeadlineActorOnly(doc, hit) {
 
 function scopeTemporal(doc, start) {
   const clause = doc.clauses.find((candidate) => start >= candidate.start && start < candidate.end);
-  const text = clause?.text || '';
+  const text = (clause?.text || '').replace(POLITENESS_HEDGE, ' ');
   if (isHistoricalOnlyHit(doc, start)) return 'historical';
   if (/\b(?:if|unless|planned|proposed|queued)\b/i.test(text)) return 'hypothetical';
   return 'current';

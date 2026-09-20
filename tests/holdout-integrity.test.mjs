@@ -23,8 +23,8 @@ const FROZEN = [
     name: 'final holdout',
     path: join(ROOT, 'fixtures', 'accuracy-holdout-final-v0.8.0.json'),
     expectedCases: 24,
-    expectedBytes: 12657,
-    expectedSha256: '02e1d9668ad1192f81f9d6c58671d6f59869d2ff1ab193dc4323200bcddfb7f0',
+    expectedBytes: 18276,
+    expectedSha256: 'b9ef96acf69efdb76b67b158697bba4299a3a1c1cca318b27c94a661125b2d1b',
     fixture: finalHoldout
   }
 ];
@@ -55,12 +55,17 @@ for (const item of FROZEN) {
 assert.match(readFileSync(ATTRIBUTES_PATH, 'utf8'), /tests\/fixtures\/\*\.json text eol=lf/,
   'fixture JSON must enforce LF bytes across Windows and Linux checkouts');
 
-assert.equal(finalHoldout.metadata.evaluated, false, 'final holdout must remain untouched');
+assert.equal(finalHoldout.metadata.evaluated, true,
+  'the final holdout is consumed; its first-look result must stay recorded');
 assert.equal(finalHoldout.metadata.labelledBeforeEvaluation, true,
   'final holdout must be labelled before evaluation');
+assert.equal(finalHoldout.metadata.firstLook.exactPriority, '11/24',
+  'the first-look holdout result must stay recorded');
+assert.equal(finalHoldout.metadata.postFixRegression.exactPriority, '23/24',
+  'the post-fix regression result must stay recorded');
 for (const ticket of finalHoldout.cases) {
   assert(!allKnownTexts.has(normalise(ticket.text)),
     'final holdout ticket duplicates an existing evaluation case: ' + ticket.id);
 }
 
-console.log('PASS - holdout integrity: development 26 frozen bytes, final 24 untouched cases');
+console.log('PASS - holdout integrity: development 26 frozen bytes, final 24 consumed with recorded first look');

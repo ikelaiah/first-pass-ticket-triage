@@ -11,6 +11,10 @@
  *     not change what the ticket is about (system names, technical domains)
  */
 
+/** An empty view or page is effectively unavailable and its process impaired. */
+const EMPTY_VIEW =
+  /\bempty\s+(?:view|views|page|pages|report|reports|list|lists)\b/;
+
 /* ------------------------------------------------------------------ scope -- */
 
 export const SCOPE_DEFINITIONS = [
@@ -27,7 +31,7 @@ export const SCOPE_DEFINITIONS = [
 
 export const SCOPE_PHRASES = [
   // Individual
-  { m: [/\b(?:one|a single|1) (?:user|student|staff member|teacher|person|employee|parent|guardian|coordinator|record|report|account|mailbox|device|analyst|applicant|administrator)\b/,
+  { m: [/\b(?:one|a single|1) (?:user|student|staff member|teacher|person|employee|parent|guardian|coordinator|record|report|account|mailbox|device|analyst|applicant|administrator|librarian|officer|adviser)\b/,
         /\b(?:a|one) (?:casual |part[- ]time |full[- ]time |new |relief |temporary |visiting )?(?:staff member|teacher|student|employee|user|parent|guardian|coordinator|contractor|analyst|applicant|administrator)\b/,
         'single user', 'one individual', 'individual user', 'just me', 'only me', 'for me', 'my account',
         'one family', 'a single family', 'one household', 'this parent',
@@ -50,7 +54,7 @@ export const SCOPE_PHRASES = [
   // Team / department
   { m: ['the team', 'our team', 'a team', 'the department', 'our department', 'registrar team', 'registrars',
         'finance team', 'payroll team', 'admin team', 'the office', 'our office', 'wellbeing office', 'north office', 'reception staff', 'registrars', 'business unit',
-        'the faculty', 'head office', 'central office', 'one department', 'a single department',
+        'the faculty', 'head office', 'central office', 'one department', 'a single department', /\b(?:two|three|four|five|several|multiple)\s+offices\b/, 'interns', /\b(?:two|three|four|five|six|several|multiple)\s+departments\b/,
         'all casuals', 'every casual', 'the casuals'],
     v: 'team', w: 2, label: 'a team or department' },
 
@@ -62,7 +66,8 @@ export const SCOPE_PHRASES = [
         'kindergarten', 'the new intake', 'an entire year', 'naplan',
         /\b(?:two|three|four|several|multiple) classes\b/,
         /\ball (?:new )?(?:applicants|applications|enrolments)\b/,
-        'whole year level', 'entire year level', 'the year level'],
+        'whole year level', 'entire year level', 'the year level',
+        /\bstudents?\b[^.;!?]{0,40}\b(?:using|occupy|occupying|attending|present in)\b[^.;!?]{0,24}\b(?:room|lab|laboratory|space|hall|gym|pool)\b/],
     v: 'cohort', w: 2, label: 'a class or cohort' },
 
   // One school
@@ -187,12 +192,14 @@ export const DEADLINE_PHRASES = [
         'before enrolments close', 'before enrolment closes',
         /\b(?:before|by|due)\s+(?:the )?(?:start of )?next (?:year|academic year|intake)\b/,
         'end of term', 'end of the term', 'end of semester', 'start of term',
-        'next quarter', 'end of the quarter'],
+        'next quarter', 'end of the quarter',
+        /\bin\s+(?:six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty|[6-9]|1\d|20)\s+days\b/],
     v: 'weeks-1-2', label: 'needed in a week or more' },
   { m: ['no deadline', 'no particular deadline', 'no due date', 'no timeframe', 'no time frame',
         'whenever you can', 'whenever suits', 'whenever convenient',
         'open ended', 'no rush', 'no hurry', 'at your convenience',
-        'when you get a chance', 'when possible', 'when someone has time', 'in due course'],
+        'when you get a chance', 'when possible', 'when someone has time', 'in due course',
+        /\bnext (?:import|run|sync|job|batch) is\b/],
     v: 'none', label: 'no deadline stated' }
 ];
 
@@ -239,7 +246,15 @@ export const WORKAROUND_PHRASES = [
         /\b(?:process|do|enter|handle|run|complete|key|record|update|load|feed|feeding)\s+(?:\w+\s+){0,3}manually\b/,
         // paper-based stopgaps (v0.3.1)
         'paper form', 'paper forms', 'using the paper', 'using paper', 'paper process', 'paper copy', 'paper roll', 'paper rolls', 'phone process',
-        'spreadsheet workaround', 'using a spreadsheet', 'can use a spreadsheet', 'on the spreadsheet'],
+        'spreadsheet workaround', 'using a spreadsheet', 'can use a spreadsheet', 'on the spreadsheet',
+        /\b(?:staff|team|clerks?|registrars?|teachers?|admin)\s+(?:repairs?|repair|fix(?:es)?|corrects?|re-?enters?|rekeys?|retypes?)\b[^.;!?]{0,24}\b(?:entries|records?|rows?|data|times?|routes?)\b/,
+        /\blive\b[^.;!?]{0,24}\b(?:page|source|view|list|board|report|times|data)\b/,
+        /\b(?:csv|export|download|extract)\b[^.;!?]{0,24}\b(?:is|are)\s+complete\b/,
+        /\b(?:existing|current)\b[^.;!?]{0,24}\b(?:summary|report|view|list|page)\b[^.;!?]{0,24}\b(?:is|are)\s+usable\b/,
+        /\bcan use the (?:csv|extract|spreadsheet|export)\b/,
+        'printed copy', 'printed copies', 'paper register',
+        /\b(?:alternate|alternative|shortcut)\b[^.;!?]{0,32}\b(?:completes?|works?|is available)\b/,
+        /\b(?:coordinator|staff|admin|team)\b[^.;!?]{0,24}\b(?:has |have )?posted\b[^.;!?]{0,24}\b(?:current|updated|correct|accurate)\b/],
     v: 'yes', label: 'a workaround or manual process exists' },
   { m: ['partial workaround', 'limited workaround', 'only some users', 'works for some',
         'only works sometimes', 'intermittently available', 'partially working',
@@ -248,14 +263,21 @@ export const WORKAROUND_PHRASES = [
         /\bprocess\s+half\s+the\s+(?:cases|applications|records|users)\s+manually\b/,
         /\b(?:works?|available|usable)\s+for\s+(?:staff|students|users|some)\s+but\s+not\b/,
         /\bhalf (?:the )?(?:cases|applications|records|users)\b[^.;!?]{0,24}\bmanually\b/,
-        /\bonly (?:urgent|some|selected) (?:applications?|cases?|records?)\b[^.;!?]{0,24}\bmanually\b/],
+        /\bonly (?:urgent|some|selected) (?:applications?|cases?|records?)\b[^.;!?]{0,24}\bmanually\b/,
+        /\bnot (?:an? )?equivalent\s+(?:way|path|route|experience|level of access)\b/,
+        /\bcovers?\b[^.;!?]{0,48}\bbut\b[^.;!?]{0,24}\b(?:can not|does not|will not|fails? to)\b/],
     v: 'partial', label: 'only a partial workaround' },
   { m: ['no workaround', 'without a workaround', 'do not have a workaround', 'does not have a workaround', 'no manual process', 'no alternative',
         'no paper roll',
         'no other way', 'nothing we can do', 'no way to', 'can not work around',
         'not able to work around', 'no fallback', 'no manual option', 'can not continue',
         'completely blocked', 'stopped entirely', 'nothing else works',
-        'manual processing is impossible', 'workaround stopped working'],
+        'manual processing is impossible', 'workaround stopped working',
+        /\b(?:rejects?|blocks?|denies?)\s+(?:every|each|all)\s+(?:attempt|submission|try)\b/,
+        /\bno\s+(?:replacement|spare)\b[^.;!?]{0,24}\b(?:unit|equipment|part|device|available|on site|on-site)\b/,
+        /\b(?:snapshot|backup|copy|restore point)\b[^.;!?]{0,24}\b(?:is|are|was|were)\s+unusable\b/,
+        /\bno\s+paper\s+(?:route|path|option|way|process|form)\b/,
+        /\bno\s+alternate\s+(?:feed|route|path|source|way)\b/],
     v: 'no', label: 'no workaround available' }
 ];
 
@@ -268,7 +290,8 @@ export const SYMPTOMS = [
         'inaccessible', 'can not access', 'will not load', 'does not load', 'blank page',
         'offline', 'service is down', 'site is down', 'completely unavailable',
         'nothing works', 'nothing is working', 'none of it works',
-        'everything is broken', 'everything is down'] },
+        'everything is broken', 'everything is down',
+        EMPTY_VIEW] },
   { id: 'authentication-failed', label: 'Authentication Failed', severity: 3,
     m: ['can not log in', 'can not log into', 'can not login', 'can not sign in', 'login failed',
         'log in failed', 'authentication failed', 'authentication error', 'can not authenticate',
@@ -291,8 +314,9 @@ export const SYMPTOMS = [
         'can not complete', 'can not upload', 'can not download', 'can not enrol',
         'can not use', 'can not navigate', 'can not read', 'can not approve',
         'can not be enrolled', 'can not be created', 'can not be added',
-        'can not be provisioned', 'can not be issued', 'can not get', 'can not obtain',
-        /\b(?:nobody|no one|no-one) (?:can|is able to)\b/] },
+        'can not be provisioned', 'can not be issued', 'can not get', 'can not obtain', 'can not lodge', /\b(?:service|portal|system|form)\b[^.;!?]{0,24}\brejects?\s+submissions?\b/,
+        /\b(?:nobody|no one|no-one) (?:can|is able to)\b/,
+        /\bcan not (?:land on|reach|focus on|tab to|activate)\b[^.;!?]{0,32}\b(?:control|button|field|link|menu|option|checkbox)\b/] },
   { id: 'safety-control-failed', label: 'Safety Control Failed', severity: 2,
     m: [/\b(?:eyewash station|eyewash)\b[^.!?;]{0,64}\b(?:valve is dry|dry|failed|not working|unavailable)\b/,
         /\b(?:valve is dry|dry|failed|not working|unavailable)\b[^.!?;]{0,64}\b(?:eyewash station|eyewash)\b/] },
@@ -402,7 +426,8 @@ export const SYMPTOMS = [
   { id: 'data-loss', label: 'Data Deleted / Lost', severity: 3,
     m: ['deleted', 'has been deleted', 'were deleted', 'was deleted', 'accidentally deleted',
         'permanently deleted', 'wiped the', 'data loss', 'lost the data', 'overwritten',
-        'gone from the', 'emptied the recycle bin'] },
+        'gone from the', 'emptied the recycle bin',
+        /\b(?:rows?|records?|entries|files?|data|documents?|forms?|enrolments?)\s+(?:have |has |had )?(?:disappeared|vanished)\b/] },
   { id: 'backup-failed', label: 'Backup Failed', severity: 2,
     m: ['backup failed', 'backup has failed', 'backups have failed', 'backup did not run',
         'backup is failing', 'no recent backup', 'restore failed', 'can not restore',
@@ -457,7 +482,8 @@ export const SYMPTOMS = [
     m: ['still has an account', 'access not removed', 'not been removed',
         'not been disabled', 'not been revoked', 'still enabled', 'still active in',
         'account is still', 'was not deprovisioned',
-        /\bstill has (?:\w+\s+){0,2}access\b/] },
+        /\bstill has (?:\w+\s+){0,2}access\b/,
+        /\bcan still (?:open|access|view|read|use)\b/] },
   { id: 'capacity', label: 'Capacity / Storage', severity: 2,
     m: ['disk full', 'disk is full', 'storage full', 'out of disk space', 'no disk space',
         'running out of space', 'running low on space', 'no space left', 'quota exceeded',
@@ -499,7 +525,7 @@ export const SYMPTOMS = [
         'has not created', 'have not created', 'did not create', 'not created',
         'never added', 'was never added', 'never created', 'was never created',
         'never set up', 'was never set up',
-        'has not generated', 'did not generate', 'not rolled over',
+        'has not generated', 'did not generate', 'not rolled over', 'not produced',
         'not enrolling', 'will not enrol', 'failing to enrol', 'not registering'] },
   { id: 'incorrect-data', label: 'Incorrect Data', severity: 1.5,
     m: ['incorrect', 'wrong', 'inaccurate', 'does not match', 'do not match', 'mismatch',
@@ -591,7 +617,7 @@ export const DOMAINS = [
   { id: 'accessibility', label: 'Accessibility',
     m: [{ p: 'accessibility', w: 2.5 }, { p: 'accessible', w: 1.5 }, { p: 'wcag', w: 3 },
         { p: 'screen reader', w: 3 }, { p: 'nvda', w: 3 }, { p: 'jaws', w: 3 },
-        { p: 'voiceover', w: 3 }, { p: 'keyboard navigation', w: 2.5 },
+        { p: 'voiceover', w: 3 }, { p: 'keyboard navigation', w: 2.5 }, { p: 'navigates by keyboard', w: 3 },
         { p: 'colour contrast', w: 2.5 }, { p: 'contrast checks', w: 2.5 },
         { p: 'alt text', w: 2.5 }, { p: 'assistive technology', w: 3 },
         { p: 'vision impaired', w: 3 }, { p: 'hearing impaired', w: 3 },
@@ -898,6 +924,29 @@ export const WORK_TYPES = [
 
 /* ----------------------------------------------------------------- risks -- */
 
+/**
+ * Job or import failures that skipped records leave data missing now.
+ * Shared so one wording feeds the I3 data-integrity risk and the U8
+ * active-harm answer; the bounded variant feeds I4 containment.
+ */
+const IMPORT_SKIPPED_RECORDS =
+  /\b(?:import|sync|synchroni[sz]ation|job|batch|export|migration|extract)\b[^.;!?]{0,24}\bskipped\b[^.;!?]{0,32}\b(?:records?|rows?|pupils?|students?|entries|items|timesheets?|invoices?|documents?|forms?)\b/;
+const IMPORT_SKIPPED_BOUNDED =
+  /\b(?:import|sync|synchroni[sz]ation|job|batch|export|migration|extract)\b[^.;!?]{0,24}\bskipped\b[^.;!?]{0,40}\b(?:in|from)\s+one\s+(?:year group|class|cohort|campus|school)\b/;
+const STILL_BEING_WRITTEN =
+  /\bstill being (?:copied|written|created|generated|updated|synced|synchronised|sent|pushed)\b/;
+const BAD_MAPPING =
+  /\bbad\b[^.;!?]{0,24}\b(?:mapping|mappings|timetable|data|records?)\b/;
+
+/**
+ * A display or board still showing yesterday's values is stale data: it is
+ * an incorrect-data risk and an impaired process, not a current source.
+ */
+const STALE_DISPLAY =
+  /\b(?:board|display|screen|page|dashboard|register|report)\b[^.;!?]{0,32}\b(?:showing|shows|displays?|displaying|listing|lists?)\b[^.;!?]{0,24}\b(?:yesterday's|old|stale|outdated|previous|last week's)\b/;
+
+const IMPORT_OMITTED_RECORDS =
+  /\b(?:import|sync|synchroni[sz]ation|job|batch|export|extract|migration)\b[^.;!?]{0,24}\b(?:drops?|dropped|omits?|omitted|leaves out|left out)\b[^.;!?]{0,32}\b(?:records?|rows?|entries|routes?|classes|items?|pupils?|students?|timesheets?|invoices?|documents?|forms?)\b/;
 export const RISK_DEFINITIONS = [
   { key: 'payroll', label: 'Payroll',
     m: ['payroll', 'pay run', 'payrun', 'timesheet', 'timesheets', 'aba file', 'pay cycle',
@@ -920,7 +969,8 @@ export const RISK_DEFINITIONS = [
         'parent details', 'staff data', 'staff information', 'confidential', 'privacy',
         'sensitive information', 'medical information', 'health information',
         /\b(?:could|may|might|would) expose (?:records?|data|information)\b/,
-        /\banother family['’]?s (?:fee )?(?:balance|balances|details|information|records?)\b/] },
+        /\banother family['’]?s (?:fee )?(?:balance|balances|details|information|records?)\b/,
+        /\b(?:examination|assessment|wellbeing|welfare|disciplinary|counselling|medical|health|disability)[- ](?:adjustment|adjustments|records?|notes?|plans?|fields?|data|details?)\b/] },
   { key: 'security', label: 'Security',
     m: ['data breach', 'privacy breach', 'security breach', 'breach of privacy',
         'breach', 'unauthorised access', 'hacked', 'compromised', 'exposed', 'data leak',
@@ -984,8 +1034,13 @@ export const RISK_DEFINITIONS = [
         'wrong form', 'wrong cohort',
         'created as a contact', 'showing as a contact', 'still an applicant',
         'flip flopping', 'keeps reverting', 'overwriting each other',
+        IMPORT_SKIPPED_RECORDS,
+        IMPORT_OMITTED_RECORDS,
+        STALE_DISPLAY,
+        BAD_MAPPING,
+        /\b(?:written|recorded|entered|loaded|imported|synced)\s+incorrectly\b/,
         // "incorrect carers", "duplicate student records", "wrong year level"
-        /\b(?:incorrect|wrong|duplicate|duplicated|mismatched|invalid)\s+(?:\w+\s+){0,2}(?:carers?|guardians?|contacts?|students?|records?|profiles?|amounts?|payments?|balances?|schools?|classes|parents?|families|enrolments?|year levels?|photos?|names?|addresses?|ids?|totals?)\b/,
+        /\b(?:incorrect|wrong|duplicate|duplicated|mismatched|invalid)\s+(?:\w+\s+){0,2}(?:carers?|guardians?|contacts?|students?|records?|profiles?|amounts?|payments?|balances?|schools?|classes|parents?|families|enrolments?|year levels?|photos?|names?|addresses?|suburbs?|ids?|totals?)\b/,
         // "the date of birth is incorrect" - adjective after the noun
         /\b(?:date of birth|dob|year level|name|address|record|records|amount|balance|total|class)\s+(?:is|are|was|were|has been|have been)\s+(?:incorrect|wrong|duplicated|mismatched)\b/,
         /\b(?:record|records|data|entries)\b[^.;!?]{0,32}\b(?:is|are|was|were|has been|have been)\s+(?:incorrect|wrong|duplicated|mismatched)\b/,
@@ -1035,7 +1090,8 @@ export const RISK_MODIFIERS = {
    */
   crossPersonVisibility: [
     /\b(?:can|could|are able to|is able to) (?:see|view|access|open|download|read) (?:another|other|others|someone else's|a different|the wrong)\b/,
-    /\b(?:another|other|a different) (?:family|families|student|students|parent|parents|carer|carers)['’]?s? (?:details|information|data|(?:fee )?balance|(?:fee )?balances|record|records|account|accounts|address|addresses|fees)\b/,
+    /\b(?:shows?|displays?|reveals?)\b[^.;!?]{0,40}\bto (?:the )?(?:wrong|another|other)\s+(?:household|households|family|families|parent|parents|carer|carers|student|students|department|team)\b/,
+    /\b(?:another|other|a different) (?:family|families|student|students|parent|parents|carer|carers|household|households)['’]?s? (?:details|information|data|(?:fee )?balance|(?:fee )?balances|record|records|account|accounts|address|addresses|fees)\b/,
     /\b(?:sent|emailed|disclosed|released|went|delivered|addressed) to (?:the )?wrong (?:parent|carer|guardian|family|recipient|person|student|address|email)\b/,
     /\b(?:wrong|another|other) (?:student|child|family|parent|staff)['’]?s? (?:photo|photograph|image|name|details|address|record)\b/,
     /\b(?:case officer|staff member|employee|user)\b[^.!?;]{0,48}\b(?:another|different)\s+(?:department|team)\b[^.!?;]{0,64}\b(?:can|could|is able to)\s+(?:see|view|access|open|read)\b[^.!?;]{0,96}\b(?:student(?:s)?['’]?s?\s+)?(?:disciplinary|welfare|medical|case)\s+(?:note|notes|record|records)\b/,
@@ -1056,6 +1112,7 @@ export const RISK_MODIFIERS = {
 
   exposureActive: [
     /\b(?:visible|available|accessible|shown|displayed) to (?:the )?(?:wrong|another|other|an unauthorised|incorrect)\b/,
+    /\b(?:shows?|displays?|reveals?)\b[^.;!?]{0,40}\bto (?:the )?(?:wrong|another|other)\s+(?:household|households|family|families|parent|parents|carer|carers|student|students|department|team)\b/,
     /\b(?:can|could|are able to|is able to) (?:see|view|access|open|read) (?:another|other|someone else's|a different)\b/,
     /\b(?:another|other|a different) (?:family|families|student|students|parent|parents)['’]?s? (?:details|information|data|(?:fee )?balance|(?:fee )?balances|record|records|account|accounts|address|addresses)\b/,
     /\b(?:case officer|staff member|employee|user)\b[^.!?;]{0,48}\b(?:another|different)\s+(?:department|team)\b[^.!?;]{0,64}\b(?:can|could|is able to)\s+(?:see|view|access|open|read)\b[^.!?;]{0,96}\b(?:student(?:s)?['’]?s?\s+)?(?:disciplinary|welfare|medical|case)\s+(?:note|notes|record|records)\b/,
@@ -1073,6 +1130,7 @@ export const RISK_MODIFIERS = {
   propagating: [
     /\bpropagat/, /\bspreading\b/, /\bcontinuing to (?:write|create|generate|sync|spread|update)\b/,
     /\bcontinuing to be (?:created|written|generated|updated)\b/,
+    STILL_BEING_WRITTEN,
     /\bacross all\b/, /\bacross every\b/, /\bsilently (?:writing|creating|generating|updating)\b/,
     /\bflowing (?:downstream|through)\b/, /\bflowing into downstream\b/, /\bflowing into (?:the )?(?:class list|reports?|systems?)\b/, /\bdownstream systems\b/, /\bkeeps (?:writing|creating)\b/,
     /\bmore records each\b/, /\bgetting worse\b/,
@@ -1150,7 +1208,11 @@ export const RECURRENCE_PHRASES = [
         /\b\w+\s+consecutive\s+(?:nights?|days?|runs?|times?)\b/,
         'changes back', /\b(?:fails?|breaks?|stops?)\s+again\b/,
         /\bagain\s+on\s+the\s+(?:next|following)\s+run\b/],
-    w: 1, label: 'the problem has happened before' }
+    w: 1, label: 'the problem has happened before' },
+  { m: [
+      /\bevery\s+(?:monday|tuesday|wednesday|thursday|friday|saturday|sunday|week|fortnight|month|term|day)\b[^.;!?]{0,48}\b(?:drops?|dropped|fails?|failing|breaks?|skips?|misses?|missing|wrong|stops?|repeats?|again)\b/
+    ],
+    w: 0, label: 'the same fault repeats on a known schedule' }
 ];
 
 /**
@@ -1271,7 +1333,8 @@ export const CONTINUITY_PHRASES = [
   { m: ['printable pdf is accurate', 'printable pdf is fine', 'gives them the complete document',
         'live departures page is accurate', 'existing summary is usable',
         'csv download for that adviser is complete', 'file opens normally',
-        'can keep booking rooms'],
+        'can keep booking rooms',
+        /\b(?:job|import|sync|process|migration)\b[^.;!?]{0,16}\b(?:is |has been )?paused\b/],
     label: 'an explicit alternative or completed path remains usable' }
 ];
 
@@ -1321,7 +1384,8 @@ export const CONTAINED_PHRASES = [
         /\b(?:batch|import|record|records?)\s+(?:has|have|is|are|was|were)\s+(?:been\s+)?isolated\b/,
         'only one student', 'only this record', 'only this one record', 'not spreading', 'is not spreading',
         'has not spread', 'no evidence of spreading', 'no other records', 'no other families',
-        'no further records', 'stays on that record', 'does not affect other', 'not affecting other'],
+        'no further records', 'stays on that record', 'does not affect other', 'not affecting other', IMPORT_SKIPPED_BOUNDED,
+        /\beveryone else\b[^.;!?]{0,24}\b(?:is|are)\s+unaffected\b/],
     w: 0, label: 'the fault appears to be contained' }
 ];
 
@@ -1337,6 +1401,11 @@ export const BLOCKED_PROCESS_PHRASES = [
     ],
     process: 'required submission or processing', label: 'a required submission or processing step is blocked' },
   { m: [
+      /\bcan not lodge\b[^.;!?]{0,32}\b(?:adjustments?|claims?|forms?|attendance|submissions?)\b/,
+      /\b(?:web form|form|portal|service|system)\b[^.;!?]{0,24}\brejects?\s+(?:every|each|all)\s+(?:attempt|submission|try)\b/
+    ],
+    process: 'attendance or claim lodgement', label: 'attendance or claim lodgement is blocked' },
+  { m: [
       // normalise() expands cannot, can't and unable to to "can not".
       /\bcan not\s+(?:mark|take|record|enter)\s+(?:the\s+)?(?:rolls?|attendance)\b/,
       /\b(?:the\s+)?rolls?\s+can not\s+be\s+(?:marked|recorded)\b/,
@@ -1344,6 +1413,10 @@ export const BLOCKED_PROCESS_PHRASES = [
       'attendance not recording'
     ],
     process: 'attendance marking', label: 'attendance marking is blocked' },
+  { m: [
+      /\b(?:eyewash|safety (?:control|equipment|station)|valve)\b[^.;!?]{0,48}\b(?:dry|failed|failing|not working|unavailable)\b/
+    ],
+    process: 'safe use of the affected space', label: 'safe operation of the affected space is blocked' },
   { m: ['can not enrol', 'cannot enrol', 'can not process enrolments',
         /\b(?:student\s+)?enrolments?\s+can not\s+be\s+processed\b/,
         /\bcan not\s+complete\s+(?:the\s+)?(?:(?:remaining|affected|these)\s+)?(?:enrolment|enrolments|enrolment applications?)\b/],
@@ -1372,8 +1445,14 @@ export const BLOCKED_PROCESS_PHRASES = [
 export const IMPAIRED_PROCESS_PHRASES = [
   { m: [
       /\b(?:queue|export|import|report|view|form|mapping)\b[^.;!?]{0,24}\b(?:will not|does not|do not|can not)\s+(?:send|load|open|display|update|complete)\b/,
-      /\b(?:import|report|export|queue|mapping|view)\b[^.;!?]{0,24}\b(?:skips?|skipped|leaves out|omits?|drops?|misaligns?|shows?\s+incorrect)\b/,
-      /\b(?:records?|rows?|forms?|entries)\s+(?:were|was|are|is)\s+(?:skipped|omitted|dropped|overwritten|missing)\b/
+      /\b(?:import|report|export|queue|mapping|view|sync|synchronisation|job|batch)\b[^.;!?]{0,24}\b(?:skips?|skipped|leaves out|omits?|omitted|drops?|misaligns?|shows?\s+incorrect)\b/,
+      /\b(?:records?|rows?|forms?|entries)\s+(?:were|was|are|is)\s+(?:skipped|omitted|dropped|overwritten|missing)\b/,
+      /\b(?:rows?|records?|entries|data)\s+(?:have |has |had )?(?:disappeared|vanished)\b/,
+      /\bcan not (?:land on|reach|focus on|tab to|activate)\b[^.;!?]{0,40}\b(?:control|button|field|link)\b/,
+      STALE_DISPLAY,
+      EMPTY_VIEW,
+      STILL_BEING_WRITTEN,
+      /\b(?:analytics|reporting|sync|import|export|integration)\s+job\b[^.;!?]{0,24}\b(?:is|are)\s+failing\b/
     ],
     process: 'named operational process', label: 'a business process is impaired' }
 ];
@@ -1389,12 +1468,13 @@ export const DRIVER_PHRASES = [
         'enrolments close', 'enrolment closes', 'direct debit run', 'nightly job', 'scheduled job', 'class starts', 'classes start',
         'lesson starts', 'lessons start', 'term starts', 'report cards out',
         'reports due out', 'attendance roll', 'excursion leaves', 'vendor cutoff',
-        'marks close', 'month-end close', 'bank file cutoff', 'term-start roster',
+        'marks close', 'month-end close', 'bank file cutoff', 'term-start roster', 'register closes', 'before classes',
+        /\b(?:managers?|staff|team|teachers?|registrars?|coordinators?)\s+need\b[^.;!?]{0,24}\b(?:tomorrow|today|this (?:morning|afternoon))\b/,
         'appeal panel', 'close of business', 'approval goes through',
         /\bpay\s+run\b[^.!?]{0,20}\bdue\b/,
         /\b(?:assessment|class|lesson)\s+(?:begins?|commences?|starts?)\b/],
     driver: 'operational', w: 0, label: 'an operational or business event drives timing' },
-  { m: ['would like it by', 'would be nice by', 'prefer it by', 'if possible by',
+  { m: ['would like it by', 'would be nice by', 'prefer it by', 'if possible by', 'would like',
         'would it be possible',
         'when you get a chance', 'whenever suits', 'whenever convenient', 'no particular rush',
         'nice to have by', 'at your convenience', 'if possible',
@@ -1414,7 +1494,8 @@ export const HARM_TIMING_PHRASES = {
     /\b(?:account|access)\b[^.;!?]{0,20}\bstill (?:compromised|has access|accessible)\b/i,
     /\b(?:attacker|intruder)\b[^.;!?]{0,20}\bstill has access\b/i,
     /\baccess has not been revoked\b/i,
-    /\b(?:missing|absent)\b[^.;!?]{0,32}\b(?:during|in)\s+(?:today|the current|current)\b/i,
+    /\b(?:missing|absent)\b[^.;!?]{0,32}\b(?:during|in|from)\s+(?:today|the current|current)\b/i,
+    IMPORT_SKIPPED_RECORDS,
     'currently visible', 'actively visible', 'wrongly linked but visible'
   ],
   pending: [
@@ -1432,5 +1513,6 @@ export const WORKAROUND_COST_PATTERNS = [
   /\bmanual(?:ly)?\s*(?:for|over)\s*(\d+)\s*days?\b/i,
   /\bfeeding\s*(?:all day|manually)\b/i,
   /\bthree registrars\b/i,
-  /\bworkaround.*costs?\s*\d+/i
+  /\bworkaround.*costs?\s*\d+/i,
+  /\b(?:by hand|manually|retype|re-?key|re-?enter)\b[^.;!?]{0,80}\b(?:take|takes|taking)\s+(?:nearly\s+|about\s+|almost\s+|over\s+|up to\s+)?(?:an?|one|two|three|four|five|six|seven|eight|\d{1,2})\s+hours?\b/i
 ];

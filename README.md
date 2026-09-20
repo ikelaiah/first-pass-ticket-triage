@@ -2,7 +2,7 @@
 
 > Local-first, explainable P1–P4 suggestions for IT and application support.
 
-v0.10.0: **Triage Handoff MVP**.
+v0.11.0: **Capability-boundary burn-down, generalisation, and holdout unseal**.
 
 Paste a messy ticket, email or work request. Get a suggested priority, the evidence
 behind it, the facts that are missing, and the questions worth asking next.
@@ -24,11 +24,20 @@ deadline, whether a usable path remains, whether harm is current or pending, and
 whether the problem is contained or spreading.
 
 The v0.8 locked release measurement reports exact Priority, Impact, Urgency, and
-facet differences separately from safety blockers. The current qualification has
-25 exact semantic divergences, all individually adjudicated (24 capability
-boundaries and one reviewed ambiguity), with zero unsafe under-prioritisation,
-severe unsafe under-prioritisation, assessed-ticket abstentions, and P1 false
-negatives. See [the capability-boundary qualification](docs/260906-v0.8-capability-boundary-qualification.md).
+facet differences separately from safety blockers. After the v0.11.0
+capability-boundary burn-down the locked validator reports **13 exact semantic
+divergences**: 11 capability boundaries (B=0, C=7, D=4), one reviewed acceptable
+ambiguity, and one reviewed scope-band label defect, with zero unadjudicated
+divergences and zero safety blockers. See
+[the capability-boundary qualification](docs/260906-v0.8-capability-boundary-qualification.md).
+
+The frozen 24-case final holdout was unsealed once in v0.11.0 and failed its
+first look (11/24 exact priority, two P1 false negatives, one severe
+under-prioritisation). Fourteen engine defects were fixed and the post-fix
+regression reads 23/24 with P1 precision and recall 4/4 and zero safety
+blockers; the first look remains the out-of-sample verdict, and a replacement
+holdout is required before the next measurement. See
+[the holdout qualification](docs/260920-final-holdout-qualification.md).
 
 ---
 
@@ -387,6 +396,8 @@ first-pass-triage/
 │   ├── facet-report.js          compact eight-facet coverage report
 │   ├── facet-tests.js           declarative, metamorphic and composition assertions
 │   ├── facet-test-helpers.js    shared facet adapters and state coverage checks
+│   ├── generalisation-tests.js  unseen-paraphrase, invariant and adversarial assertions
+│   ├── final-holdout-evaluation.mjs re-runnable evaluation of the consumed final holdout
 │   ├── catalogue-coverage.test.mjs source-to-catalogue reconciliation report
 │   └── fixtures/               semantic, legacy, and labelled corpora (not production accuracy data)
 ├── serve.bat                   double-click launcher for the dev server

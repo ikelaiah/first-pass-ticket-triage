@@ -1,5 +1,146 @@
 # Changelog
 
+## [0.11.0] - 2026-09-20 — Capability-Boundary Burn-Down, Generalisation, and Holdout Unseal
+
+### Added
+
+- Added `docs/260919-safety-boundary-adjudication.md`, which resolves four
+  disputed evaluation cases against the written policy before safety metrics
+  become release-blocking.
+- Added a safety release gate to `node tests/evaluate.mjs`: any unsafe
+  under-prioritisation, severe under-prioritisation, P1 false negative, or
+  assessed-ticket abstention now fails the gate, with evaluator self-tests for
+  the blocker list.
+- Added `tests/generalisation-tests.js`, a Phase 4 suite of unseen-paraphrase,
+  invariant, and adversarial assertions: every accuracy fix in this release is
+  re-tested with wording that is not in any locked fixture, alongside urgency
+  monotonicity, comparator/history scope, clause-local negation, screaming
+  without consequence, resolved-then-live wording, UAT test cases, pasted logs,
+  and quoted history.
+
+### Changed
+
+- Corrected two evaluation labels under the written payroll and safeguarding
+  rules: a same-day payment processing failure is P1, and potential harm without
+  active access is P2. Added an erratum to the v0.8.0 calibration report.
+
+### Fixed
+
+- A payroll/payment file reported as "not produced" is now missing-data
+  evidence, so a same-day processing failure escalates through the existing
+  `financial.confirmed` policy instead of stopping at P2.
+- Politeness hedges such as "if possible" and "if you can" no longer mark a
+  stated population as hypothetical, so an explicit "all schools" scope survives
+  into I1; real conditionals such as "if the change is approved" remain
+  hypothetical.
+- U8 harm timing now reads absence from a *current* process ("absent from the
+  current pay run") as active harm, while historical and future clauses stay
+  filtered by the clause temporal classifier. This resolves locked capability
+  boundary `release-21-casual-pay-missing`; the case was removed from the
+  ledger so a regression becomes an unadjudicated divergence and blocks again.
+- A record-skipping import or job now feeds three dimensions from one shared
+  pattern: data-integrity risk (I3), bounded containment when the skip is
+  limited to one named group (I4), and active harm for records missing now
+  (U8). A register close is an operational deadline driver (U6). This resolves
+  locked capability boundary `release-35-small-group-absence-import`; a skipped
+  process *step* is not a record-skip, and a spreading skip is not contained.
+- An accessibility barrier where a keyboard user cannot land on a form control
+  is now an action-blocked symptom (I3 unavailable) and an impaired process
+  (I2); a non-equivalent assisted path is a partial workaround (U7); and an
+  impaired process with only a partial path is active harm (U8). The ticket
+  routes to the Accessibility domain. This resolves locked capability boundary
+  `release-07-keyboard-accommodation`; a working form is not a barrier.
+- A disappeared data batch is now data-loss (I3), an impaired process (I2), and
+  active harm (U8); an explicit loss with a usable recovery path is a full
+  workaround (U7). The written `loss.recoverable` policy is now implemented: a
+  recovery path caps Impact at Medium but does not stop the clock, so a near
+  restoration need that is not marked soft keeps High Urgency, while an
+  unstated loss event does not raise restoration urgency. This resolves locked
+  capability boundary `release-23-enrolment-restore-lock`.
+- A weekly cadence that drops the same records is now an I4 recurrence without
+  extra cumulative weight (Impact now uses the strongest recurrence evidence),
+  and dropped records raise the data-integrity risk (I3). A repair-before-classes
+  routine is an operational driver (U6) and a full workaround (U7), while the
+  next scheduled run stays a schedule rather than a required-by (U5 none). This
+  resolves locked capability boundary `release-25-timetable-repeating-campus`.
+- Counted offices are now a team-scale population (I1); a refusal to lodge
+  attendance adjustments is a blocked process (I2) and an action-blocked symptom
+  (I3 unavailable); "rejects every attempt" leaves no workaround (U7), so the
+  blocked process is active harm (U8). A state-adverb "now" before a modal is no
+  longer an immediate deadline (U5 today), and the blocked-action symptom is no
+  longer double-counted with the blocked process in Impact. This resolves locked
+  capability boundary `release-32-retired-phone-workaround`.
+- Students using the affected room, lab or space are now a cohort-scale
+  population (I1); a dry or failed eyewash or safety control blocks safe use of
+  that space (I2), and "no replacement unit on site" leaves no workaround (U7),
+  so the blocked safety process is active harm (U8). This resolves locked
+  capability boundary `release-17-lab-eyewash-control`.
+- Manual effort measured in hours, in a manual-work context, is now a
+  workaround cost (U7). A failing finance process with costly manual work before
+  a committed operational close is High urgency and active harm, because the
+  work is already under way, while Impact stays Medium. An impaired process now
+  counts as an active failure for the costly-workaround floor. This resolves
+  locked capability boundary `release-10-invoice-entry-cost`.
+- A board or display still showing yesterday's values is now stale-display
+  evidence: an impaired process (I2) and a data-integrity risk (I3
+  incorrect-data), with a current board no longer classified as historical. A
+  live accurate page or coordinator-posted current times is a full workaround
+  (U7). This closes the remaining engine gaps in locked case
+  `release-11-stale-bus-arrivals`; its residual I1 divergence is re-adjudicated
+  as a reviewed scope-band label defect (twelve pupils is `team` per the
+  counting band and three checked-in fixtures, while the frozen label says
+  `few-users`).
+- Deadline parsing now treats a state "works now" as a current condition rather
+  than an immediate deadline, and reads "in eight/ten days" as a one-to-two-week
+  deadline. A replaced certificate with a future requirement is pending harm
+  rather than active harm, and an unusable storage snapshot leaves no
+  workaround. The unique extent question now also covers active exposure and
+  explicit loss at cohort scale. This resolves locked D case
+  `release-28-certificate-grant-window` and adds tested clarification paths for
+  `release-14`, `release-15`, `release-24`, and `release-36`.
+- Phase 3 composition pass resolves locked C cases `release-09`, `release-26`,
+  and `release-27`: "covers X but cannot do Y" is a partial workaround; a
+  consequence word inside a system name is no longer an imminent-consequence
+  escalation; "still being copied" is active propagation with Medium-bounded
+  urgency; a bad mapping is a data-integrity risk; an empty view is unavailable
+  and impaired; "everyone else is unaffected" is comparator containment; a
+  complete CSV extract is a workaround; and the continuity deadline demotion no
+  longer applies to outage-grade symptoms. Also adds `would like` as a
+  preference driver, a failing analytics job as impaired, "can use the CSV
+  extract" as a workaround, and a comparator guard for forward negation. The
+  seven remaining C cases are documented policy/label boundaries with
+  clarification coverage tested.
+- Phase 4 generalisation fixes from the new suite: an omitted sync batch is an
+  impaired process, "can be rebuilt from a backup" is a recovery path,
+  "displaying last week's" is a stale display, written-number manual durations
+  are costs, and "stopped again" reopens a resolved incident.
+- Unsealed the frozen 24-case final holdout once and recorded the honest
+  first-look verdict: 11/24 exact priority, two P1 false negatives and one
+  severe under-prioritisation, failing the safety gate. Fourteen mismatches were
+  adjudicated as engine defects and fixed (active disclosure to another
+  household, access-not-revoked wording, printed-copy and shortcut workarounds,
+  resolved-since and scheduled-renewal context, pending privacy drafts,
+  data-integrity wording, negated service failures, paused-job continuity, and
+  an unrecoverable-loss urgency floor); one remains a deferred policy
+  question. The post-fix regression reads 23/24 with P1 precision and recall
+  4/4 and zero safety blockers. The consumed fixture keeps its first-look
+  metadata and checksum; a replacement holdout is required before the next
+  release measurement. See
+  [the holdout qualification](docs/260920-final-holdout-qualification.md).
+
+### Verified
+
+- 1060 behavioural assertions pass, and the checked-in corpus reads 78/79 exact
+  priority with zero unsafe under-prioritisation, zero severe
+  under-prioritisation, zero P1 false negatives, and zero assessed-ticket
+  abstentions.
+- The locked v0.8.0 validator reports 13 exact semantic divergences: 11
+  capability boundaries (B=0, C=7, D=4), one acceptable ambiguity, and one
+  reviewed scope-band label defect, with zero unadjudicated divergences and zero
+  safety blockers.
+- The consumed final holdout records an 11/24 first look and a 23/24 post-fix
+  regression; the first look remains the out-of-sample verdict.
+
 ## [0.10.0] - 2026-09-07 — Triage Handoff MVP
 
 ### Added

@@ -63,8 +63,18 @@ export function extractHarmTimingEvidence(doc, symptom, context = {}, ledger = c
   const isExpiring = symptomId === 'expiring-soon';
   const isDataLoss = symptomId === 'data-loss';
 
-  const historicalResolution = /\b(?:last|previous|earlier|yesterday)\b[\s\S]{0,60}\b(?:renewed|replaced|restored|fixed|valid|resolved)\b/i.test(doc.text);
+  const historicalResolution = /\b(?:last|previous|earlier|yesterday|old)\b[\s\S]{0,60}\b(?:renewed|replaced|replacement|renewal|restored|fixed|valid|resolved)\b/i.test(doc.text);
   if (isExpired && historicalResolution) {
+    // The expired credential was replaced; if a future requirement still needs
+    // the new one, the harm is waiting rather than present.
+    const replacementNeeded =
+      /\b(?:required|needed|due)\b[^.;!?]{0,48}\b(?:in|within)\s+(?:six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty|\d{1,2})\s+days\b/i.test(doc.text);
+    if (replacementNeeded) {
+      addCandidate(extraction, {
+        timing: 'pending', label: 'harm is waiting — the replacement is required soon',
+        quote: 'required', source: 'expired-replacement', temporal: 'current', ...quoteHit(doc, 'required')
+      });
+    }
     return extraction;
   }
   if (isExpired) {
@@ -75,7 +85,8 @@ export function extractHarmTimingEvidence(doc, symptom, context = {}, ledger = c
     const quote = symptom.evidence[0]?.quote || 'expiring';
     addCandidate(extraction, { timing: 'pending', label: 'harm is waiting — expiring soon', quote, source: 'symptom', ...quoteHit(doc, quote) });
   }
-  if (isDataLoss && /\b(?:already(?:\s+been)?|has been|have been|was|were)\s+(?:deleted|wiped|lost|overwritten)\b/i.test(doc.text)) {
+  const disappearedLoss = /\b(?:rows?|records?|entries|files?|data|documents?|forms?|enrolments?)\s+(?:have |has |had )?(?:disappeared|vanished)\b/.test(doc.text);
+  if (isDataLoss && (/\b(?:already(?:\s+been)?|has been|have been|was|were)\s+(?:deleted|wiped|lost|overwritten)\b/i.test(doc.text) || disappearedLoss)) {
     const quote = symptom.evidence[0]?.quote || 'deleted';
     addCandidate(extraction, {
       timing: 'active', label: 'harm is happening now — data was lost', quote,
@@ -89,8 +100,8 @@ export function extractHarmTimingEvidence(doc, symptom, context = {}, ledger = c
   const pendingHit = matchesAny(doc, HARM_TIMING_PHRASES.pending);
   if (pendingHit) addCandidate(extraction, { timing: 'pending', label: 'harm is waiting to happen', source: 'harm-phrase', ...pendingHit });
 
-  const pendingChange = /\b(?:proposed|queued|planned)\b[\s\S]{0,120}\b(?:could|may|might|would)\b/i.test(doc.text) &&
-    /\b(?:if\s+(?:the\s+)?approval|not\s+(?:live|enabled)|has not been enabled)\b/i.test(doc.text);
+  const pendingChange = /\b(?:proposed|queued|planned|draft)\b[\s\S]{0,120}\b(?:could|may|might|would)\b/i.test(doc.text) &&
+    /\b(?:if\s+(?:the\s+)?approval|if\s+(?:it|the change|the role|this)\s+is\s+(?:enabled|approved)|not\s+(?:live|enabled|active)|has not been enabled)\b/i.test(doc.text);
   if (pendingChange) {
     const start = doc.text.search(/\b(?:proposed|queued|planned)\b/i);
     addCandidate(extraction, {
@@ -111,10 +122,20 @@ export function extractHarmTimingEvidence(doc, symptom, context = {}, ledger = c
     const quote = context.blockedProcess?.quote || 'active exposure';
     addCandidate(extraction, { timing: 'active', label: 'harm is happening now — exposure is active', quote, source: 'risk-modifier', authority: 'inferred', temporal: 'current', ...quoteHit(doc, quote) });
   }
-  if (context.blockedProcess?.level === 'blocked' &&
+  // A blocked process with no usable path is current harm; so is an impaired
+  // process when the only remaining path is partial, because the shortfall is
+  // being felt now. A full workaround does not qualify.
+  if (['blocked', 'impaired'].includes(context.blockedProcess?.level) &&
       (context.workaround === 'no' || context.workaround === 'partial')) {
     const quote = context.blockedProcess.quote;
     addCandidate(extraction, { timing: 'active', label: 'harm is happening now — work is currently affected', quote, source: 'business-consequence', authority: 'inferred', temporal: 'current', ...quoteHit(doc, quote) });
+  }
+
+  // Material manual effort already under way means the shortfall is present,
+  // even when a full workaround still keeps the process moving.
+  if (context.workaroundCost && ['blocked', 'impaired'].includes(context.blockedProcess?.level)) {
+    const quote = context.blockedProcess.quote;
+    addCandidate(extraction, { timing: 'active', label: 'harm is happening now — manual effort is under way', quote, source: 'workaround-cost', authority: 'inferred', temporal: 'current', ...quoteHit(doc, quote) });
   }
 
   return extraction;
