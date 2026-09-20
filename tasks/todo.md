@@ -14,7 +14,10 @@
 - [x] Unseal the final holdout once, fix the fourteen exposed engine defects,
   and record both the first-look verdict and the post-fix regression.
 - [x] Update README, CHANGELOG, release report, and version metadata to 0.11.0.
-- [ ] Complete remote PR, CI, merge, tag, release, and Pages operations.
+- [x] Complete local browser runtime qualification with headless Chrome.
+- [ ] Label and freeze a replacement holdout with I3/U8 facets before the next
+  measurement.
+- [x] Complete remote PR, CI, merge, tag, release, and Pages operations.
 
 ## v0.10.0 Triage Handoff MVP
 
