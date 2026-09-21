@@ -12,7 +12,7 @@
   safety blockers; guard every safety fix with unseen paraphrases.
 - [x] Commit and push the measurement, fixes, and documentation.
 - [x] Run the release gate, browser qualification, and v0.11.1 release report.
-- [ ] Tag v0.11.1, publish the GitHub release, and verify Pages.
+- [x] Tag v0.11.1, publish the GitHub release, and verify Pages.
 
 ## v0.11.0 capability-boundary burn-down, generalisation, and holdout unseal
 
