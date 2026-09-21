@@ -2,7 +2,7 @@
 
 > Local-first, explainable P1–P4 suggestions for IT and application support.
 
-v0.11.0: **Capability-boundary burn-down, generalisation, and holdout unseal**.
+v0.11.1: **Replacement holdout measurement and safety fixes**.
 
 Paste a messy ticket, email or work request. Get a suggested priority, the evidence
 behind it, the facts that are missing, and the questions worth asking next.

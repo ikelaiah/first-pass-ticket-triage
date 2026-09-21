@@ -10,7 +10,9 @@
   urgency-floor policy question.
 - [x] Re-run post-fix: 24/24 exact priority, P1 precision/recall 6/6, zero
   safety blockers; guard every safety fix with unseen paraphrases.
-- [ ] Commit and push the measurement, fixes, and documentation.
+- [x] Commit and push the measurement, fixes, and documentation.
+- [x] Run the release gate, browser qualification, and v0.11.1 release report.
+- [ ] Tag v0.11.1, publish the GitHub release, and verify Pages.
 
 ## v0.11.0 capability-boundary burn-down, generalisation, and holdout unseal
 
