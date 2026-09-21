@@ -35,9 +35,17 @@ The frozen 24-case final holdout was unsealed once in v0.11.0 and failed its
 first look (11/24 exact priority, two P1 false negatives, one severe
 under-prioritisation). Fourteen engine defects were fixed and the post-fix
 regression reads 23/24 with P1 precision and recall 4/4 and zero safety
-blockers; the first look remains the out-of-sample verdict, and a replacement
-holdout is required before the next measurement. See
-[the holdout qualification](docs/260920-final-holdout-qualification.md).
+blockers; the first look remains the out-of-sample verdict. See
+[the final holdout qualification](docs/260920-final-holdout-qualification.md).
+
+The independently labelled replacement holdout was unsealed once in the
+v0.11.1 work and failed its first look as well (14/24 exact priority, three P1
+false negatives, four severe under-prioritisations). The twenty-two exposed
+engine defects were fixed, and the post-fix regression reads 24/24 exact
+priority with P1 precision and recall 6/6 and zero safety blockers. The first
+look remains the verdict, and another replacement holdout is required before
+the next measurement. See
+[the holdout qualification](docs/260920-replacement-holdout-qualification.md).
 
 ---
 

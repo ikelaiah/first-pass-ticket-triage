@@ -1,5 +1,45 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- Added `tests/fixtures/accuracy-holdout-v0.11.1.json`, an independently
+  authored and labelled 24-case replacement holdout with I3/U8 facet fields, and
+  `tests/validate-holdout.mjs`, a safe work-in-progress validator.
+- Added `tests/replacement-holdout-evaluation.mjs` and
+  `docs/260920-replacement-holdout-qualification.md`, recording the one-time
+  unseal and its post-fix regression.
+
+### Changed
+
+- Unsealed the replacement holdout once. **The first look is the verdict:
+  14/24 exact priority, three P1 false negatives, four severe
+  under-prioritisations, one abstention — a safety-gate failure.** Twenty-two
+  mismatches were adjudicated as engine defects and fixed; one is a deferred
+  urgency-floor policy question.
+- Safety fixes: chemical hazards are inside the support boundary, "can still
+  send" is access-not-revoked, erased/destroyed loss with no recovery path is
+  unrecoverable, "neither … nor … available" is no workaround, and "in ninety
+  minutes" / "in two hours" are same-day deadlines.
+- Evidence and facet fixes: regulator statutory driver, export/feed failure
+  impairment, individual receptionist scope, "no substitute", partial
+  "works for six, the remaining two have none", manual daily cost, paused-feed
+  continuity, "N days from now" bucketing, bare-participle deletion as active
+  harm, explicit "a preference" and "fine to leave it until later",
+  "no account change" is not missing data, pending "awaiting review / has never
+  run", learning-support privacy context, and a soft-continuation signal.
+
+### Verified
+
+- 1068 behavioural assertions pass; the checked-in corpus reads 78/79 exact
+  priority with all safety metrics zero; the locked validator is unchanged at 13
+  divergences (B=0, C=7, D=4) with zero safety blockers.
+- Replacement holdout post-fix regression: 24/24 exact priority, impact 24/24,
+  P1 precision and recall 6/6, zero unsafe under-prioritisation, zero
+  abstentions. The consumed final holdout recheck remains 23/24 with zero safety
+  blockers.
+
 ## [0.11.0] - 2026-09-20 — Capability-Boundary Burn-Down, Generalisation, and Holdout Unseal
 
 ### Added

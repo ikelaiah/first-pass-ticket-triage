@@ -1,5 +1,17 @@
 # v0.5.0 reliability, privacy, and safety checklist
 
+## v0.11.1 replacement holdout measurement
+
+- [x] Scaffold the replacement holdout and validation helper.
+- [x] Freeze the labelled fixture checksum before evaluation.
+- [x] Unseal it once and record the first-look verdict (14/24, three P1 false
+  negatives, four severe under-prioritisations).
+- [x] Adjudicate all 23 mismatches: 22 engine defects fixed, one deferred
+  urgency-floor policy question.
+- [x] Re-run post-fix: 24/24 exact priority, P1 precision/recall 6/6, zero
+  safety blockers; guard every safety fix with unseen paraphrases.
+- [ ] Commit and push the measurement, fixes, and documentation.
+
 ## v0.11.0 capability-boundary burn-down, generalisation, and holdout unseal
 
 - [x] Adjudicate the disputed safety-boundary labels and correct the stale v0.8.0
