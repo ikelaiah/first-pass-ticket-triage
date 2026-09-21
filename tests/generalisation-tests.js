@@ -199,4 +199,41 @@ export function registerGeneralisationTests(test, ok) {
     const result = analyse("The sole archive of last year's audit reports was erased; there is no usable backup and the next review is in two weeks.");
     return ok(result.urgency === 'medium', result.urgency);
   });
+
+  // --- replacement-holdout safety guards ------------------------------------
+  test('Generalisation', 'a chemical hazard on a student-accessible system is P1', () =>
+  priority('The chemical store door is opening for student cards during the lesson now in progress and staff cannot secure it.', 'P1'));
+
+  test('Generalisation', 'a suspended teacher who can still message pupils is P1', () => {
+    const result = analyse('A suspended teacher with a no contact order can still send messages to students.');
+    return ok(result.risks.safeguarding === true && result.suggestedPriority === 'P1',
+      JSON.stringify({ safeguarding: result.risks.safeguarding, priority: result.suggestedPriority }));
+  });
+
+  test('Generalisation', 'permanently erased records with no surviving copy are P1', () => {
+    const result = analyse('The assessment portfolios were permanently erased and the provider confirmed no surviving copy; the panel needs them in two hours.');
+    return ok(result.suggestedPriority === 'P1' && result.impact === 'high',
+      JSON.stringify({ priority: result.suggestedPriority, impact: result.impact }));
+  });
+
+  test('Generalisation', 'neither manual nor alternative path is no workaround', () => {
+    const result = analyse('The claims portal is down and neither manual entry nor an alternative route is available in time.');
+    return ok(result.workaround === 'no', JSON.stringify({ workaround: result.workaround }));
+  });
+
+  test('Generalisation', 'a regulator portal closing in ninety minutes is P2', () =>
+  priority('The regulator submission portal closes in ninety minutes and the export fails for every record.', 'P2'));
+
+  test('Generalisation', 'no account change is not missing data', () => {
+    const result = analyse('No account change or access repair is requested; the records are correctly matched.');
+    return ok(result.symptom !== 'missing-data', result.symptom);
+  });
+
+  test('Generalisation', 'fine to leave it until later is backlog work', () =>
+  priority('The dashboard colour could be changed; it is fine to leave it until later.', 'P4'));
+
+  test('Generalisation', 'four days from now is a two-to-five-day deadline', () => {
+    const result = analyse('The reporting service is failing and the panel needs the reconstruction plan four days from now.');
+    return ok(result.deadline === 'days-2-5', result.deadline);
+  });
 }

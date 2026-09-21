@@ -26,6 +26,7 @@ import { assessUrgency } from './urgency.js';
 import { applyTriagePolicy } from './policy.js';
 import { recommendNextAction } from './next-action.js';
 import { detectRecoverability } from './recoverability.js';
+import { SOFT_CONTINUATION_PHRASES } from '../data/phrases.js';
 import { assessConfidence } from './confidence.js';
 import {
   priorityFor, priorityDefinition, LEVEL_LABELS
@@ -287,6 +288,7 @@ function policyEvidence(context) {
     inScope,
     harmTiming: harmTiming?.timing || 'unknown',
     recoverability: recoverability?.value || 'unknown',
+    deadlineSoft: Boolean(context.deadlineSoft),
     criticalSystem: Boolean(systemResult?.criticalSystem),
     technicalDomain: domainResult?.domain || 'unknown',
     accessibilityIssue: domainResult?.domain === 'accessibility',
@@ -1031,6 +1033,9 @@ export function analyse(rawText, overrides = {}) {
       immediateSafeguarding: active && risks.safeguarding
     };
   }
+  // A soft continuation phrase keeps work going while the fault is repaired,
+  // so the policy must not price the restoration as imminent.
+  const deadlineSoft = scanPositive(doc, [{ m: SOFT_CONTINUATION_PHRASES }]).length > 0;
   const effectiveRisk = { ...riskResult, risks, modifiers };
 
   const workTypeResult = detectWorkType(doc, {
@@ -1128,7 +1133,7 @@ export function analyse(rawText, overrides = {}) {
         evidence: []
       };
     }
-    if (!applied.driver && driver.driver === 'unknown') {
+    if (!applied.driver && driver.driver === 'unknown' && !deadlineResult.committed) {
       driver = {
         driver: 'preference',
         label: 'an ordinary guidance preference drives timing',
@@ -1221,7 +1226,8 @@ export function analyse(rawText, overrides = {}) {
       risks, modifiers, symptom, deadlineResult, scopeResult, workaroundResult,
       expectedBehaviour, immediateNeed, workTypeResult, activeIncident,
       decisionContext, inScope, driver, harmTiming, recoverability,
-      systemResult, domainResult, containment, urgencyResult, blockedProcess
+      systemResult, domainResult, containment, urgencyResult, blockedProcess,
+      deadlineSoft
     })
   });
   urgencyResult = {

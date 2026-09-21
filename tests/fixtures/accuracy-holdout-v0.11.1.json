@@ -1,0 +1,633 @@
+{
+  "metadata": {
+    "name": "v0.11.1 replacement holdout",
+    "kind": "ai-authored-policy-labelled-holdout",
+    "note": "Independently authored and labelled; unsealed once on 2026-09-20. See docs/260920-replacement-holdout-qualification.md.",
+    "labelledBeforeEvaluation": true,
+    "evaluated": true,
+    "authoring": {
+      "method": "AI-authored, policy-labelled synthetic cases",
+      "policySource": "docs/triage-policy.md",
+      "humanReviewed": false,
+      "priorExposure": "The author inspected part of accuracy-holdout-final-v0.8.0.json and saw prior fixture case names while checking repository conventions. These scenarios were newly written, but this is not a blind independent human-authored holdout."
+    },
+    "evaluationRule": "Keep unevaluated until labels are reviewed and fixture bytes are frozen in tests/holdout-integrity.test.mjs. Publish the first look regardless of result; a safety blocker stops release.",
+    "validationCommand": "node tests/validate-holdout.mjs tests/fixtures/accuracy-holdout-v0.11.1.json",
+    "labelNotes": "Every case includes I3 and U8. U8 unknown means no evidenced current active or pending harm, including explicitly resolved historical harm. Deadline and driver labels are included where they substantiate a hard cutoff, including the financial safety gate. I3 can retain an explicitly evidenced historical exposure; U8 and harm.resolved distinguish that from ongoing exposure, as in holdout-22.",
+    "integrationContext": "Synthetic deployment scenarios use the student information system (SIS) as the authoritative source for teacher and student records, classes, academic year and photos, delivered through direct integration or Wonde (Platform Integration). Each ticket states the relevant route, affected records and downstream consequence; these are scenario assumptions, not claims about every vendor deployment. A corrected SIS record does not establish downstream recovery, and a downstream edit is not a full workaround if the next sync overwrites it. Platform names and integration criticality alone do not raise priority.",
+    "staffIdentityContext": "User-provided current process: upon acceptance, new staff are entered immediately in three places: the HR platform (for example Aurion or Pay Ascender), Microsoft Entra ID and the SIS. Identity1 is being introduced, but actual connectors, field ownership, matching rules, write directions and activation dates are not yet confirmed. Entry at acceptance does not itself establish that access must already be active. Identity1-enabled tickets describe synthetic configured workflows, not verified company deployments or guaranteed vendor connectors. HR employment status, Entra account/access state and SIS teaching assignments must be checked separately; one successful record or sync does not prove end-to-end provisioning or deprovisioning. SIS authority for learning-platform data does not imply authority over every employment or identity attribute.",
+    "identityPlatformReference": {
+      "url": "https://identity1.com/",
+      "note": "Vendor describes configurable HR-driven provisioning/offboarding, SIS integration and Azure Active Directory management. This is capability context only, not independent product validation or confirmation of connectors for the company HR and SIS versions."
+    },
+    "evaluatedAt": "2026-09-20",
+    "firstLook": {
+      "exactPriority": "14/24",
+      "impact": "19/24",
+      "urgency": "12/24",
+      "p1PrecisionRecall": "3/3 / 3/6",
+      "mismatches": 23,
+      "underPrioritisation": 7,
+      "severeUnderPrioritisation": 4,
+      "unsafeUnderPrioritisation": 3,
+      "p1FalseNegatives": 3,
+      "p1FalsePositives": 0,
+      "abstentionsOnAssessed": 1,
+      "safetyBlockers": 5
+    },
+    "postFixRegression": {
+      "exactPriority": "24/24",
+      "impact": "24/24",
+      "urgency": "22/24",
+      "p1PrecisionRecall": "6/6 / 6/6",
+      "unsafeUnderPrioritisation": 0,
+      "severeUnderPrioritisation": 0,
+      "p1FalseNegatives": 0,
+      "abstentionsOnAssessed": 0,
+      "safetyBlockers": 0,
+      "note": "The first look remains the holdout verdict; these are the fixes it triggered."
+    }
+  },
+  "cases": [
+    {
+      "id": "holdout-01",
+      "text": "Our direct integration provisions Seesaw classes from the SIS. An incorrect teacher assignment gave a teacher access to another class's private student work, which they are not authorised to read. We corrected the assignment in the SIS, but verified that the teacher can still open that work in Seesaw right now; the downstream access has not been revoked.",
+      "expected": {
+        "assessmentStatus": "assessed",
+        "priority": "P1",
+        "impact": "high",
+        "urgency": "high",
+        "i3": "privacy-exposure",
+        "u8": "active"
+      },
+      "labelBasis": {
+        "policyIds": [
+          "privacy.active",
+          "harm.active"
+        ],
+        "rationale": "Confirmed unauthorised access to private student work is still active downstream. Correcting the authoritative SIS record has not revoked that access, so privacy.active requires High impact and urgency."
+      },
+      "review": {
+        "classification": "engine defect",
+        "note": "i3 risk mapping (privacy exposure classified as security compromise); priority was already exact."
+      }
+    },
+    {
+      "id": "holdout-02",
+      "text": "Our identity administrator confirmed that an intruder is using a stolen staff session to create new administrator accounts right now. Signing the teacher out did not terminate that session.",
+      "expected": {
+        "assessmentStatus": "assessed",
+        "priority": "P1",
+        "impact": "high",
+        "urgency": "high",
+        "i3": "security-compromise",
+        "u8": "active"
+      },
+      "labelBasis": {
+        "policyIds": [
+          "harm.active"
+        ],
+        "rationale": "An attacker retains live privileged access; the attempted containment has not stopped the security consequence."
+      }
+    },
+    {
+      "id": "holdout-03",
+      "text": "The chemistry store access system is opening the chemical cupboard for student cards during the lesson now in progress. Staff cannot disable the reader or physically secure the cupboard.",
+      "expected": {
+        "assessmentStatus": "assessed",
+        "priority": "P1",
+        "impact": "high",
+        "urgency": "high",
+        "i3": "safety",
+        "u8": "active"
+      },
+      "labelBasis": {
+        "policyIds": [
+          "safety.active"
+        ],
+        "rationale": "A failed safety control currently exposes students to hazardous materials with no effective containment."
+      },
+      "review": {
+        "classification": "engine defect",
+        "note": "safety-critical P1 false negative and abstention: a chemical hazard was outside the recognised support boundary."
+      }
+    },
+    {
+      "id": "holdout-04",
+      "text": "A teacher has been suspended with an explicit safeguarding restriction prohibiting student contact. HR records the suspension and the Entra ID account is disabled, but the SIS still lists the teacher as active. In our configured Identity1 workflow that SIS status left the learning-platform account enabled. The safeguarding lead verified that its existing session still allows the teacher to receive and answer pupils' private messages right now.",
+      "expected": {
+        "assessmentStatus": "assessed",
+        "priority": "P1",
+        "impact": "high",
+        "urgency": "high",
+        "i3": "safeguarding",
+        "u8": "active"
+      },
+      "labelBasis": {
+        "policyIds": [
+          "safeguarding.active"
+        ],
+        "rationale": "A confirmed safeguarding restriction is currently being breached through a downstream session. HR suspension and an Entra account disable have not ended student contact. Active safeguarding harm requires High impact and urgency regardless of which integration owns the defect."
+      },
+      "review": {
+        "classification": "engine defect",
+        "note": "safety-critical P1 false negative: \"still allows ... receive\" was not access-not-revoked."
+      }
+    },
+    {
+      "id": "holdout-05",
+      "text": "The bank has confirmed that every employee across our eight schools received only half their wages. The correction file is blocked, there is no alternative submission route, and the bank must receive it by noon today.",
+      "expected": {
+        "assessmentStatus": "assessed",
+        "priority": "P1",
+        "impact": "high",
+        "urgency": "high",
+        "i3": "financial-harm",
+        "u8": "active",
+        "u5": "today",
+        "u6": "operational",
+        "u7": "no"
+      },
+      "labelBasis": {
+        "policyIds": [
+          "financial.confirmed",
+          "deadline.hard-near"
+        ],
+        "rationale": "Material missed pay across eight schools and a blocked same-day correction require High impact and urgency."
+      },
+      "review": {
+        "classification": "engine defect",
+        "note": "u6/u8 not derived for the stated operational timing."
+      }
+    },
+    {
+      "id": "holdout-06",
+      "text": "All signed assessment portfolios for the graduating class were permanently erased. The backup provider confirmed there is no surviving copy. The certification panel needs those records in two hours and cannot proceed without them.",
+      "expected": {
+        "assessmentStatus": "assessed",
+        "priority": "P1",
+        "impact": "high",
+        "urgency": "high",
+        "i3": "lost-data",
+        "u8": "active",
+        "u5": "today",
+        "u6": "operational",
+        "u7": "no"
+      },
+      "labelBasis": {
+        "policyIds": [
+          "loss.unrecoverable",
+          "deadline.hard-near"
+        ],
+        "rationale": "Irretrievable cohort-wide evidence loss blocks an imminent certification event."
+      },
+      "review": {
+        "classification": "engine defect",
+        "note": "P1 false negative: \"permanently erased\" was not data-loss, no recovery path, and the two-hour deadline was missed."
+      }
+    },
+    {
+      "id": "holdout-07",
+      "text": "The SIS is the source of truth for teacher assignments, student class memberships and academic year at five schools. Incorrect academic-year values in the SIS are being sent through Wonde into Education Perfect, putting more students and teachers into the wrong year groups on each run. Editing Education Perfect does not hold: the next sync restores the incorrect source values. These are next-term groups that are not open for use yet; no private work is exposed, current lessons still work, and there is no immediate teaching deadline.",
+      "expected": {
+        "assessmentStatus": "assessed",
+        "priority": "P2",
+        "impact": "high",
+        "urgency": "medium",
+        "i3": "incorrect-data",
+        "u8": "active",
+        "i1": "multiple-schools",
+        "i4": "spreading"
+      },
+      "labelBasis": {
+        "policyIds": [
+          "propagation.active"
+        ],
+        "rationale": "Authoritative source errors are actively propagating across five schools. Downstream edits are overwritten and do not contain the defect. The stated breadth supports High impact and propagation supplies Medium urgency; no immediate teaching block or exposure supports High urgency."
+      },
+      "review": {
+        "classification": "engine defect",
+        "note": "i3/i4/u8 facet projections (incorrect-data, spreading, active)."
+      }
+    },
+    {
+      "id": "holdout-08",
+      "text": "The only originals of ten years of the organisation's governing-board minutes were destroyed, and recovery specialists confirmed they cannot be restored. The records manager requires an archive reconstruction plan for an internal recovery meeting in ten days; this is an operational deadline, not a statutory filing. No current service depends on these files.",
+      "expected": {
+        "assessmentStatus": "assessed",
+        "priority": "P2",
+        "impact": "high",
+        "urgency": "medium",
+        "i3": "lost-data",
+        "u8": "active",
+        "u5": "weeks-1-2",
+        "u6": "operational"
+      },
+      "labelBasis": {
+        "policyIds": [
+          "loss.unrecoverable",
+          "deadline.hard-future"
+        ],
+        "rationale": "Material permanent organisational record loss has High impact; a committed future requirement supplies Medium urgency."
+      },
+      "review": {
+        "classification": "engine defect",
+        "note": "severe under-prioritisation: \"destroyed\" and \"cannot be restored\" were not loss evidence."
+      }
+    },
+    {
+      "id": "holdout-09",
+      "text": "The transport subsidy ledger for all schools contains confirmed incorrect reimbursement totals from the last term. Further posting has been stopped. An independently reconciled ledger lets every current reimbursement be paid correctly, and the damaged history can be repaired whenever convenient.",
+      "expected": {
+        "assessmentStatus": "assessed",
+        "priority": "P2",
+        "impact": "high",
+        "urgency": "low",
+        "i3": "financial-harm",
+        "u8": "active",
+        "u7": "yes"
+      },
+      "labelBasis": {
+        "policyIds": [
+          "financial.confirmed",
+          "containment.preserve",
+          "workaround.full",
+          "deadline.soft"
+        ],
+        "rationale": "Broad financial record corruption preserves High impact after containment; a complete reconciled alternative and no repair cutoff allow Low urgency."
+      },
+      "review": {
+        "classification": "engine defect",
+        "note": "i3 financial-harm mapping and u7/u8 facets."
+      }
+    },
+    {
+      "id": "holdout-10",
+      "text": "The absence notification service is unavailable across the whole organisation. Each school has switched to a tested call service that reaches every guardian within the usual staffing and time allocation. This can continue indefinitely; restoring automated notifications can wait.",
+      "expected": {
+        "assessmentStatus": "assessed",
+        "priority": "P2",
+        "impact": "high",
+        "urgency": "low",
+        "i3": "unavailable",
+        "u8": "active",
+        "u7": "yes"
+      },
+      "labelBasis": {
+        "policyIds": [
+          "workaround.full",
+          "deadline.soft"
+        ],
+        "rationale": "An organisation-wide service failure retains broad impact, while a sustainable complete alternative removes immediate process pressure."
+      },
+      "review": {
+        "classification": "policy disagreement deferred",
+        "note": "Broad active failure with an indefinite full workaround: the written policy keeps a Medium urgency floor, the label reads the explicit can-wait wording as Low."
+      }
+    },
+    {
+      "id": "holdout-11",
+      "text": "Our direct SIS-to-Atomi class integration has stopped sending student memberships for one year group. The SIS records are correct, but those students cannot access the assigned assessment in Atomi. The assessment must start tomorrow morning, and staff have confirmed that neither manual enrolment nor an alternative assessment route is available in time.",
+      "expected": {
+        "assessmentStatus": "assessed",
+        "priority": "P2",
+        "impact": "medium",
+        "urgency": "high",
+        "i3": "unavailable",
+        "u8": "active",
+        "u5": "tomorrow",
+        "u6": "operational",
+        "u7": "no",
+        "i1": "cohort"
+      },
+      "labelBasis": {
+        "policyIds": [
+          "deadline.hard-near"
+        ],
+        "rationale": "A failed direct integration blocks one cohort's access to a committed assessment tomorrow with no timely alternative. Correct SIS records do not restore the unavailable downstream process; Medium impact and High urgency follow from the cohort consequence and cutoff."
+      },
+      "review": {
+        "classification": "engine defect",
+        "note": "unsafe under-prioritisation: \"neither ... nor ... available\" was read as a workaround."
+      }
+    },
+    {
+      "id": "holdout-12",
+      "text": "Our school cannot produce the required monthly attendance return: the export fails for every record. The regulator's submission portal closes in ninety minutes, and it accepts only this export format; there is no manual submission route.",
+      "expected": {
+        "assessmentStatus": "assessed",
+        "priority": "P2",
+        "impact": "medium",
+        "urgency": "high",
+        "i3": "unavailable",
+        "u8": "active",
+        "u5": "today",
+        "u6": "statutory",
+        "u7": "no"
+      },
+      "labelBasis": {
+        "policyIds": [
+          "deadline.hard-near"
+        ],
+        "rationale": "A school reporting process is fully blocked at a same-day statutory cutoff without a workaround."
+      },
+      "review": {
+        "classification": "engine defect",
+        "note": "unsafe under-prioritisation: \"ninety minutes\" and \"no manual submission route\" were missed."
+      }
+    },
+    {
+      "id": "holdout-13",
+      "text": "Eight new teachers at one school were entered in HR, Entra ID and the SIS when they accepted their offers. Today is their first teaching day. In our Identity1 rollout, the account-linking step failed: all eight records exist, but the teachers cannot sign in to the learning platform to deliver their assigned lessons. An approved temporary access process works for six teachers; the remaining two have no usable access or alternative lesson route, and their lessons start in an hour.",
+      "expected": {
+        "assessmentStatus": "assessed",
+        "priority": "P2",
+        "impact": "medium",
+        "urgency": "high",
+        "i3": "unavailable",
+        "u8": "active",
+        "u5": "today",
+        "u6": "operational",
+        "u7": "partial"
+      },
+      "labelBasis": {
+        "policyIds": [
+          "workaround.partial",
+          "deadline.hard-near"
+        ],
+        "rationale": "Record creation in all three systems has not delivered usable access. A partial alternative leaves two imminent teaching processes blocked within one school, supporting Medium impact and High urgency. Identity1 rollout status and HR entry alone do not imply financial harm."
+      },
+      "review": {
+        "classification": "engine defect",
+        "note": "u7 partial workaround and u8 facets."
+      }
+    },
+    {
+      "id": "holdout-14",
+      "text": "At one school, the Wonde feed from our SIS into Education Perfect has stopped updating teacher and student class memberships. Two administrators spend four hours each day applying the verified SIS changes manually in Education Perfect. The failed feed is paused so it cannot overwrite their edits. Every affected class can continue its lessons and assessments through this process, with no immediate cutoff, but the daily manual work must continue until the integration is repaired.",
+      "expected": {
+        "assessmentStatus": "assessed",
+        "priority": "P3",
+        "impact": "medium",
+        "urgency": "medium",
+        "i3": "unavailable",
+        "u8": "active",
+        "u7": "yes",
+        "i1": "one-school"
+      },
+      "labelBasis": {
+        "policyIds": [
+          "workaround.costly"
+        ],
+        "rationale": "One school's roster integration is impaired. Pausing the feed makes manual corrections durable and the alternative completes the teaching process, so U7 is yes. Eight staff-hours of daily effort make it materially costly, preserving Medium urgency under workaround.costly and supporting Medium impact."
+      },
+      "review": {
+        "classification": "engine defect",
+        "note": "manual daily cost and paused-feed continuity were not recognised."
+      }
+    },
+    {
+      "id": "holdout-15",
+      "text": "A deleted set of lesson recordings for one year group is recoverable from a verified backup. Restoration takes a day. The teachers need the recordings for a scheduled moderation session four days from now; teaching can continue meanwhile.",
+      "expected": {
+        "assessmentStatus": "assessed",
+        "priority": "P3",
+        "impact": "medium",
+        "urgency": "medium",
+        "i3": "lost-data",
+        "u8": "active",
+        "u5": "days-2-5",
+        "u6": "operational"
+      },
+      "labelBasis": {
+        "policyIds": [
+          "loss.recoverable",
+          "deadline.hard-future"
+        ],
+        "rationale": "Recoverable cohort data loss remains a Medium consequence, with sufficient recovery time before a committed future event."
+      },
+      "review": {
+        "classification": "engine defect",
+        "note": "\"four days from now\" was mis-bucketed and bare deletion was not active harm."
+      }
+    },
+    {
+      "id": "holdout-16",
+      "text": "Twelve incoming teachers at one school have records in HR, Entra ID and the SIS following acceptance. A reconciliation check found that their SIS staff identifiers are linked to the wrong Entra accounts in the staged Identity1 mappings. The affected workflow has been paused before any access changes were applied; no unauthorised access or downstream writes occurred. The mappings must be corrected for the compulsory staff induction in twelve days. None of these starters needs access before that event.",
+      "expected": {
+        "assessmentStatus": "assessed",
+        "priority": "P3",
+        "impact": "medium",
+        "urgency": "medium",
+        "i3": "incorrect-data",
+        "u8": "active",
+        "u5": "weeks-1-2",
+        "u6": "operational",
+        "i1": "one-school"
+      },
+      "labelBasis": {
+        "policyIds": [
+          "deadline.hard-future"
+        ],
+        "rationale": "Incorrect staged identity mappings affect a bounded group of starters at one school, supporting Medium impact. The mapping defect exists now, but propagation and exposure are explicitly absent. A committed induction in twelve days supplies the Medium urgency floor."
+      },
+      "review": {
+        "classification": "engine defect",
+        "note": "i3 data-integrity wording and u6/u8 facets."
+      }
+    },
+    {
+      "id": "holdout-17",
+      "text": "A proposed Identity1 rule would assign an Entra group giving every new teacher in one faculty access to individual learning-support plans, including teachers who are not authorised to read them. The rule is awaiting review and has never run. No additional person can currently see the plans, existing staff access is correct, and the owner can review the proposal whenever convenient.",
+      "expected": {
+        "assessmentStatus": "assessed",
+        "priority": "P3",
+        "impact": "medium",
+        "urgency": "low",
+        "i3": "privacy-context",
+        "u8": "pending"
+      },
+      "labelBasis": {
+        "policyIds": [
+          "harm.pending",
+          "privacy.context",
+          "deadline.soft"
+        ],
+        "rationale": "A specific proposed group rule creates credible potential unauthorised access, supporting contextual Medium impact and pending harm. It has never run and has no committed activation date, so neither active propagation nor current exposure supplies urgency; the soft target supports Low urgency."
+      },
+      "review": {
+        "classification": "engine defect",
+        "note": "pending privacy context was not recognised; urgency over-reads a conditional restriction."
+      }
+    },
+    {
+      "id": "holdout-18",
+      "text": "The direct SIS integration has stopped refreshing the music department's class lists in Seesaw. The SIS lists are correct. The integration is paused, and a tested daily import of those lists keeps every affected teacher and student in the correct class without extra staff time. All assigned work, submissions and feedback can continue through this process; the department is happy to wait for the automatic feed to be repaired.",
+      "expected": {
+        "assessmentStatus": "assessed",
+        "priority": "P3",
+        "impact": "medium",
+        "urgency": "low",
+        "i3": "unavailable",
+        "u8": "active",
+        "u7": "yes",
+        "i1": "team"
+      },
+      "labelBasis": {
+        "policyIds": [
+          "workaround.full",
+          "deadline.soft"
+        ],
+        "rationale": "The department-wide automatic roster service remains unavailable, supporting Medium impact. The stated alternative uses authoritative SIS records, survives because the feed is paused, and preserves the whole teaching process without material cost, permitting Low urgency."
+      },
+      "review": {
+        "classification": "engine defect",
+        "note": "u8 active not derived from the current financial context."
+      }
+    },
+    {
+      "id": "holdout-19",
+      "text": "One teacher's profile in our third-party learning platform is showing their own previous staff photo again. Our deployment gets photos from the SIS through Wonde, and the correct new photo is present in the SIS. This has recurred three times; we have paused photo updates while investigating. The older photo still identifies the same teacher correctly, no other person's image or private data is exposed, and accounts, classes and teaching work normally. Replacing the photo can wait.",
+      "expected": {
+        "assessmentStatus": "assessed",
+        "priority": "P4",
+        "impact": "low",
+        "urgency": "low",
+        "i3": "incorrect-data",
+        "u8": "active",
+        "i1": "individual",
+        "i4": "recurring"
+      },
+      "labelBasis": {
+        "policyIds": [
+          "recurrence.pattern",
+          "deadline.soft",
+          "platform.neutral"
+        ],
+        "rationale": "One downstream profile has a stale photo of the correct person; the source is intact, teaching continues fully and further photo updates are paused. Recurrence and the integration route do not establish broader impact, data loss or unauthorised disclosure. The cosmetic discrepancy and soft repair target support Low impact and urgency."
+      },
+      "review": {
+        "classification": "engine defect",
+        "note": "i3/i4/u8 facet projections."
+      }
+    },
+    {
+      "id": "holdout-20",
+      "text": "The deputy principal wants the colour of the personal dashboard heading changed to match a presentation theme. Everything works, and next Friday is only a preference; it is fine to leave it until later.",
+      "expected": {
+        "assessmentStatus": "assessed",
+        "priority": "P4",
+        "impact": "low",
+        "urgency": "low",
+        "i3": "unknown",
+        "u8": "unknown"
+      },
+      "labelBasis": {
+        "policyIds": [
+          "seniority.neutral",
+          "deadline.soft"
+        ],
+        "rationale": "An individual cosmetic preference has no operational consequence; seniority and a soft target do not raise priority."
+      },
+      "review": {
+        "classification": "engine defect",
+        "note": "explicit preference and \"fine to leave it until later\" were missed."
+      }
+    },
+    {
+      "id": "holdout-21",
+      "text": "One accounts clerk needs instructions for changing the default zoom on the payment reconciliation screen. Today's reconciliation finished correctly, no money or records are wrong, and the clerk says there is no rush.",
+      "expected": {
+        "assessmentStatus": "assessed",
+        "priority": "P4",
+        "impact": "low",
+        "urgency": "low",
+        "i3": "unknown",
+        "u8": "unknown"
+      },
+      "labelBasis": {
+        "policyIds": [
+          "financial.topic",
+          "deadline.soft"
+        ],
+        "rationale": "A personal display question with successful financial processing supplies neither harm nor time pressure."
+      },
+      "review": {
+        "classification": "engine defect",
+        "note": "i3 projection preference (expected unknown, engine financial-harm)."
+      }
+    },
+    {
+      "id": "holdout-22",
+      "text": "A departed staff member previously retained access to private student work because the SIS still marked them active after HR recorded their departure. The records are now reconciled, Identity1 offboarding has completed, and IT has verified that Entra sign-in, existing sessions and access in every affected learning platform are revoked. No exposure remains active. The only request is to explain the reconciliation report columns when convenient.",
+      "expected": {
+        "assessmentStatus": "assessed",
+        "priority": "P4",
+        "impact": "low",
+        "urgency": "low",
+        "i3": "privacy-exposure",
+        "u8": "unknown"
+      },
+      "labelBasis": {
+        "policyIds": [
+          "harm.resolved",
+          "deadline.soft"
+        ],
+        "rationale": "Confirmed historical unauthorised access is retained as privacy-exposure in I3, but is explicitly resolved across the source records, identity account and affected downstream sessions. U8 is unknown because there is no current active or pending harm. The current request is a low-consequence explanation with a soft target, supporting Low impact and urgency."
+      },
+      "review": {
+        "classification": "engine defect",
+        "note": "i3 projection preference (expected privacy-exposure, engine financial-harm)."
+      }
+    },
+    {
+      "id": "holdout-23",
+      "text": "One onboarding administrator needs instructions for recording the cross-reference between a new starter's existing HR, Entra ID and SIS records in the Identity1 implementation handover. All three records were created at acceptance, are correctly matched, and the starter has all approved access. The project manager requires the documentation at an internal handover in eight days. No account change or access repair is requested.",
+      "expected": {
+        "assessmentStatus": "assessed",
+        "priority": "P3",
+        "impact": "low",
+        "urgency": "medium",
+        "i3": "unknown",
+        "u8": "unknown",
+        "u5": "weeks-1-2",
+        "u6": "operational"
+      },
+      "labelBasis": {
+        "policyIds": [
+          "deadline.hard-future"
+        ],
+        "rationale": "An individual documentation request has Low impact and no active identity or access defect. A committed internal handover in eight days supplies Medium urgency; the presence of three systems and Identity1 does not increase impact."
+      },
+      "review": {
+        "classification": "engine defect",
+        "note": "\"no account change\" was read as missing data; documentation driver mis-set."
+      }
+    },
+    {
+      "id": "holdout-24",
+      "text": "One receptionist cannot print their personal attendance certificate. The course organiser needs it today to close that person's training record, accepts no substitute, and the submission closes in twenty minutes. No school operations or other staff are affected.",
+      "expected": {
+        "assessmentStatus": "assessed",
+        "priority": "P3",
+        "impact": "low",
+        "urgency": "high",
+        "i3": "unavailable",
+        "u8": "active",
+        "u5": "today",
+        "u6": "operational",
+        "u7": "no"
+      },
+      "labelBasis": {
+        "policyIds": [
+          "deadline.hard-near"
+        ],
+        "rationale": "The consequence is limited to one person's training administration, while a blocked non-substitutable submission at an imminent cutoff makes urgency High."
+      },
+      "review": {
+        "classification": "engine defect",
+        "note": "individual receptionist scope and \"no substitute\" workaround were missed."
+      }
+    }
+  ]
+}

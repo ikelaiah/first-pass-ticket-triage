@@ -6,7 +6,9 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import development from './fixtures/accuracy-holdout-v0.8.0.json' with { type: 'json' };
 import finalHoldout from './fixtures/accuracy-holdout-final-v0.8.0.json' with { type: 'json' };
+import replacementHoldout from './fixtures/accuracy-holdout-v0.11.1.json' with { type: 'json' };
 import corpus from './fixtures/accuracy-corpus.json' with { type: 'json' };
+import { allFacetCases } from './fixtures/facets/index.js';
 
 const ROOT = dirname(fileURLToPath(import.meta.url));
 const ATTRIBUTES_PATH = join(ROOT, '..', '.gitattributes');
@@ -26,6 +28,14 @@ const FROZEN = [
     expectedBytes: 18276,
     expectedSha256: 'b9ef96acf69efdb76b67b158697bba4299a3a1c1cca318b27c94a661125b2d1b',
     fixture: finalHoldout
+  },
+  {
+    name: 'replacement holdout',
+    path: join(ROOT, 'fixtures', 'accuracy-holdout-v0.11.1.json'),
+    expectedCases: 24,
+    expectedBytes: 31552,
+    expectedSha256: '33b6aff1ec1f2eda48924ffd67c2698e03348067c9ab8bb312a42c44666bb6b5',
+    fixture: replacementHoldout
   }
 ];
 
@@ -35,7 +45,12 @@ function normalise(text) {
 
 const allKnownTexts = new Set([
   ...corpus.cases.map((item) => normalise(item.text)),
-  ...development.cases.map((item) => normalise(item.text))
+  ...development.cases.map((item) => normalise(item.text)),
+  ...allFacetCases.map((item) => normalise(item.text))
+]);
+const replacementForbidden = new Set([
+  ...allKnownTexts,
+  ...finalHoldout.cases.map((item) => normalise(item.text))
 ]);
 
 for (const item of FROZEN) {
@@ -68,4 +83,21 @@ for (const ticket of finalHoldout.cases) {
     'final holdout ticket duplicates an existing evaluation case: ' + ticket.id);
 }
 
-console.log('PASS - holdout integrity: development 26 frozen bytes, final 24 consumed with recorded first look');
+assert.equal(replacementHoldout.metadata.evaluated, true,
+  'the replacement holdout is consumed; its first-look result must stay recorded');
+assert.equal(replacementHoldout.metadata.labelledBeforeEvaluation, true,
+  'replacement holdout must be labelled before evaluation');
+assert.equal(replacementHoldout.metadata.firstLook.exactPriority, '14/24',
+  'the replacement first-look result must stay recorded');
+assert.equal(replacementHoldout.metadata.firstLook.p1FalseNegatives, 3,
+  'the replacement first-look safety finding must stay recorded');
+assert.equal(replacementHoldout.metadata.postFixRegression.exactPriority, '24/24',
+  'the replacement post-fix regression must stay recorded');
+assert.equal(replacementHoldout.metadata.postFixRegression.safetyBlockers, 0,
+  'the replacement post-fix safety result must stay recorded');
+for (const ticket of replacementHoldout.cases) {
+  assert(!replacementForbidden.has(normalise(ticket.text)),
+    'replacement holdout ticket duplicates an existing evaluation case: ' + ticket.id);
+}
+
+console.log('PASS - holdout integrity: development 26 frozen, final 24 consumed, replacement 24 consumed with recorded first look');

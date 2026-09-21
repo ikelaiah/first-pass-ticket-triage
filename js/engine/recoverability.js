@@ -9,7 +9,9 @@ const UNRECOVERABLE = [
   /\b(?:can not|cannot|will not|won't)\s+be\s+recovered\b/i,
   /\bno\s+(?:usable\s+)?(?:backup|restore point)\b/i,
   /\b(?:backup|snapshot|restore point)\b[^.;!?]{0,48}\b(?:unusable|not usable|corrupt|failed)\b/i,
-  /\b(?:irretrievable|unrecoverable|lost forever)\b/i
+  /\b(?:irretrievable|unrecoverable|lost forever)\b/i,
+  /\b(?:can not|cannot|will not)\s+be\s+restored\b/i,
+  /\bno\s+surviving\s+copy\b/i
 ];
 
 const RECOVERABLE = [

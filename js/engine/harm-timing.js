@@ -86,7 +86,7 @@ export function extractHarmTimingEvidence(doc, symptom, context = {}, ledger = c
     addCandidate(extraction, { timing: 'pending', label: 'harm is waiting — expiring soon', quote, source: 'symptom', ...quoteHit(doc, quote) });
   }
   const disappearedLoss = /\b(?:rows?|records?|entries|files?|data|documents?|forms?|enrolments?)\s+(?:have |has |had )?(?:disappeared|vanished)\b/.test(doc.text);
-  if (isDataLoss && (/\b(?:already(?:\s+been)?|has been|have been|was|were)\s+(?:deleted|wiped|lost|overwritten)\b/i.test(doc.text) || disappearedLoss)) {
+  if (isDataLoss && (/\b(?:already(?:\s+been)?|has been|have been|was|were)\s+(?:permanently\s+|accidentally\s+|irretrievably\s+)?(?:deleted|wiped|lost|overwritten|erased|destroyed)\b/i.test(doc.text) || disappearedLoss)) {
     const quote = symptom.evidence[0]?.quote || 'deleted';
     addCandidate(extraction, {
       timing: 'active', label: 'harm is happening now — data was lost', quote,
@@ -101,7 +101,7 @@ export function extractHarmTimingEvidence(doc, symptom, context = {}, ledger = c
   if (pendingHit) addCandidate(extraction, { timing: 'pending', label: 'harm is waiting to happen', source: 'harm-phrase', ...pendingHit });
 
   const pendingChange = /\b(?:proposed|queued|planned|draft)\b[\s\S]{0,120}\b(?:could|may|might|would)\b/i.test(doc.text) &&
-    /\b(?:if\s+(?:the\s+)?approval|if\s+(?:it|the change|the role|this)\s+is\s+(?:enabled|approved)|not\s+(?:live|enabled|active)|has not been enabled)\b/i.test(doc.text);
+    /\b(?:if\s+(?:the\s+)?approval|if\s+(?:it|the change|the role|this)\s+is\s+(?:enabled|approved)|not\s+(?:live|enabled|active)|has not been enabled|awaiting review|has never run)\b/i.test(doc.text);
   if (pendingChange) {
     const start = doc.text.search(/\b(?:proposed|queued|planned)\b/i);
     addCandidate(extraction, {
