@@ -1,11 +1,15 @@
 /**
  * Organisation-specific configuration.
  *
- * Everything that is specific to *this* organisation lives here so the rules
- * engine itself stays generic. This file is intentionally public: change or
- * replace these deployment values when reusing the static site, and never put
- * credentials, tokens or other secrets here. A future split of generic defaults
- * from the organisation profile should preserve the same no-secrets boundary.
+ * Everything specific to *this* organisation lives here so the rules engine
+ * stays generic. This file is intentionally public: change or replace these
+ * deployment values when reusing the static site, and never put credentials,
+ * tokens or other secrets here.
+ *
+ * v0.12.0 removed the scheduled-job, source-of-truth, system-status and
+ * business-cycle blocks. They drove inference layers (expected behaviour,
+ * known answers, upstream checks) that guessed at facts the ticket did not
+ * state. Those are now normal follow-up questions instead.
  */
 export const organisationConfig = {
   /** Number of schools serviced. Used for labels and "all N schools" detection. */
@@ -34,11 +38,7 @@ export const organisationConfig = {
     aurion: { name: 'Aurion', aliases: ['aurion'], critical: true },
     anz: { name: 'ANZ', aliases: ['anz', 'aba file', 'aba'], critical: true },
     calumo: { name: 'Calumo', aliases: ['calumo'], critical: false },
-    wonde: {
-      name: 'Wonde',
-      aliases: ['wonde'],
-      critical: true
-    },
+    wonde: { name: 'Wonde', aliases: ['wonde'], critical: true },
     azuredevops: {
       name: 'Azure DevOps',
       aliases: [
@@ -57,21 +57,13 @@ export const organisationConfig = {
       ],
       critical: false
     },
-    db2: {
-      name: 'IBM DB2',
-      aliases: ['db2', 'ibm db2'],
-      critical: false
-    },
+    db2: { name: 'IBM DB2', aliases: ['db2', 'ibm db2'], critical: false },
     postgres: {
       name: 'PostgreSQL',
       aliases: ['postgresql', 'postgres', 'psql', 'pgbouncer', 'pg_dump'],
       critical: false
     },
-    sqlite: {
-      name: 'SQLite',
-      aliases: ['sqlite', 'sqlite3'],
-      critical: false
-    },
+    sqlite: { name: 'SQLite', aliases: ['sqlite', 'sqlite3'], critical: false },
     m365: {
       name: 'Microsoft 365',
       aliases: ['microsoft 365', 'office 365', 'm365', 'o365', 'sharepoint', 'outlook', 'o365 suite', 'office suite', 'microsoft office'],
@@ -89,13 +81,7 @@ export const organisationConfig = {
     flexischools: { name: 'Flexischools', aliases: ['flexischools', 'flexi schools'], critical: false },
     complispace: { name: 'CompliSpace', aliases: ['complispace', 'compli space'], critical: false },
     moodle: { name: 'Moodle', aliases: [new RegExp('\\bmoodle(?=\\s+(?:is|was|has|have|lms|course|class|login|unavailable|failing))', 'i')], critical: false },
-    readspeak: {
-      name: 'ReadSpeaker',
-      aliases: [
-        'readspeak', 'read speaker', 'readspeaker'
-      ],
-      critical: false
-    },
+    readspeak: { name: 'ReadSpeaker', aliases: ['readspeak', 'read speaker', 'readspeaker'], critical: false },
     clever: { name: 'Clever', aliases: [new RegExp('\\bclever(?=\\s+(?:is|was|has|have|sync|rostering|provisioning|platform|app|login|dashboard|integration|account|class))', 'i')], critical: true },
     portalhq: { name: 'PortalHQ', aliases: ['portalhq', 'portal hq'], critical: false },
     wherescape: { name: 'Wherescape', aliases: ['wherescape', 'where scape', 'whereescape', 'data warehousing'], critical: false },
@@ -124,10 +110,9 @@ export const organisationConfig = {
       aliases: ['helpdesk', 'help desk', 'service desk', 'itsm', 'ticketing system'],
       critical: false
     },
-    sql: { name: 'SQL Server', aliases: ['sql server', 'ssms', 'sql', 'sql server management studio', 'ssms'], critical: false },
+    sql: { name: 'SQL Server', aliases: ['sql server', 'ssms', 'sql', 'sql server management studio'], critical: false },
     powerautomate: { name: 'Power Automate', aliases: ['power automate', 'powerautomate', 'power-automate', 'flow'], critical: false },
     sendhq: { name: 'SendHQ', aliases: ['sendhq', 'send hq'], critical: false },
-    // Australian school-sector systems and common vendors (v0.3.1 coverage drop)
     compass: { name: 'Compass', aliases: [new RegExp('\\bcompass(?=\\s+(?:education|portal|events?|pay|wellbeing|timetable|student|is|was|has|have|sync|unavailable|failing))', 'i')], critical: false },
     synergetic: { name: 'Synergetic', aliases: ['synergetic'], critical: false },
     tass: { name: 'TASS', aliases: ['tass', 'tass web'], critical: false },
@@ -142,94 +127,6 @@ export const organisationConfig = {
     mimecast: { name: 'Mimecast', aliases: ['mimecast'], critical: false },
     proofpoint: { name: 'Proofpoint', aliases: ['proofpoint'], critical: false }
   },
-
-  /**
-   * Scheduled jobs that create *expected* processing delays.
-   * If a request describes something created after the scheduled run time and
-   * nothing else indicates a failure, the engine suggests "Expected Behaviour"
-   * instead of raising an incident.
-   */
-  scheduledJobs: [
-    {
-      name: 'Casual Staff Canvas Sync',
-      scheduledTime: '09:30',
-      keywords: ['casual', 'canvas', 'staff'],
-      // Once a creation event is explicitly associated with a staff record,
-      // staff + Canvas is enough to identify this configured sync. The event
-      // grammar in analyzer.js remains the conservative gate.
-      minKeywords: 2,
-      note: 'Casual staff are synchronised to Canvas at 09:30 each day.'
-    },
-    {
-      name: 'EnrolHQ to Edumate Enrolment Sync',
-      scheduledTime: '06:00',
-      keywords: ['enrolhq', 'edumate', 'enrolment'],
-      minKeywords: 2,
-      note: 'Enrolment records flow from EnrolHQ to Edumate in the 06:00 batch.'
-    }
-  ],
-
-  /**
-   * Which system is the source of truth for which.
-   *
-   * When something is missing from a downstream system, the first question is
-   * almost never about the downstream system - it is whether the record was
-   * ever correct upstream. A teacher who was never assigned the class in
-   * Edumate will never appear in Canvas, no matter how many times the sync
-   * runs, and a manual fix applied downstream may be reversed at the next run.
-   */
-  dataFlows: [
-    { downstream: 'canvas', source: 'edumate',
-      note: 'Canvas courses, teachers and enrolments are synchronised from Edumate.' },
-    { downstream: 'seesaw', source: 'edumate',
-      // Wonde only carries roll-call classes; non-roll-call classes (e.g. SS English)
-      // never flow to Wonde and so never appear in Seesaw. Manual entry is the workaround.
-      note: 'Seesaw classes are synchronised from Edumate via Wonde; only roll-call classes flow through Wonde.' },
-    { downstream: 'wonde', source: 'edumate',
-      note: 'Wonde shares data that originates in Edumate (roll-call classes and enrolments).' },
-    { downstream: 'sendhq', source: 'edumate',
-      entities: ['parent', 'parents', 'carer', 'carers', 'mail carers', 'mail carer'],
-      note: 'SendHQ parent and Mail Carer data is sourced from Edumate; integration setup is on the SendHQ (vendor) side and customer-side settings are not available.' },
-    { downstream: 'edumate', source: 'enrolhq',
-      // EnrolHQ carries student enrolments, not staff or timetable data.
-      entities: ['student', 'students', 'enrolment', 'enrolments', 'application',
-                 'applications', 'applicant', 'applicants', 'family', 'families',
-                 'carer', 'carers', 'parent', 'parents'],
-      note: 'Enrolment records flow from EnrolHQ into Edumate.' },
-    { downstream: 'anz', source: 'aurion',
-      note: 'Payment files are generated from Aurion.' },
-    { downstream: 'calumo', source: 'aurion',
-      note: 'Calumo reporting is sourced from Aurion.' }
-  ],
-
-  /**
-   * Organisation-specific meanings of a system status. These are inferred
-   * consequences, not wording supplied by the requester, so the UI labels
-   * them accordingly and asks the analyst to confirm any time-critical effect.
-   */
-  statusConsequences: [
-    {
-      system: 'edumate',
-      symptom: 'wrong-record-type',
-      phrases: ['public contact'],
-      blockedProcess: 'student is excluded from class rolls and downstream education-system sync',
-      note: 'In Edumate, a public contact is not treated as an enrolled student. ' +
-        'The student is absent from class rolls and downstream education-system sync, ' +
-        'and may not be billable for invoicing.',
-      followUpQuestion: 'Is a class-roll, downstream education-system, or billing/invoice deadline affected?'
-    }
-  ],
-
-  /**
-   * Business dates that commonly drive urgency. Purely descriptive: shown to
-   * the user as context in follow-up questions.
-   */
-  businessCycles: [
-    'fortnightly payroll cutoff',
-    'enrolment close dates',
-    'term start / class rollover',
-    'assessment and reporting deadlines'
-  ],
 
   /**
    * Advisory text shown in the footer. The tool suggests, humans decide.

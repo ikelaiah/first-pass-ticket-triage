@@ -1,11 +1,18 @@
 /**
- * The analysis pipeline.
+ * The analysis pipeline — v0.12.0 core.
  *
  *   ticket text
- *      -> evidence          (systems, scope, workaround, deadline, symptom, domain, risks)
- *      -> Impact + Urgency  (weighted scoring, then structured policy calibration)
- *      -> priority matrix   (the only place a P number is decided)
- *      -> explanation       (reasoning, missing information, follow-up questions)
+ *      > evidence          (system, symptom, the eight decision questions, risks)
+ *      > Impact + Urgency  (weighted scoring, then a small safety calibration)
+ *      > priority matrix   (the only place a P number is decided)
+ *      > explanation       (reasoning, missing information, follow-up questions)
+ *
+ * The engine is deliberately small. It detects what the ticket states for the
+ * eight questions, and when a question is unknown it asks rather than guessing.
+ * The removed inference layers (scheduled-job expected behaviour, known answers,
+ * source-of-truth flows, differential diagnosis, status consequences, domain and
+ * work-type classifiers, generic platform catalogue) all tried to answer a
+ * question the ticket had not answered. That is now a follow-up question.
  *
  * Everything happens in this browser. No network call exists in this module or
  * anywhere else in the application.
@@ -14,259 +21,83 @@ import { createDocument, has, scanPositive } from './negation.js';
 import { createEvidenceLedger } from './evidence.js';
 import { organisationConfig } from '../config.js';
 import { detectSystems, describeSystems } from '../data/systems.js';
-import { extractScopeEvidence, projectScope, scopeDefinition, scopeLabel } from './scope.js';
+import { extractScopeEvidence, projectScope, scopeLabel } from './scope.js';
 import { extractWorkaroundEvidence, projectWorkaround, workaroundLabel } from './workaround.js';
 import { detectDeadline, deadlineLabel } from './deadline.js';
 import { detectSymptom, SEVERITY } from './symptom.js';
-import { detectDomain, domainLabel } from './domain.js';
-import { detectWorkType, workTypeLabel } from './work-type.js';
-import { detectRisks, emptyRisks, RISK_LABELS } from './risks.js';
+import { detectRisks, emptyRisks, RISK_LABELS, RISK_KEYS } from './risks.js';
 import { assessImpact } from './impact.js';
 import { assessUrgency } from './urgency.js';
 import { applyTriagePolicy } from './policy.js';
 import { recommendNextAction } from './next-action.js';
 import { detectRecoverability } from './recoverability.js';
-import { SOFT_CONTINUATION_PHRASES } from '../data/phrases.js';
 import { assessConfidence } from './confidence.js';
-import {
-  priorityFor, priorityDefinition, LEVEL_LABELS
-} from './priority-matrix.js';
-import {
-  IMMEDIATE_NEED_PATTERNS, CONTEXT_ELSEWHERE_PHRASES,
-  WORKING_COMPARATOR_PHRASES, CONTINUITY_PHRASES, CONTRAST_PHRASES,
-  ACTIVE_INCIDENT_PHRASES, ESCALATION_PHRASES,
-  RECURRENCE_PHRASES, UNDETECTED_PHRASES, SLA_BREACH_PHRASES,
-  BLOCKED_PROCESS_PHRASES, IMPAIRED_PROCESS_PHRASES
-} from '../data/phrases.js';
+import { priorityFor, priorityDefinition, LEVEL_LABELS } from './priority-matrix.js';
 import { detectContainment } from './containment.js';
 import { detectDriver } from './driver.js';
 import { extractHarmTimingEvidence, projectHarmTiming } from './harm-timing.js';
-import { prepareDecisionContext } from './context.js';
-import { detectExplicitSupportContext } from './support-context.js';
+import { CONTEXT_ELSEWHERE_PHRASES, BLOCKED_PROCESS_PHRASES, IMPAIRED_PROCESS_PHRASES, RECURRENCE_PHRASES, UNDETECTED_PHRASES, ACTIVE_INCIDENT_PHRASES, ESCALATION_PHRASES } from '../data/phrases.js';
 
-const TIME_12H = /\b(\d{1,2})(?::(\d{2}))?\s*(am|pm)\b/g;
-const TIME_24H = /\b([01]?\d|2[0-3]):([0-5]\d)\b/g;
-const CLOCK_TOKEN = '(?:\\d{1,2}(?::\\d{2})?\\s*(?:am|pm)|(?:[01]?\\d|2[0-3]):[0-5]\\d)';
-const SCHEDULE_EVENT_TIME = new RegExp(
-  '\\b(?:added|created|updated|entered|registered|enrolled|assigned|provisioned|' +
-  'imported|uploaded|set\\s+up)\\b' +
-  '(?=[^.!?;\\n]{0,90}\\b(?:staff|account|record|user|student|enrolment|application|' +
-  'employee|teacher|class|member|contact)\\b)' +
-  '(?:(?!\\b(?:but|and|because|while|although)\\b)[^.!?;\\n]){0,90}?' +
-  '\\bat\\s+(' + CLOCK_TOKEN + ')\\b', 'g'
-);
-const PAST_DATE_MARKER = /\b(?:yesterday|last\s+(?:night|evening|week|month|monday|tuesday|wednesday|thursday|friday|saturday|sunday)|previous(?:ly)?|earlier|the day before)\b/;
-const EVENT_NEGATION = /\b(?:not|never|no|did\s+not|didn['’]t|was\s+not|wasn['’]t|were\s+not|weren['’]t)\s+(?:\w+\s+){0,3}$/;
+const LEVEL_VALUES = ['low', 'medium', 'high'];
 
-function toMinutes(hours, minutes, meridiem) {
-  let h = hours % 12;
-  if (meridiem === 'pm') h += 12;
-  if (!meridiem) h = hours;
-  return h * 60 + (minutes || 0);
-}
-
-function parseClockTimes(text) {
-  const found = [];
-  let m;
-  TIME_12H.lastIndex = 0;
-  while ((m = TIME_12H.exec(text)) !== null) {
-    found.push({
-      quote: m[0],
-      minutes: toMinutes(parseInt(m[1], 10), parseInt(m[2] || '0', 10), m[3])
-    });
-  }
-  TIME_24H.lastIndex = 0;
-  while ((m = TIME_24H.exec(text)) !== null) {
-    found.push({
-      quote: m[0],
-      minutes: toMinutes(parseInt(m[1], 10), parseInt(m[2], 10), null)
-    });
-  }
-  return found;
-}
-
-function scheduledTimeToMinutes(value) {
-  const [h, min] = String(value).split(':').map((n) => parseInt(n, 10));
-  return (h || 0) * 60 + (min || 0);
-}
-
-function hasMissingRecordSignal(symptom, text) {
-  const missingIds = ['missing-data', 'partial-data', 'not-synchronising', 'not-writing'];
-  return symptom.all.some((item) => missingIds.includes(item.id)) ||
-    /\b(?:not|never)\s+(?:in|on|showing in|appearing in)\s+(?:canvas|edumate)\b/.test(text);
-}
-
-function findScheduledCreationTime(text, job, scheduled) {
-  const clauses = text.split(/[.!?;\n]+/);
-  for (const clause of clauses) {
-    if (PAST_DATE_MARKER.test(clause)) continue;
-    SCHEDULE_EVENT_TIME.lastIndex = 0;
-    let match;
-    while ((match = SCHEDULE_EVENT_TIME.exec(clause)) !== null) {
-      const event = match[0];
-      const beforeEvent = clause.slice(0, match.index);
-      if (EVENT_NEGATION.test(beforeEvent)) continue;
-      if (!job.keywords.some((keyword) => event.includes(keyword))) continue;
-      if (/\b(?:meeting|appointment|lesson|assessment|access)\b/.test(event)) continue;
-      const time = parseClockTimes(match[1])[0];
-      if (time && time.minutes > scheduled) return time;
-    }
-  }
-  return null;
-}
+/* ------------------------------------------------------ decision context -- */
 
 /**
- * "Added at 10am, hasn't appeared yet" - when the record was created after the
- * scheduled run, nothing has failed yet.
+ * The one context rule kept from the old decision-context engine: a ticket that
+ * explicitly says the incident is now resolved should not be scored as live. It
+ * is deliberately small. The user can always correct it in the refine panel.
  */
-export function detectExpectedBehaviour(doc, symptom, config = organisationConfig) {
-  if (symptom.severity > SEVERITY.DATA) return null;
-  if (!hasMissingRecordSignal(symptom, doc.text)) return null;
+const RESOLVED_RE =
+  /\b(?:is|was|has been|now)\s+(?:fixed|resolved|restored|recovered)\b|\bworking again\b|\bback online\b|\bno action (?:is )?required\b|\baccess (?:has|had|was) (?:been )?(?:removed|revoked)\b|\bissue (?:is|was) contained\b/;
+const REOPENED_RE =
+  /\b(?:not (?:fixed|resolved|restored)|still (?:down|failing|failed|broken|blocked|unavailable)|(?:down|failed|failing|broken|blocked|unavailable|stopped|recurred) again|continues? to fail)\b/;
 
-  for (const job of config.scheduledJobs) {
-    const hits = job.keywords.filter((k) => doc.text.includes(k)).length;
-    const needed = job.minKeywords || job.keywords.length;
-    if (hits < needed) continue;
-
-    const scheduled = scheduledTimeToMinutes(job.scheduledTime);
-    const after = findScheduledCreationTime(doc.text, job, scheduled);
-    if (!after) continue;
-
+function detectDecisionContext(doc) {
+  const resolved = RESOLVED_RE.test(doc.text);
+  const reopened = REOPENED_RE.test(doc.text);
+  if (resolved && !reopened) {
     return {
-      job,
-      quote: after.quote,
-      scheduledTime: job.scheduledTime,
-      note: job.note,
-      reason:
-        'The record was created at ' + after.quote + ', after the ' + job.scheduledTime +
-        ' "' + job.name + '" run. There is currently no evidence that the ' +
-        'integration failed.'
+      status: 'resolved',
+      evidence: [{ quote: doc.text.match(RESOLVED_RE)[0], meaning: 'The latest explicit status says the incident is resolved or contained', source: 'decision-context' }]
     };
   }
-  return null;
+  return { status: 'active-or-unspecified', evidence: [] };
 }
 
-/**
- * Some questions are already answered by the configuration. "What time does the
- * casual staff sync run?" is a P4 - and the answer is in `scheduledJobs`, so the
- * tool says so instead of making someone go and look it up.
- */
-export function findKnownAnswer(doc, isQuestion, config = organisationConfig) {
-  if (!isQuestion) return null;
-  for (const job of config.scheduledJobs) {
-    if (!job.note) continue;
-    const hits = job.keywords.filter((k) => doc.text.includes(k)).length;
-    if (hits >= (job.minKeywords || job.keywords.length)) {
-      return { job: job.name, scheduledTime: job.scheduledTime, answer: job.note };
-    }
-  }
-  return null;
-}
+/* -------------------------------------------------------------- evidence -- */
 
-/**
- * Symptoms that mean "this is not here" rather than "this broke". For these,
- * the record may never have existed correctly upstream - which is a different
- * investigation from a failing integration.
- */
-const SOURCE_CHECK_SYMPTOMS = [
-  'missing-data', 'wrong-record-type', 'access-denied', 'not-synchronising',
-  'partial-data', 'not-writing', 'action-blocked'
-];
-
-/**
- * "Missing from Canvas" is usually a question about Edumate.
- * Returns the upstream system to check first, if there is one.
- */
-export function findSourceOfTruth(systemResult, symptom, config = organisationConfig, doc = null) {
-  if (!SOURCE_CHECK_SYMPTOMS.includes(symptom.symptom)) return null;
-
-  const present = new Set((systemResult.systems || []).map((s) => s.id));
-  for (const flow of config.dataFlows || []) {
-    // Only useful when the downstream system is the one being complained about
-    // and the upstream one has not already been named as the problem.
-    if (present.has(flow.downstream) && !present.has(flow.source)) {
-      // Some flows only carry certain kinds of record.
-      if (flow.entities && doc &&
-          !flow.entities.some((e) => new RegExp('\\b' + e + '\\b').test(doc.text))) continue;
-      const downstream = config.systems[flow.downstream];
-      const source = config.systems[flow.source];
-      if (!downstream || !source) continue;
-      return {
-        downstream: downstream.name,
-        source: source.name,
-        note: flow.note
-      };
-    }
-  }
-  return null;
-}
-
-/**
- * One record works, a comparable one does not. This changes the diagnostic
- * question, but it must not overrule explicit evidence about breadth.
- */
-export function detectDifferential(doc, symptom, scopeResult = null) {
-  const working = scanPositive(doc, WORKING_COMPARATOR_PHRASES);
-  const contrast = scanPositive(doc, CONTRAST_PHRASES);
-  const hasComparatorPair = working.length > 0 && contrast.length > 0;
-  if (symptom.severity < SEVERITY.DATA && !hasComparatorPair) return null;
-  if (!working.length && !contrast.length) return null;
-  const effectiveScope = scopeResult || detectScope(doc);
-  const broad = scopeDefinition(effectiveScope.scope).rank >=
-    scopeDefinition('multiple-schools').rank;
+/** I2 — the business process that cannot continue, not the technical symptom. */
+function detectBlockedProcess(doc) {
+  const blocked = scanPositive(doc, BLOCKED_PROCESS_PHRASES);
+  const impaired = scanPositive(doc, IMPAIRED_PROCESS_PHRASES);
+  const chosen = blocked[0] || impaired[0];
+  if (!chosen) return null;
+  const level = blocked.length ? 'blocked' : 'impaired';
   return {
-    quote: (working[0] || contrast[0]).quote,
-    reason: broad
-      ? 'At least one comparable record is working, so the failure may be conditional ' +
-        'rather than total. The reported broad scope remains valid and must still drive ' +
-        'impact and urgency.'
-      : 'A comparable record is working while another is failing, suggesting the fault ' +
-        'may depend on record-specific or conditional factors. Compare the successful ' +
-        'and failing records before assuming the wider cause.'
+    level,
+    process: chosen.entry.process,
+    label: chosen.entry.label,
+    quote: chosen.quote,
+    source: 'explicit',
+    evidence: [{ quote: chosen.quote, meaning: chosen.entry.label, source: 'consequence' }]
   };
 }
 
-function hasImmediateNeed(doc) {
-  return IMMEDIATE_NEED_PATTERNS.some((re) => re.test(doc.text));
-}
-
-/**
- * Scope, deadlines and claimed urgency do not establish that text is an IT
- * ticket. They are deliberately excluded so unrelated or manipulative wording
- * such as "all users, P1, fix now" cannot manufacture a support incident.
- */
-function assessInputRelevance(context) {
-  const {
-    doc, systemResult, symptom, domainResult, workTypeResult, risks, serviceManagementSignal, supportContext
-  } = context;
+/** Input relevance: at least one recognised support signal must be present. */
+function assessInputRelevance({ systemResult, symptom, risks, serviceManagementSignal }) {
   const signals = [];
-  // "This is broken" tells us neither what "this" is nor whether it belongs
-  // to support. Its domain and incident are inferred from the generic failure,
-  // so neither may bootstrap the relevance decision. This deliberately does
-  // not discard a concrete statement such as "Printing is not working".
-  const unanchoredGenericFailure = symptom.symptom === 'failed' &&
-    /\b(?:this|it)\s+(?:is|was|has|keeps)\s+(?:broken|not working|failing|failed)\b|\b(?:this|it)\s+(?:doesn't|does not|didn't|did not)\s+work\b/i.test(doc.text);
-
   if (systemResult.primary) signals.push('system');
-  if (symptom.severity > SEVERITY.NONE && !unanchoredGenericFailure) signals.push('symptom');
-  if (domainResult.domain !== 'unknown' && !domainResult.inferred) signals.push('domain');
-  if (workTypeResult.workType !== 'unknown' && workTypeResult.workType !== 'incident') {
-    signals.push('work-type');
-  }
+  if (symptom.severity > SEVERITY.NONE) signals.push('symptom');
   if (Object.values(risks).some(Boolean)) signals.push('risk');
   if (serviceManagementSignal) signals.push('service-management');
-  if (supportContext) signals.push('explicit-support-context');
-
   return { inScope: signals.length > 0, signals };
 }
 
-/** Map analyzer evidence into the text-free v0.8.0 policy contract. */
 function policyEvidence(context) {
   const {
     risks, modifiers, symptom, deadlineResult, scopeResult, workaroundResult,
-    expectedBehaviour, immediateNeed, workTypeResult, decisionContext, activeIncident,
-    inScope, driver, harmTiming, recoverability, systemResult, domainResult,
-    containment, urgencyResult
+    workTypeResult, activeIncident, decisionContext, inScope, driver, harmTiming,
+    recoverability, systemResult, containment, urgencyResult, blockedProcess
   } = context;
   return {
     risks,
@@ -277,30 +108,26 @@ function policyEvidence(context) {
     deadlineDriver: driver?.driver || 'unknown',
     lowUrgencySignal: Boolean(urgencyResult?.lowUrgencySignal),
     scope: scopeResult.scope,
-    consequence: context.blockedProcess?.level || 'unknown',
+    consequence: blockedProcess?.level || 'unknown',
     workaround: workaroundResult.workaround,
     workaroundCost: workaroundResult.costPerDay,
-    expectedBehaviour: Boolean(expectedBehaviour),
-    immediateNeed: Boolean(immediateNeed),
+    expectedBehaviour: false,
+    immediateNeed: false,
     workType: workTypeResult.workType,
     decisionContext: decisionContext.status,
     activeIncident: Boolean(activeIncident),
     inScope,
     harmTiming: harmTiming?.timing || 'unknown',
     recoverability: recoverability?.value || 'unknown',
-    deadlineSoft: Boolean(context.deadlineSoft),
+    deadlineSoft: false,
     criticalSystem: Boolean(systemResult?.criticalSystem),
-    technicalDomain: domainResult?.domain || 'unknown',
-    accessibilityIssue: domainResult?.domain === 'accessibility',
+    technicalDomain: 'unknown',
+    accessibilityIssue: false,
     containment: containment || {}
   };
 }
 
-function latestCurrentFact(facts, type, value = null) {
-  return facts.find((fact) => fact.type === type &&
-    (value === null || fact.value === value) && fact.temporal === 'current' &&
-    fact.polarity === 'positive' && fact.context === 'primary' && fact.role !== 'comparator') || null;
-}
+/* --------------------------------------------------------- eight questions -- */
 
 function irreversibilityAnswer(symptom, risks, modifiers, recoverability) {
   let answer = symptom.symptom === 'data-loss'
@@ -319,132 +146,45 @@ function irreversibilityAnswer(symptom, risks, modifiers, recoverability) {
                 ? 'Unavailable/outage'
                 : 'No irreversibility flagged';
   if (recoverability.value === 'recoverable') {
-    if (answer === 'No irreversibility flagged') answer = 'Recovery available';
-    else answer += ' — recovery available';
+    answer = answer === 'No irreversibility flagged' ? 'Recovery available' : answer + ' — recovery available';
   } else if (recoverability.value === 'unrecoverable') {
-    if (answer === 'No irreversibility flagged') answer = 'Recovery unavailable';
-    else answer += ' — recovery unavailable';
+    answer = answer === 'No irreversibility flagged' ? 'Recovery unavailable' : answer + ' — recovery unavailable';
   }
   return answer;
 }
 
-/** Map existing projections into the independent Safe Next Action contract. */
-function nextActionEvidence(context) {
-  const { assessmentStatus, workTypeResult, blockedProcess, deadlineResult,
-    workaroundResult, containment, harmTiming, symptom, risks, modifiers,
-    riskResult, sourceOfTruth, urgencyResult, evidenceFacts, applied, decisionContext, decisionText } = context;
-  const facts = evidenceFacts || [];
-  const authorityFor = (type, value, fallback = 'unknown') =>
-    latestCurrentFact(facts, type, value)?.authority || fallback;
-  const selected = (value, authority, quote = null) => ({ value, authority, quote });
-  const riskAuthority = (key) => {
-    if (applied.risks && Object.prototype.hasOwnProperty.call(applied.risks, key)) return 'analyst-confirmed';
-    return riskResult.evidence.some((item) => item.key === key) ? 'explicit' : 'unknown';
-  };
-  const currentHarm = latestCurrentFact(facts, 'harm-timing', 'active');
-  const eventAuthority = currentHarm?.authority || 'inferred';
-  const events = [];
-  if (modifiers.exposureActive) events.push({ kind: 'active-exposure', authority: eventAuthority, temporal: 'current', quote: currentHarm?.quote || null });
-  // A direct observed-disclosure phrase is still insufficient to infer its
-  // extent or current status. Preserve it as inferred action evidence so the
-  // policy asks for confirmation rather than planning around a possible breach.
-  if (!modifiers.exposureActive && /\bvisible\s+to\s+(?:the\s+)?wrong\s+(?:user|users|person|people)\b/i.test(decisionText || '')) {
-    events.push({ kind: 'active-exposure', authority: 'inferred', temporal: 'current' });
-  }
-  if (modifiers.propagating) events.push({ kind: 'propagation', authority: applied.contained === 'spreading' ? 'analyst-confirmed' : 'explicit', temporal: 'current' });
-  if (modifiers.immediateSafeguarding && currentHarm) events.push({ kind: 'safeguarding-consequence', authority: eventAuthority, temporal: 'current', quote: currentHarm.quote });
-  if (risks.safety && currentHarm) events.push({ kind: 'safety-consequence', authority: eventAuthority, temporal: 'current', quote: currentHarm.quote });
-  if (modifiers.unpaidRisk && currentHarm) events.push({ kind: 'material-financial-consequence', authority: eventAuthority, temporal: 'current', quote: currentHarm.quote });
+function buildEightFacets({ scopeResult, blockedProcess, symptom, risks, modifiers, recoverability, containment, deadlineResult, driver, workaroundResult, harmTiming }) {
   return {
-    assessmentStatus,
-    workType: workTypeResult.workType,
-    businessConsequence: selected(blockedProcess?.level || 'unknown', applied.consequence ? 'analyst-confirmed' : blockedProcess?.source === 'explicit' ? 'explicit' : 'inferred', blockedProcess?.label || null),
-    deadline: selected(deadlineResult.deadline, applied.deadline ? 'analyst-confirmed' : deadlineResult.committed ? 'explicit' : authorityFor('deadline', deadlineResult.deadline)),
-    deadlineRelationship: deadlineResult.deadline !== 'unknown' && deadlineResult.deadline !== 'none' && !deadlineResult.committed ? 'unknown' : 'known',
-    workaround: selected(workaroundResult.workaround, applied.workaround ? 'analyst-confirmed' : authorityFor('workaround', workaroundResult.workaround)),
-    containment: selected(containment.propagating ? 'spreading' : containment.contained ? 'contained' : 'unknown', applied.contained ? 'analyst-confirmed' : containment.containedEvidence || containment.propagatingEvidence ? 'explicit' : 'unknown'),
-    harm: selected(harmTiming.timing, currentHarm?.authority || 'unknown'),
-    currentFailure: selected(Boolean(symptom.hasFailure), symptom.hasFailure ? 'explicit' : 'unknown', symptom.hasFailure ? 'Current technical failure' : null),
-    risks: Object.fromEntries(Object.keys(risks).map((key) => [key, selected(Boolean(risks[key]), riskAuthority(key))])),
-    events,
-    verification: sourceOfTruth || /\bwhat happened\b/i.test(decisionText || '') ? 'source' : null,
-    canWait: Boolean(urgencyResult.lowUrgencySignal),
-    temporalState: decisionContext.status === 'resolved' ? 'resolved' :
-      harmTiming.timing === 'pending' ? 'ambiguous' : 'current'
+    i1Scope: { question: 'Who and how many are affected?', answer: scopeResult.label, value: scopeResult.scope, explicit: scopeResult.explicit, quote: scopeResult.evidence[0]?.quote || null },
+    i2Blocked: { question: 'What can they not do that they could do yesterday?', answer: blockedProcess ? blockedProcess.label : 'Not stated', quote: blockedProcess?.quote || null, blockedProcess },
+    i3Irreversibility: {
+      question: 'Is anything wrong, exposed, lost or unsafe — and can it be recovered?',
+      answer: irreversibilityAnswer(symptom, risks, modifiers, recoverability),
+      risks: Object.keys(risks).filter((k) => risks[k]),
+      modifiers,
+      recoverability: { value: recoverability.value, quote: recoverability.quote }
+    },
+    i4Containment: { question: 'Contained or spreading / recurring / unknown extent?', answer: containment.summary, containment },
+    u5Deadline: { question: 'When do you need this by?', answer: deadlineResult.label, value: deadlineResult.deadline, committed: deadlineResult.committed, quote: deadlineResult.evidence[0]?.quote || null },
+    u6Driver: { question: 'What creates the deadline — a requirement or a preference?', answer: driver.driver === 'unknown' ? 'Not stated' : driver.label, driver },
+    u7Workaround: { question: 'Can work continue — and at what daily cost?', answer: workaroundResult.label + (workaroundResult.costPerDay ? ' (' + workaroundResult.costPerDay + ')' : ''), workaround: workaroundResult.workaround, costPerDay: workaroundResult.costPerDay },
+    u8HarmTiming: { question: 'Harm happening now or waiting to happen? (expired vs expiring)', answer: harmTiming.timing === 'unknown' ? 'Not stated' : harmTiming.label, harmTiming }
   };
 }
 
-function inferStatusConsequence(doc, systemResult, symptom) {
-  for (const consequence of organisationConfig.statusConsequences || []) {
-    if (consequence.symptom !== symptom.symptom) continue;
-    if (!systemResult.systems.some((system) => system.id === consequence.system)) continue;
-    const phrase = consequence.phrases.find((candidate) => doc.text.includes(candidate));
-    if (phrase) return { ...consequence, quote: phrase };
-  }
-  return null;
-}
-
-function isResolvedReferenceRequest(doc, symptom) {
-  if (symptom.hasFailure) return false;
-  const historical = /\b(?:last|previous|earlier)\s+(?:year|term|week|month|incident|issue)\b/i;
-  const healthyNow = /\b(?:is|are)\s+(?:correct|working|usable)|\bcompleted\s+successfully\b/i;
-  const request = /\b(?:can|could|would|should)\s+(?:we\s+)?(?:document|record|reference|plan)\b/i;
-  return historical.test(doc.text) && healthyNow.test(doc.text) && request.test(doc.text);
-}
-
-function detectBlockedProcess(doc, domainResult, symptom, systemResult, ledger) {
-  const candidates = [];
-  const add = (level, hit, source = 'explicit', extra = {}) => {
-    const clause = Number.isInteger(hit.clauseIndex) ? doc.clauses[hit.clauseIndex]?.text || '' : '';
-    // A current board can display yesterday's values: the possessive timestamp
-    // qualifies the shown data, not when the impairment exists.
-    const displayIsCurrent = /\b(?:is|are|remain|remains|still)\s+(?:showing|displaying|listing)\b[^.;!?]{0,24}\b(?:yesterday's|last (?:week|month|term|year)'s|old|stale|outdated|previous)\b/i.test(clause);
-    const temporal = (!displayIsCurrent &&
-      /\b(?:yesterday|last\s+(?:term|week|month)|previous|earlier)\b/i.test(clause)) ? 'historical' :
-      /\b(?:if|unless|planned|proposed|queued)\b/i.test(clause) ? 'hypothetical' : 'current';
-    const fact = ledger?.addFromHit({ type: 'process-consequence', value: level, hit,
-      authority: source === 'explicit' ? 'explicit' : 'inferred', temporal, ...extra });
-    candidates.push({ level, hit, source, fact, ...extra });
-  };
-  for (const hit of scanPositive(doc, BLOCKED_PROCESS_PHRASES)) add('blocked', hit);
-  for (const hit of scanPositive(doc, IMPAIRED_PROCESS_PHRASES)) add('impaired', hit);
-  const statusConsequence = inferStatusConsequence(doc, systemResult, symptom);
-  if (statusConsequence) {
-    const start = doc.text.indexOf(statusConsequence.quote);
-    add('blocked', { quote: statusConsequence.quote, start, end: start + statusConsequence.quote.length,
-      clauseIndex: start < 0 ? null : doc.clauses.findIndex((c) => start >= c.start && start < c.end),
-      entry: { process: statusConsequence.blockedProcess, label: statusConsequence.blockedProcess } }, 'inferred',
-    { note: statusConsequence.note, followUpQuestion: statusConsequence.followUpQuestion });
-  }
-  const usable = candidates.filter((candidate) => !candidate.fact ||
-    (candidate.fact.temporal === 'current' && candidate.fact.polarity === 'positive' && candidate.fact.context === 'primary'));
-  const chosen = usable.find((candidate) => candidate.source === 'explicit' && candidate.level === 'blocked') ||
-    usable.find((candidate) => candidate.source === 'explicit') || usable[0];
-  if (!chosen) return null;
-  return { level: chosen.level, process: chosen.hit.entry.process, label: chosen.hit.entry.label,
-    quote: chosen.hit.quote, source: chosen.source, hit: chosen.hit, inferred: chosen.source === 'inferred',
-    note: chosen.note, followUpQuestion: chosen.followUpQuestion,
-    evidence: usable.map((candidate) => ({ quote: candidate.hit.quote, meaning: candidate.hit.entry.label,
-      source: candidate.source === 'explicit' ? 'consequence' : 'consequence-inferred' })) };
-}
+/* ------------------------------------------------------- follow-up questions -- */
 
 function buildMissingInformation(context) {
   const {
-    scopeResult, deadlineResult, workaroundResult, systemResult, symptom,
-    risks, modifiers, urgencyResult, impactResult, expectedBehaviour,
-    doc, domainResult, isQuestion, knownAnswer, sourceOfTruth, differential,
-    recurring, undetected, inScope, containment, driver, harmTiming, blockedProcess,
-    simulate, currentPriority, currentImpact
+    scopeResult, deadlineResult, workaroundResult, systemResult, symptom, risks,
+    modifiers, urgencyResult, impactResult, doc, isQuestion, inScope, containment,
+    driver, harmTiming, blockedProcess, simulate, currentPriority, currentImpact
   } = context;
 
   const missing = [];
   const questions = [];
   const meta = [];
-  // kind: "diagnostic" = changes what to do next (source of truth, differential,
-  // root cause, missing context); "priority" = answering could move the matrix
-  // cell; "confidence" = narrows the assessment but keeps the cell.
-  const pq = (tests) =>
-    (simulate && tests.some((t) => simulate(t) !== currentPriority)) ? 'priority' : 'confidence';
+  const pq = (tests) => (simulate && tests.some((t) => simulate(t) !== currentPriority) ? 'priority' : 'confidence');
   const addQuestion = (q, kind = 'confidence') => {
     if (questions.includes(q)) return;
     questions.push(q);
@@ -456,26 +196,12 @@ function buildMissingInformation(context) {
       missing: ['Whether this describes an IT or application-support request'],
       questions: ['What IT system, application, device, or service needs support?'],
       meta: [{ text: 'What IT system, application, device, or service needs support?', kind: 'priority' }],
-      summary: 'No IT system, technical symptom, service request, or support topic ' +
-        'was recognised. Treat this result as unassessed rather than as a valid ' +
-        'low-priority ticket.'
+      summary: 'No IT system, technical symptom or support topic was recognised. Treat this ' +
+        'as unassessed rather than as a valid low-priority ticket.'
     };
   }
 
-  // A how-to does not need the incident questions. Asking "what happens if this
-  // is not resolved today?" about "what time does the sync run?" is noise.
   if (isQuestion) {
-    if (knownAnswer) {
-      return {
-        missing: [],
-        questions: ['Does the requester need access before the next run at ' +
-          knownAnswer.scheduledTime + '?'],
-        meta: [{ text: 'Does the requester need access before the next run at ' +
-          knownAnswer.scheduledTime + '?', kind: 'priority' }],
-        summary: 'This looks like a question rather than a fault. The configured ' +
-          'answer is shown above; confirm it still matches the environment.'
-      };
-    }
     return {
       missing: ['Whether the answer is needed for something with a deadline'],
       questions: [
@@ -486,54 +212,22 @@ function buildMissingInformation(context) {
         { text: 'Is this general information, or is it needed for something with a deadline?', kind: 'priority' },
         { text: 'Is anything currently blocked while waiting for the answer?', kind: 'confidence' }
       ],
-      summary: 'This reads as a question rather than a fault, so the usual incident ' +
-        'facts (scope, workaround, outage) do not apply.'
+      summary: 'This reads as a question rather than a fault, so the usual incident facts ' +
+        '(scope, workaround, outage) do not decide it.'
     };
   }
 
-  // The most decision-relevant questions first. A ticket that leans on a
-  // conversation we cannot see is missing its most important fact.
   if (doc && has(doc, CONTEXT_ELSEWHERE_PHRASES)) {
     missing.push('The background the request refers to is not in the ticket');
     addQuestion('What was previously discussed or agreed that this request refers to?', 'diagnostic');
   }
-  if (expectedBehaviour) {
-    addQuestion('Is access required before the next scheduled run at ' +
-      expectedBehaviour.scheduledTime + '?', 'diagnostic');
-  }
-  if (recurring) {
-    missing.push('Why the fault recurs - the root cause is not yet known');
-    addQuestion('What is the root cause, and what stops this happening to the next record?', 'diagnostic');
-  }
-  if (undetected) {
-    missing.push('How many other records are affected but unreported');
-    addQuestion('How many other records may be affected without anyone noticing, ' +
-      'and can they be found in bulk?', 'diagnostic');
-  }
-  if (differential) {
-    missing.push('What is different about the record that failed');
-    addQuestion('What is different about the record that failed - document type, ' +
-      'size, upload time, or a recent status change?', 'diagnostic');
-  }
-  if (sourceOfTruth) {
-    missing.push('Whether the record is correct in ' + sourceOfTruth.source +
-      ', the system ' + sourceOfTruth.downstream + ' is synchronised from');
-    addQuestion('Is the record set up correctly in ' + sourceOfTruth.source +
-      ', which ' + sourceOfTruth.downstream + ' is synchronised from?', 'diagnostic');
-  }
-  if (blockedProcess?.followUpQuestion) {
-    addQuestion(
-      blockedProcess.followUpQuestion,
-      pq([{ deadline: 'today' }])
-    );
+  if (!blockedProcess && symptom.severity >= SEVERITY.FAILURE) {
+    addQuestion('What can they not do right now that they could do yesterday? (the blocked business process, not just the symptom)', 'diagnostic');
   }
   if (!scopeResult.explicit) {
     missing.push('How many users, teams or schools are affected');
-    addQuestion(
-      'Is this affecting one person, one school, several schools or all ' +
-      organisationConfig.schoolCount + ' schools?',
-      pq([{ scope: 'all-schools' }, { scope: 'one-school' }])
-    );
+    addQuestion('Is this affecting one person, one school, several schools or all ' + organisationConfig.schoolCount + ' schools?',
+      pq([{ scope: 'all-schools' }, { scope: 'one-school' }]));
   }
   if (deadlineResult.deadline === 'unknown') {
     missing.push('When the work is required by');
@@ -542,312 +236,189 @@ function buildMissingInformation(context) {
   }
   if (workaroundResult.workaround === 'unknown') {
     missing.push('Whether a workaround or manual process exists');
-    addQuestion('Is there a workaround or manual process available?',
-      pq([{ workaround: 'no' }, { workaround: 'yes' }]));
+    addQuestion('Is there a workaround or manual process available?', pq([{ workaround: 'no' }, { workaround: 'yes' }]));
   }
   if (!systemResult.primary) {
     missing.push('Which system or application is affected');
     addQuestion('Which system or application is affected?');
   }
-  // One bad record is often the visible corner of a bad batch.
-  const BATCH_DOMAINS = ['data-quality', 'data-pipeline', 'integration-api', 'academic-ops'];
-  if (['individual', 'few-users'].includes(scopeResult.scope) &&
-      domainResult && BATCH_DOMAINS.includes(domainResult.domain)) {
-    addQuestion('Are other records from the same intake or batch affected?', 'diagnostic');
-  }
-
   if (urgencyResult.claimedOnly) {
     missing.push('The business consequence behind the stated urgency');
-    addQuestion('What is the business consequence if this waits until tomorrow?',
-      pq([{ deadline: 'today' }]));
+    addQuestion('What is the business consequence if this waits until tomorrow?', pq([{ deadline: 'today' }]));
   }
-  if (symptom.isDataIssue && !modifiers.decisionRisk && !expectedBehaviour) {
-    missing.push('Whether incorrect data is visible to users');
-    addQuestion('Is incorrect information visible to users or being used for decisions?',
-      pq([{ exposureActive: true }, { decisionRisk: true, deadline: 'today' }]));
-  }
-  if (symptom.isDataIssue && !modifiers.propagating && !expectedBehaviour) {
+  if (symptom.isDataIssue && !modifiers.propagating) {
+    addQuestion('Is incorrect information visible to users, or being used for decisions?', pq([{ exposureActive: true }]));
     addQuestion('Is the issue still occurring, or has it stopped?');
   }
   if ((risks.payroll || risks.financial) && deadlineResult.deadline === 'unknown') {
     missing.push('The next payroll or payment cutoff');
-    addQuestion('Is a payroll or payment cutoff affected, and when is it?',
-      pq([{ deadline: 'today' }]));
+    addQuestion('Is a payroll or payment cutoff affected, and when is it?', pq([{ deadline: 'today' }]));
   }
   if ((risks.privacy || risks.security) && !modifiers.exposureActive) {
     missing.push('Whether anyone has actually accessed the information');
-    addQuestion('Has anyone outside the intended audience actually seen the information?',
-      pq([{ exposureActive: true }]));
+    addQuestion('Has anyone outside the intended audience actually seen the information?', pq([{ exposureActive: true }]));
   }
   if (symptom.isDegraded) {
     addQuestion('Can users still complete their work, or is it effectively unavailable?');
   }
-  if (impactResult.impact === 'high' && deadlineResult.deadline === 'unknown') {
-    addQuestion('When does business processing next depend on this?',
-      pq([{ deadline: 'today' }, { deadline: 'days-2-5' }]));
-  }
-
-  // 8-question framework — only ask when current facets are unknown
-  if (!blockedProcess && symptom.severity >= 2 && !isQuestion) {
-    addQuestion('What can they not do right now that they could do yesterday? (blocked business process, not just symptom)');
-  }
-  if (containment && containment.contained) {
-    // contained is good news — no question, but keep reasoning
-  } else if (containment && !containment.propagating && !recurring && !undetected) {
-    // Only ask containment if no other spread signal
-    const modestScope = ['individual', 'few-users', 'team', 'cohort'].includes(scopeResult.scope);
-    const containmentMatters = symptom.isDataIssue || symptom.symptom === 'data-loss' ||
-      Boolean(risks.dataIntegrity || risks.privacy || modifiers.exposureActive);
-    if (containmentMatters && (modestScope || modifiers.exposureActive)) {
-      addQuestion('Is this contained to one record/family, or could it be spreading?',
-        pq([{ propagating: true }]));
-    }
-  }
   if (driver && driver.driver === 'unknown' && deadlineResult.deadline !== 'unknown' && deadlineResult.deadline !== 'none') {
-    addQuestion('What creates the deadline — a requirement (statutory/operational) or a preference? What actually happens if it is missed?',
+    addQuestion('What creates the deadline — a requirement (statutory/operational) or a preference?',
       (urgencyResult.floorApplied && priorityFor(currentImpact, 'low') !== currentPriority) ? 'priority' : 'confidence');
   }
-  if (driver && driver.driver === 'preference') {
-    addQuestion('Is "by Friday" a requirement (statutory/operational) or a preference? Preferences score lower.');
-  }
   if (workaroundResult.workaround === 'yes' && !workaroundResult.costPerDay) {
-    addQuestion('What does the workaround cost per day — how many staff/hours does manual processing take?');
+    addQuestion('What does the workaround cost per day — how many staff or hours does manual processing take?');
   }
-  if (harmTiming && harmTiming.timing === 'pending') {
-    addQuestion('Is harm waiting to happen (expiring) rather than happening now (expired/active exposure)?');
-  } else if (harmTiming && harmTiming.timing === 'unknown' && (risks.privacy || risks.security || symptom.severity >= 1.5)) {
-    addQuestion('Is harm happening now, or waiting to happen? (expired/active vs expiring/pending)',
-      pq([{ exposureActive: true }]));
+  if (harmTiming && harmTiming.timing === 'unknown' && (risks.privacy || risks.security || symptom.severity >= SEVERITY.DATA)) {
+    addQuestion('Is harm happening now, or waiting to happen? (expired/active vs expiring/pending)', pq([{ exposureActive: true }]));
+  }
+  if (containment && !containment.propagating && !containment.contained &&
+      (symptom.isDataIssue || risks.dataIntegrity)) {
+    addQuestion('Is this contained to one record/family, or could it be spreading?', pq([{ propagating: true }]));
   }
 
   let summary = '';
   if (missing.length) {
     const impactKnown = impactResult.impact !== 'low' || scopeResult.explicit;
     summary = impactKnown && deadlineResult.deadline === 'unknown'
-      ? 'The impact can be estimated, but urgency cannot be determined confidently ' +
-        'because no deadline or business consequence was provided.'
-      : 'Some of the information needed for a confident assessment is missing. ' +
-        'The suggestion below is based on what the request actually states.';
+      ? 'The impact can be estimated, but urgency cannot be determined confidently because no ' +
+        'deadline or business consequence was provided.'
+      : 'Some information needed for a confident assessment is missing. The suggestion is based ' +
+        'on what the request actually states.';
   }
 
-  // Diagnostic questions first (they change what to do next), then
-  // priority-changing ones, then confidence-only (stable within each kind),
-  // capped at six.
   const KIND_ORDER = { diagnostic: 0, priority: 1, confidence: 2 };
   const paired = meta.map((m, i) => [m, i]);
-  paired.sort((a, b) =>
-    (KIND_ORDER[a[0].kind] - KIND_ORDER[b[0].kind]) || (a[1] - b[1]));
+  paired.sort((a, b) => (KIND_ORDER[a[0].kind] - KIND_ORDER[b[0].kind]) || (a[1] - b[1]));
   const top = paired.slice(0, 6);
-  return {
-    missing,
-    questions: top.map(([m]) => m.text),
-    meta: top.map(([m]) => m),
-    summary
-  };
+  return { missing, questions: top.map(([m]) => m.text), meta: top.map(([m]) => m), summary };
 }
+
+const debugWouldChange = false;
+
+/* ------------------------------------------------------------- reasoning -- */
 
 function buildReasoning(context) {
   const {
-    scopeResult, systemResult, domainResult, symptom, workaroundResult,
-    deadlineResult, impactResult, urgencyResult, rules, priority,
-    impact, urgency, expectedBehaviour, urgencyBase, impactBase, knownAnswer, isQuestion,
-    sourceOfTruth, differential, escalated, recurring, undetected, inScope,
-    containment, driver, harmTiming, blockedProcess, decisionContext
+    scopeResult, systemResult, symptom, workaroundResult, deadlineResult, rules,
+    priority, impact, urgency, impactBase, urgencyBase, isQuestion, recurring,
+    undetected, inScope, containment, driver, harmTiming, blockedProcess, escalated,
+    decisionContext, riskFlags
   } = context;
 
   const reasoning = [];
-
   if (!inScope) {
-    const unassessedReasoning = [
+    return [
       'This does not appear to describe an IT or application-support request.',
-      'Scope, deadlines and requester-declared priority are ignored until a ' +
-        'support system, symptom, work type, technical domain or risk is recognised.'
-    ];
-    if (rules.some((rule) => rule.direction === 'manual')) {
-      unassessedReasoning.push(
-        'The analyst-refined impact or urgency was retained, but the input is still unassessed.'
-      );
-    }
-    unassessedReasoning.push(
+      'Scope, deadlines and requester-declared priority are ignored until a support ' +
+        'system, symptom or risk is recognised.',
       'Impact ' + LEVEL_LABELS[impact].toUpperCase() + ' and urgency ' +
         LEVEL_LABELS[urgency].toUpperCase() + ' map to ' + priority +
         ' in the priority matrix; treat this suggestion as unassessed.'
-    );
-    return unassessedReasoning;
+    ];
   }
   if (decisionContext.status === 'resolved') {
-    reasoning.push(
-      'The latest explicit update says the incident is resolved or contained. Earlier ' +
-      'failure wording is retained as history but does not describe current urgency.'
-    );
-  } else if (decisionContext.status === 'planned-test') {
-    reasoning.push(
-      'The failure wording describes a design, simulation, exercise, or test rather ' +
-      'than a live production incident.'
-    );
+    reasoning.push('The latest explicit update says the incident is resolved or contained, so it is not scored as live.');
   }
-
-  if (systemResult.primary) {
-    reasoning.push(describeSystems(systemResult.systems) + ' was identified as the affected system.');
+  if (systemResult.primary) reasoning.push(describeSystems(systemResult.systems) + ' was identified as the affected system.');
+  if (symptom.severity > 0) reasoning.push('The reported symptom is "' + symptom.label.toLowerCase() + '".');
+  if (isQuestion) reasoning.push('This reads as a question rather than a fault report.');
+  else {
+    reasoning.push(scopeResult.explicit
+      ? 'The request describes ' + scopeResult.label.toLowerCase() + ' as affected.'
+      : 'The request does not state how many people or schools are affected, so scope is unknown.');
   }
-  if (symptom.severity > 0) {
-    reasoning.push(
-      domainResult.domain === 'unknown'
-        ? 'The reported symptom is "' + symptom.label.toLowerCase() +
-          '", but the technical domain could not be determined.'
-        : 'The reported symptom is "' + symptom.label.toLowerCase() + '" in the ' +
-          domainResult.label + ' domain' +
-          (domainResult.inferred ? ', inferred from the symptom.' : '.')
-    );
-  }
-  // Scope and deadline decide incidents. Reciting their absence on a how-to
-  // just buries the one line that matters.
-  if (!isQuestion) {
-    reasoning.push(
-      scopeResult.explicit
-        ? 'The request describes ' + scopeResult.label.toLowerCase() + ' as affected.'
-        : 'The request does not state how many people or schools are affected, ' +
-          'so scope is treated as unknown.'
-    );
-  } else {
-    reasoning.push('This reads as a question rather than a fault report.');
-  }
+  if (blockedProcess) reasoning.push('Blocked process: "' + blockedProcess.quote + '" — ' + blockedProcess.label + '.');
   if (workaroundResult.workaround !== 'unknown') {
-    reasoning.push(
-      workaroundResult.workaround === 'no'
-        ? 'No workaround is available, so waiting has an immediate cost.'
-        : 'A ' + workaroundResult.label.toLowerCase() + ' workaround was described, ' +
-          'which reduces urgency without reducing impact.'
-    );
+    reasoning.push(workaroundResult.workaround === 'no'
+      ? 'No workaround is available, so waiting has an immediate cost.'
+      : 'A ' + workaroundResult.label.toLowerCase() + ' workaround was described, which reduces urgency without reducing impact.');
   }
+  if (workaroundResult.costPerDay) reasoning.push('Workaround cost: ' + workaroundResult.costPerDay + '.');
   if (!isQuestion || deadlineResult.deadline !== 'unknown') {
-    reasoning.push(
-      deadlineResult.deadline === 'unknown'
-        ? 'No business deadline was found in the request.'
-        : 'The stated timing is "' + deadlineResult.label.toLowerCase() + '"' +
-          (deadlineResult.committed ? ' and is expressed as a commitment.' : '.')
-    );
+    reasoning.push(deadlineResult.deadline === 'unknown'
+      ? 'No business deadline was found in the request.'
+      : 'The stated timing is "' + deadlineResult.label.toLowerCase() + '"' + (deadlineResult.committed ? ' and is expressed as a commitment.' : '.'));
   }
-  if (expectedBehaviour) {
-    reasoning.push(expectedBehaviour.reason);
-  }
-  if (knownAnswer) {
-    reasoning.push('This appears to be answered by the configured "' + knownAnswer.job +
-      '": ' + knownAnswer.answer);
-  }
-  if (differential) {
-    reasoning.push(differential.reason);
-  }
-  if (recurring) {
-    reasoning.push('This has happened before. The ticket is about the pattern, not ' +
-      'the instance - correcting the affected record will not stop it recurring, ' +
-      'so impact is assessed on the cumulative reach of the fault.');
-  }
-  if (undetected) {
-    reasoning.push('The requester has said that affected records may exist without ' +
-      'being reported. The number of records involved is therefore unknown and ' +
-      'larger than the ones raised so far.');
-  }
-  if (escalated) {
-    reasoning.push('The request has been escalated by a stakeholder. That is recorded ' +
-      'as context only: who asked does not change what breaks, so it has not ' +
-      'altered the impact or urgency above.');
-  }
-  if (sourceOfTruth) {
-    reasoning.push(sourceOfTruth.note + ' If the record is missing or incorrect in ' +
-      sourceOfTruth.source + ', the synchronisation will keep excluding it, and a manual ' +
-      'change made directly in ' + sourceOfTruth.downstream +
-      ' may be reversed at the next run.');
-  }
-  if (urgencyResult.claimedOnly) {
-    reasoning.push(
-      'Urgency was asserted in the wording, but no business consequence was stated. ' +
-      'Asserted urgency alone does not raise priority.'
-    );
-  }
-  if (urgencyResult.floorApplied) {
-    reasoning.push(
-      'A future deadline was stated, so urgency is treated as at least Medium ' +
-      'even though the business can continue for now.'
-    );
-  }
-  if (blockedProcess) {
-    reasoning.push('Blocked process: ' + blockedProcess.quote + ' — ' + blockedProcess.label + '.');
-    if (blockedProcess.note) reasoning.push(blockedProcess.note);
-  }
+  if (driver && driver.driver !== 'unknown') reasoning.push('Driver: ' + driver.label + (driver.actor ? ' (' + driver.actor + ')' : '') + '.');
+  if (harmTiming && harmTiming.timing !== 'unknown') reasoning.push('Harm timing: ' + harmTiming.label + '.');
   if (containment) {
-    if (containment.contained) reasoning.push('Containment: ' + containment.summary + ' (' + (containment.containedEvidence?.quote || '') + ').');
-    else if (containment.propagating) reasoning.push('Containment: ' + containment.summary + ' — raises impact, not urgency.');
+    if (containment.propagating) reasoning.push('Containment: ' + containment.summary + ' — raises impact, not urgency.');
+    else if (containment.contained) reasoning.push('Containment: ' + containment.summary + '.');
     else if (containment.recurring || containment.undetected) reasoning.push('Containment: ' + containment.summary + '.');
   }
-  if (driver && driver.driver !== 'unknown') {
-    const who = driver.actor ? ' (' + driver.actor + ')' : '';
-    reasoning.push('Driver: ' + driver.label + who + (driver.quote ? ' — "' + driver.quote + '"' : '') + '.');
-  }
-  if (harmTiming && harmTiming.timing !== 'unknown') {
-    reasoning.push('Harm timing: ' + harmTiming.label + (harmTiming.quote ? ' — "' + harmTiming.quote + '"' : '') + '.');
-  }
-  if (workaroundResult.costPerDay) {
-    reasoning.push('Workaround cost: ' + workaroundResult.costPerDay + ' — ' + (workaroundResult.sustainability || 'manual effort') + '.');
-  }
-  for (const rule of rules) {
-    reasoning.push('Modifier applied: ' + rule.label);
-  }
-  if (impactBase !== impact) {
-    reasoning.push('Impact adjusted from ' + LEVEL_LABELS[impactBase] + ' to ' + LEVEL_LABELS[impact] + '.');
-  }
-  if (urgencyBase !== urgency) {
-    reasoning.push('Urgency adjusted from ' + LEVEL_LABELS[urgencyBase] + ' to ' + LEVEL_LABELS[urgency] + '.');
-  }
-  reasoning.push(
-    'Impact ' + LEVEL_LABELS[impact].toUpperCase() + ' and urgency ' +
-    LEVEL_LABELS[urgency].toUpperCase() + ' map to ' + priority + ' in the priority matrix.'
-  );
-
+  if (recurring) reasoning.push('This has happened before. The ticket is about the pattern, not the instance, so impact is assessed on the cumulative reach.');
+  if (undetected) reasoning.push('The requester said affected records may exist without being reported, so the number involved is unknown.');
+  if (escalated) reasoning.push('The request was escalated by a stakeholder. That is context only: who asked does not change what breaks.');
+  for (const flag of riskFlags) reasoning.push('Risk flagged: ' + flag.label + '.');
+  if (urgencyResult_claimedOnly(context)) reasoning.push('Urgency was asserted in the wording, but no business consequence was stated. Asserted urgency alone does not raise priority.');
+  for (const rule of rules) reasoning.push('Modifier applied: ' + rule.label);
+  if (impactBase !== impact) reasoning.push('Impact adjusted from ' + LEVEL_LABELS[impactBase] + ' to ' + LEVEL_LABELS[impact] + '.');
+  if (urgencyBase !== urgency) reasoning.push('Urgency adjusted from ' + LEVEL_LABELS[urgencyBase] + ' to ' + LEVEL_LABELS[urgency] + '.');
+  reasoning.push('Impact ' + LEVEL_LABELS[impact].toUpperCase() + ' and urgency ' +
+    LEVEL_LABELS[urgency].toUpperCase() + ' map to ' + priority + ' in the priority matrix.');
   return reasoning;
 }
 
-/**
- * The one-sentence justification from the TASC guide, section 10:
- * "All 19 schools affected; manual workaround available; classes not yet
- *  blocked; recovery needed before tomorrow morning -> High Impact +
- *  Medium Urgency -> P2."
- *
- * Written to be pasted straight into the ticket when the call may be challenged.
- */
-function buildJustification(context) {
-  const {
-    scopeResult, workaroundResult, deadlineResult, symptom, riskFlags,
-    impact, urgency, priority
-  } = context;
+function urgencyResult_claimedOnly(context) {
+  return Boolean(context.urgencyResult && context.urgencyResult.claimedOnly);
+}
 
-  if (!context.inScope) {
-    return 'No IT or application-support context recognised -> ' +
-      LEVEL_LABELS[impact] + ' Impact + ' + LEVEL_LABELS[urgency] + ' Urgency -> ' +
-      priority + ' (unassessed)';
+function buildJustification({ scopeResult, workaroundResult, deadlineResult, symptom, riskFlags, impact, urgency, priority, inScope }) {
+  if (!inScope) {
+    return 'No IT or application-support context recognised -> ' + LEVEL_LABELS[impact] + ' Impact + ' +
+      LEVEL_LABELS[urgency] + ' Urgency -> ' + priority + ' (unassessed)';
   }
-
   const facts = [];
-  if (scopeResult.explicit) facts.push(scopeResult.label + ' affected');
-  else facts.push('scope not stated');
-
+  facts.push(scopeResult.explicit ? scopeResult.label + ' affected' : 'scope not stated');
   if (symptom.severity > 0) facts.push(symptom.label.toLowerCase());
-
   if (workaroundResult.workaround === 'yes') facts.push('workaround available');
   else if (workaroundResult.workaround === 'partial') facts.push('partial workaround only');
   else if (workaroundResult.workaround === 'no') facts.push('no workaround');
-
   if (deadlineResult.deadline === 'unknown') facts.push('no deadline stated');
   else if (deadlineResult.deadline === 'none') facts.push('no deadline required');
   else facts.push('needed ' + deadlineResult.label.toLowerCase());
-
   for (const flag of riskFlags.slice(0, 2)) facts.push(flag.label.toLowerCase() + ' involved');
-
-  return facts.join('; ') + ' -> ' + LEVEL_LABELS[impact] + ' Impact + ' +
-    LEVEL_LABELS[urgency] + ' Urgency -> ' + priority;
+  return facts.join('; ') + ' -> ' + LEVEL_LABELS[impact] + ' Impact + ' + LEVEL_LABELS[urgency] + ' Urgency -> ' + priority;
 }
 
-const LEVEL_VALUES = ['low', 'medium', 'high'];
+/* ------------------------------------------------------- next-action input -- */
+
+function nextActionEvidence(context) {
+  const {
+    assessmentStatus, workTypeResult, blockedProcess, deadlineResult,
+    workaroundResult, containment, harmTiming, symptom, risks, modifiers,
+    urgencyResult, applied, decisionContext
+  } = context;
+  const selected = (value, authority) => ({ value, authority });
+  const riskAuthority = (key) => (applied.risks && Object.prototype.hasOwnProperty.call(applied.risks, key))
+    ? 'analyst-confirmed'
+    : (risks[key] ? 'explicit' : 'unknown');
+  const events = [];
+  const harmAuthority = harmTiming.timing === 'active' ? 'explicit' : 'inferred';
+  if (modifiers.exposureActive) events.push({ kind: 'active-exposure', authority: harmAuthority, temporal: 'current' });
+  if (modifiers.propagating) events.push({ kind: 'propagation', authority: applied.contained === 'spreading' ? 'analyst-confirmed' : 'explicit', temporal: 'current' });
+  if (modifiers.immediateSafeguarding) events.push({ kind: 'safeguarding-consequence', authority: harmAuthority, temporal: 'current' });
+  if (risks.safety && harmTiming.timing === 'active') events.push({ kind: 'safety-consequence', authority: harmAuthority, temporal: 'current' });
+  if (modifiers.unpaidRisk && harmTiming.timing === 'active') events.push({ kind: 'material-financial-consequence', authority: harmAuthority, temporal: 'current' });
+  return {
+    assessmentStatus,
+    workType: workTypeResult.workType,
+    businessConsequence: selected(blockedProcess?.level || 'unknown', applied.consequence ? 'analyst-confirmed' : blockedProcess?.source === 'explicit' ? 'explicit' : 'inferred'),
+    deadline: selected(deadlineResult.deadline, applied.deadline ? 'analyst-confirmed' : deadlineResult.committed ? 'explicit' : 'unknown'),
+    deadlineRelationship: deadlineResult.deadline !== 'unknown' && deadlineResult.deadline !== 'none' && !deadlineResult.committed ? 'unknown' : 'known',
+    workaround: selected(workaroundResult.workaround, applied.workaround ? 'analyst-confirmed' : 'explicit'),
+    containment: selected(containment.propagating ? 'spreading' : containment.contained ? 'contained' : 'unknown', 'explicit'),
+    harm: selected(harmTiming.timing, harmTiming.source === 'manual' ? 'analyst-confirmed' : 'explicit'),
+    currentFailure: selected(Boolean(symptom.hasFailure), symptom.hasFailure ? 'explicit' : 'unknown'),
+    risks: Object.fromEntries(RISK_KEYS.map((key) => [key, selected(Boolean(risks[key]), riskAuthority(key))])),
+    events,
+    verification: null,
+    canWait: Boolean(urgencyResult.lowUrgencySignal),
+    temporalState: decisionContext.status === 'resolved' ? 'resolved' : 'current'
+  };
+}
+
+/* --------------------------------------------------------------- overrides -- */
 
 function normaliseOverrides(overrides = {}) {
   const clean = {};
@@ -876,31 +447,22 @@ function normaliseOverrides(overrides = {}) {
   return clean;
 }
 
-/**
- * Analyse a ticket.
- *
- * @param {string} rawText
- * @param {object} overrides  manual refinements from the UI
- * @returns {object} result model
- */
+/* ------------------------------------------------------------------ analyse -- */
+
 export function analyse(rawText, overrides = {}) {
   const originalDoc = createDocument(rawText);
   if (!originalDoc.text) {
     return { empty: true, priority: null, reasoning: [], evidence: [] };
   }
-  const preparedContext = prepareDecisionContext(rawText);
-  const { decisionText, ...decisionContext } = preparedContext;
-  const doc = createDocument(decisionText);
+  const doc = originalDoc;
   const evidenceLedger = createEvidenceLedger(doc);
-
   const applied = normaliseOverrides(overrides);
   const overridesApplied = Object.keys(applied).length > 0;
 
-  // --- evidence ---------------------------------------------------------
+  const decisionContext = detectDecisionContext(doc);
   const systemResult = detectSystems(doc);
   const symptom = detectSymptom(doc);
   const recoverability = detectRecoverability(doc);
-  const domainResult = detectDomain(doc, systemResult, symptom);
 
   const scopeEvidence = extractScopeEvidence(doc, evidenceLedger);
   const detectedScope = projectScope(scopeEvidence);
@@ -909,45 +471,22 @@ export function analyse(rawText, overrides = {}) {
   const detectedDeadline = detectDeadline(doc);
   const riskResult = detectRisks(doc, { symptom, scope: detectedScope });
 
-  // --- manual refinements ----------------------------------------------
   let scopeResult = applied.scope
-    ? {
-        ...detectedScope,
-        scope: applied.scope,
-        label: scopeLabel(applied.scope),
-        explicit: applied.scope !== 'unknown',
-        evidence: [{ quote: 'manual input', meaning: 'Scope confirmed by the analyst', source: 'scope' }]
-      }
+    ? { ...detectedScope, scope: applied.scope, label: scopeLabel(applied.scope), explicit: applied.scope !== 'unknown', evidence: [{ quote: 'manual input', meaning: 'Scope confirmed by the analyst', source: 'scope' }] }
     : detectedScope;
 
   let workaroundResult = applied.workaround
-    ? {
-        ...detectedWorkaround,
-        workaround: applied.workaround,
-        label: workaroundLabel(applied.workaround),
-        evidence: [{ quote: 'manual input', meaning: 'Workaround confirmed by the analyst', source: 'workaround' }]
-      }
+    ? { ...detectedWorkaround, workaround: applied.workaround, label: workaroundLabel(applied.workaround), evidence: [{ quote: 'manual input', meaning: 'Workaround confirmed by the analyst', source: 'workaround' }] }
     : detectedWorkaround;
   if (applied.workaround) {
-    evidenceLedger.add({
-      type: 'workaround', value: applied.workaround, quote: 'manual input',
-      authority: 'analyst-confirmed', temporal: 'current',
-      role: applied.workaround === 'no' ? 'primary' : 'alternative-path'
-    });
+    evidenceLedger.add({ type: 'workaround', value: applied.workaround, quote: 'manual input', authority: 'analyst-confirmed', temporal: 'current', role: applied.workaround === 'no' ? 'primary' : 'alternative-path' });
   }
 
   let deadlineResult = applied.deadline
-    ? {
-        ...detectedDeadline,
-        deadline: applied.deadline,
-        label: deadlineLabel(applied.deadline),
-        committed: applied.deadline !== 'unknown',
-        evidence: [{ quote: 'manual input', meaning: 'Deadline confirmed by the analyst', source: 'deadline' }]
-      }
+    ? { ...detectedDeadline, deadline: applied.deadline, label: deadlineLabel(applied.deadline), committed: applied.deadline !== 'unknown', evidence: [{ quote: 'manual input', meaning: 'Deadline confirmed by the analyst', source: 'deadline' }] }
     : detectedDeadline;
 
   const risks = { ...emptyRisks(), ...riskResult.risks, ...(applied.risks || {}) };
-  // Re-gate modifiers against the (possibly overridden) risk flags.
   const raw = riskResult.rawModifiers;
   let modifiers = {
     ...riskResult.modifiers,
@@ -958,263 +497,59 @@ export function analyse(rawText, overrides = {}) {
     immediateSafeguarding: raw.immediateSafeguarding && risks.safeguarding
   };
 
-  // --- expected behaviour ----------------------------------------------
-  const expectedBehaviour = detectExpectedBehaviour(doc, symptom);
-  const immediateNeed = hasImmediateNeed(doc);
-
-  // A fault that repeats, and one whose full reach is unknown, both change
-  // what kind of ticket this is - so they are established before work type.
   const recurring = has(doc, RECURRENCE_PHRASES);
   const undetected = has(doc, UNDETECTED_PHRASES);
   let containment = detectContainment(doc, risks);
   let driver = detectDriver(doc);
-  let blockedProcess = detectBlockedProcess(doc, domainResult, symptom, systemResult, evidenceLedger);
+  let blockedProcess = detectBlockedProcess(doc);
   const harmTimingEvidence = extractHarmTimingEvidence(doc, symptom, {
-    modifiers,
-    blockedProcess,
-    workaround: workaroundResult.workaround,
-    workaroundCost: workaroundResult.costPerDay
+    modifiers, blockedProcess, workaround: workaroundResult.workaround, workaroundCost: workaroundResult.costPerDay
   }, evidenceLedger);
   let harmTiming = projectHarmTiming(harmTimingEvidence);
-  // Facet overrides — analyst confirmed values
+
   if (applied.contained) {
     if (applied.contained === 'contained') containment = { ...containment, contained: true, propagating: false, recurring: false, undetected: false, summary: 'appears contained (manually confirmed)' };
     else if (applied.contained === 'spreading') containment = { ...containment, contained: false, propagating: true, summary: 'appears to be spreading (manually confirmed)' };
     else if (applied.contained === 'unknown') containment = { ...containment, contained: false, propagating: false, recurring: false, undetected: true, summary: 'unknown extent (manually confirmed)' };
   }
-  if (applied.driver) {
-    if (applied.driver !== 'auto') {
-      const labelMap = { statutory: 'a statutory or compliance deadline drives timing', operational: 'an operational or business event drives timing', preference: 'a preference rather than a deadline was expressed', none: 'no deadline driver' };
-      driver = { driver: applied.driver, label: labelMap[applied.driver] || applied.driver, quote: 'manual input', actor: driver.actor, committed: applied.driver !== 'preference' && applied.driver !== 'none' };
-    }
+  if (applied.driver && applied.driver !== 'auto') {
+    const labelMap = { statutory: 'a statutory or compliance deadline drives timing', operational: 'an operational or business event drives timing', preference: 'a preference rather than a deadline was expressed', none: 'no deadline driver' };
+    driver = { driver: applied.driver, label: labelMap[applied.driver] || applied.driver, quote: 'manual input', actor: driver.actor, committed: applied.driver !== 'preference' && applied.driver !== 'none' };
   }
-  if (applied.harm) {
-    if (applied.harm !== 'auto') {
-      const labelMap = { active: 'harm is happening now', pending: 'harm is waiting to happen', unknown: null };
-      harmTiming = { timing: applied.harm, label: labelMap[applied.harm], quote: applied.harm === 'unknown' ? null : 'manual input', source: 'manual' };
-      if (applied.harm !== 'unknown') {
-        evidenceLedger.add({
-          type: 'harm-timing', value: applied.harm, quote: 'manual input',
-          authority: 'analyst-confirmed', temporal: 'current'
-        });
-      }
-    }
+  if (applied.harm && applied.harm !== 'auto') {
+    const labelMap = { active: 'harm is happening now', pending: 'harm is waiting to happen', unknown: null };
+    harmTiming = { timing: applied.harm, label: labelMap[applied.harm], quote: applied.harm === 'unknown' ? null : 'manual input', source: 'manual' };
   }
   if (applied.consequence) {
-    const labelMap = {
-      impaired: 'business process is impaired',
-      blocked: 'business process is blocked',
-      unknown: 'business consequence is unknown'
-    };
-    blockedProcess = {
-      level: applied.consequence,
-      process: null,
-      label: labelMap[applied.consequence],
-      quote: 'manual input',
-      source: 'manual',
-      evidence: [{ quote: 'manual input', meaning: labelMap[applied.consequence], source: 'consequence' }]
-    };
+    const labelMap = { impaired: 'business process is impaired', blocked: 'business process is blocked', unknown: 'business consequence is unknown' };
+    blockedProcess = { level: applied.consequence, process: null, label: labelMap[applied.consequence], quote: 'manual input', source: 'manual', evidence: [{ quote: 'manual input', meaning: labelMap[applied.consequence], source: 'consequence' }] };
   }
-
-  // Confirmed facets are scoring inputs, not display-only annotations. They
-  // remain gated by the matching risk so a refinement cannot manufacture a
-  // data, privacy, security, or safeguarding concern that was never present.
   if (applied.contained) {
-    modifiers = {
-      ...modifiers,
-      propagating: applied.contained === 'spreading' && risks.dataIntegrity
-    };
+    modifiers = { ...modifiers, propagating: applied.contained === 'spreading' && risks.dataIntegrity };
   }
   if (applied.harm) {
     const active = applied.harm === 'active';
-    modifiers = {
-      ...modifiers,
-      exposureActive: active && (risks.privacy || risks.security),
-      immediateSafeguarding: active && risks.safeguarding
-    };
+    modifiers = { ...modifiers, exposureActive: active && (risks.privacy || risks.security), immediateSafeguarding: active && risks.safeguarding };
   }
-  // A soft continuation phrase keeps work going while the fault is repaired,
-  // so the policy must not price the restoration as imminent.
-  const deadlineSoft = scanPositive(doc, [{ m: SOFT_CONTINUATION_PHRASES }]).length > 0;
+
   const effectiveRisk = { ...riskResult, risks, modifiers };
+  const isQuestion = symptom.symptom === 'question' && !symptom.hasFailure;
+  const workTypeResult = { workType: isQuestion ? 'question' : 'incident', label: isQuestion ? 'Question' : 'Incident' };
 
-  const workTypeResult = detectWorkType(doc, {
-    symptom,
-    risks,
-    modifiers,
-    expectedBehaviour: Boolean(expectedBehaviour),
-    differential: Boolean(detectDifferential(doc, symptom, scopeResult)) || recurring
-  });
-
-  // A question with no failure behind it is a different kind of ticket: the
-  // facts that decide an incident simply do not apply to it.
-  const isQuestion =
-    (workTypeResult.workType === 'documentation' || symptom.symptom === 'question') &&
-    !symptom.hasFailure;
-
-  // A viable alternative stated beside a minor fault bounds the effect without
-  // claiming that the primary experience is healthy. This evidence is a
-  // context-derived impairment, so it informs the eight-facet answer but does
-  // not receive the scoring authority of an explicitly blocked process.
-  const continuityHit = scanPositive(doc, CONTINUITY_PHRASES)[0];
-  if (continuityHit && symptom.severity > SEVERITY.NONE && !applied.consequence) {
-    blockedProcess = {
-      level: 'impaired', process: 'primary path',
-      label: 'the primary path is impaired but work can continue',
-      quote: continuityHit.quote, source: 'inferred', inferred: true,
-      evidence: [{ quote: continuityHit.quote, meaning: 'a viable alternative remains available', source: 'consequence-inferred' }]
-    };
-    if (!applied.workaround && workaroundResult.workaround === 'unknown') {
-      evidenceLedger.addFromHit({
-        type: 'workaround', value: 'yes', hit: continuityHit,
-        authority: 'inferred', polarity: 'positive', role: 'alternative-path'
-      });
-      workaroundResult = projectWorkaround(workaroundEvidence);
-    }
-    // A viable alternative bounds timing for a failure-grade fault. When the
-    // primary path is an outage, the time question stays open.
-    if (symptom.severity <= SEVERITY.FAILURE) {
-      if (!applied.deadline && deadlineResult.deadline === 'unknown') {
-        deadlineResult = { ...deadlineResult, deadline: 'none', label: deadlineLabel('none'),
-          evidence: [{ quote: continuityHit.quote, meaning: 'no deadline accompanies the viable alternative', source: 'context' }] };
-      }
-      if (!applied.driver && driver.driver === 'unknown') {
-        driver = { driver: 'none', label: 'no deadline driver was stated', quote: continuityHit.quote, actor: null, committed: false };
-      }
-    }
-    if (!applied.contained && !containment.propagating && !containment.recurring) {
-      containment = { ...containment, contained: true, containedEvidence: continuityHit,
-        summary: 'appears contained' };
-    }
-  }
-
-  // A recoverable data loss has a real restoration path. Treat it as the U7
-  // workaround so the panel shows it and the policy can price the time
-  // pressure explicitly: a usable path does not stop the clock.
-  if (!applied.workaround && workaroundResult.workaround === 'unknown' &&
-      symptom.symptom === 'data-loss' && recoverability.value === 'recoverable') {
-    workaroundResult = {
-      ...workaroundResult,
-      workaround: 'yes',
-      label: workaroundLabel('yes'),
-      evidence: [...workaroundResult.evidence, {
-        quote: recoverability.quote || 'a recovery path is available',
-        meaning: 'a recovery path exists',
-        source: 'recoverability',
-        value: 'yes'
-      }]
-    };
-  }
-
-  // A non-incident how-to concerns the requester unless it names a broader
-  // affected population.  Its optional timing describes when the requester
-  // would like to use the answer, not a triage deadline, unless the language
-  // makes that timing a commitment.  Keep explicit analyst refinements and
-  // real failures authoritative.
-  if (isQuestion && workTypeResult.workType === 'documentation') {
-    if (!applied.scope && scopeResult.scope === 'unknown') {
-      scopeResult = {
-        ...scopeResult,
-        scope: 'individual',
-        label: scopeLabel('individual'),
-        evidence: [{
-          quote: 'requester guidance request',
-          meaning: 'the request concerns one requester',
-          source: 'context'
-        }]
-      };
-    }
-    if (!applied.deadline && !deadlineResult.committed) {
-      deadlineResult = {
-        ...deadlineResult,
-        deadline: 'none',
-        label: deadlineLabel('none'),
-        candidates: [],
-        evidence: []
-      };
-    }
-    if (!applied.driver && driver.driver === 'unknown' && !deadlineResult.committed) {
-      driver = {
-        driver: 'preference',
-        label: 'an ordinary guidance preference drives timing',
-        quote: 'requester guidance request',
-        actor: null,
-        committed: false
-      };
-    }
-  }
-  if (!applied.driver && driver.driver === 'unknown' && deadlineResult.explicitNoRequirement) {
-    driver = {
-      driver: 'none',
-      label: 'no deadline driver was stated',
-      quote: 'explicitly no required-by date',
-      actor: null,
-      committed: false
-    };
-  }
-  // A current request to document a resolved historical incident is planning
-  // context, not a new operational deadline.  Require all three signals so a
-  // documentation question beside an active failure remains authoritative.
-  if (!applied.driver && driver.driver === 'unknown' && isResolvedReferenceRequest(doc, symptom)) {
-    driver = {
-      driver: 'preference',
-      label: 'an explanatory documentation preference drives timing',
-      quote: 'current reference request about resolved history',
-      actor: null,
-      committed: false
-    };
-  }
-  const knownAnswer = findKnownAnswer(doc, isQuestion);
-  const sourceOfTruth = findSourceOfTruth(systemResult, symptom, organisationConfig, doc);
-  const differential = detectDifferential(doc, symptom, scopeResult);
   const activeIncident = has(doc, ACTIVE_INCIDENT_PHRASES);
   const escalated = has(doc, ESCALATION_PHRASES);
-  const slaBreached = has(doc, SLA_BREACH_PHRASES);
-  const supportContext = detectExplicitSupportContext(doc);
-  const relevance = assessInputRelevance({
-    doc, systemResult, symptom, domainResult, workTypeResult, risks,
-    serviceManagementSignal: activeIncident || slaBreached ||
-      decisionContext.status !== 'active-or-unspecified',
-    supportContext
-  });
+  const relevance = assessInputRelevance({ systemResult, symptom, risks, serviceManagementSignal: activeIncident || decisionContext.status !== 'active-or-unspecified' });
   const inScope = relevance.inScope;
 
-  // Without a recognised support subject, pronouns such as "this" and "it"
-  // have no safe referent. Do not let their surrounding scope, deadline, or
-  // workaround language answer a triage question; an analyst's explicit
-  // refinement remains authoritative.
   if (!inScope) {
-    if (!applied.scope) {
-      scopeResult = {
-        ...scopeResult, scope: 'unknown', label: scopeLabel('unknown'), explicit: false,
-        allUsers: false, evidence: []
-      };
-    }
-    if (!applied.workaround) {
-      workaroundResult = {
-        ...workaroundResult, workaround: 'unknown', label: workaroundLabel('unknown'), evidence: []
-      };
-    }
-    if (!applied.deadline) {
-      deadlineResult = {
-        ...deadlineResult, deadline: 'unknown', label: deadlineLabel('unknown'),
-        committed: false, asserted: false, evidence: []
-      };
-    }
-    if (!applied.driver) {
-      driver = { driver: 'unknown', label: null, quote: null, actor: null, committed: false };
-    }
+    if (!applied.scope) scopeResult = { ...scopeResult, scope: 'unknown', label: scopeLabel('unknown'), explicit: false, allUsers: false, evidence: [] };
+    if (!applied.workaround) workaroundResult = { ...workaroundResult, workaround: 'unknown', label: workaroundLabel('unknown'), evidence: [] };
+    if (!applied.deadline) deadlineResult = { ...deadlineResult, deadline: 'unknown', label: deadlineLabel('unknown'), committed: false, asserted: false, evidence: [] };
+    if (!applied.driver) driver = { driver: 'unknown', label: null, quote: null, actor: null, committed: false };
   }
 
-  // --- impact and urgency ----------------------------------------------
-  const impactResult = assessImpact(doc, {
-    scopeResult, symptom, riskResult: effectiveRisk, deadlineResult, systemResult,
-    consequence: blockedProcess, harmTiming
-  });
-  let urgencyResult = assessUrgency(doc, {
-    deadlineResult, workaroundResult, symptom, scopeResult, riskResult: effectiveRisk,
-    differential, driver, harmTiming, consequence: blockedProcess
-  });
+  const impactResult = assessImpact(doc, { scopeResult, symptom, riskResult: effectiveRisk, deadlineResult, systemResult, consequence: blockedProcess, harmTiming });
+  let urgencyResult = assessUrgency(doc, { deadlineResult, workaroundResult, symptom, scopeResult, riskResult: effectiveRisk, differential: null, driver, harmTiming, consequence: blockedProcess });
 
   const impactBase = impactResult.impact;
   const urgencyBase = urgencyResult.urgency;
@@ -1224,39 +559,20 @@ export function analyse(rawText, overrides = {}) {
     urgency: urgencyBase,
     evidence: policyEvidence({
       risks, modifiers, symptom, deadlineResult, scopeResult, workaroundResult,
-      expectedBehaviour, immediateNeed, workTypeResult, activeIncident,
-      decisionContext, inScope, driver, harmTiming, recoverability,
-      systemResult, domainResult, containment, urgencyResult, blockedProcess,
-      deadlineSoft
+      workTypeResult, activeIncident, decisionContext, inScope, driver, harmTiming,
+      recoverability, systemResult, containment, urgencyResult, blockedProcess
     })
   });
-  urgencyResult = {
-    ...urgencyResult,
-    urgency: modified.urgency,
-    floorApplied: modified.floorApplied,
-    policyIds: modified.policyIds
-  };
+  urgencyResult = { ...urgencyResult, urgency: modified.urgency, floorApplied: modified.floorApplied, policyIds: modified.policyIds };
 
-  // The analyst's explicit call wins over every automatic rule.
   const impact = applied.impact || modified.impact;
   const urgency = applied.urgency || modified.urgency;
   const priority = priorityFor(impact, urgency);
 
-  // Re-run the scoring with a hypothetical answer, to rank follow-up questions
-  // by whether they could move the matrix cell ("would change priority").
   const simulate = (ov = {}) => {
-    const scopeR = ov.scope
-      ? { ...scopeResult, scope: ov.scope, label: scopeLabel(ov.scope), explicit: true, allUsers: false }
-      : scopeResult;
-    const deadlineR = ov.deadline
-      ? { ...deadlineResult, deadline: ov.deadline, label: deadlineLabel(ov.deadline), committed: true, asserted: false }
-      : deadlineResult;
-    const workaroundR = ov.workaround
-      ? { ...workaroundResult, workaround: ov.workaround, label: workaroundLabel(ov.workaround) }
-      : workaroundResult;
-    const consequenceR = ov.consequence
-      ? { level: ov.consequence, quote: 'hypothetical answer', source: 'manual' }
-      : blockedProcess;
+    const scopeR = ov.scope ? { ...scopeResult, scope: ov.scope, label: scopeLabel(ov.scope), explicit: true, allUsers: false } : scopeResult;
+    const deadlineR = ov.deadline ? { ...deadlineResult, deadline: ov.deadline, label: deadlineLabel(ov.deadline), committed: true, asserted: false } : deadlineResult;
+    const workaroundR = ov.workaround ? { ...workaroundResult, workaround: ov.workaround, label: workaroundLabel(ov.workaround) } : workaroundResult;
     const mods = {
       ...modifiers,
       propagating: Boolean(modifiers.propagating || (ov.propagating && risks.dataIntegrity)),
@@ -1264,107 +580,62 @@ export function analyse(rawText, overrides = {}) {
       decisionRisk: Boolean(modifiers.decisionRisk || (ov.decisionRisk && (symptom.isDataIssue || risks.dataIntegrity)))
     };
     const riskSim = { ...effectiveRisk, modifiers: mods };
-    const imp = assessImpact(doc, {
-      scopeResult: scopeR, symptom, riskResult: riskSim, deadlineResult: deadlineR, systemResult,
-      consequence: consequenceR, harmTiming
-    });
-    const urg = assessUrgency(doc, {
-      deadlineResult: deadlineR, workaroundResult: workaroundR, symptom,
-      scopeResult: scopeR, riskResult: riskSim, differential, driver, harmTiming,
-      consequence: consequenceR
-    });
-    const mod = applyTriagePolicy({
-      impact: imp.impact,
-      urgency: urg.urgency,
-      evidence: policyEvidence({
-        risks, modifiers: mods, symptom, deadlineResult: deadlineR,
-        scopeResult: scopeR, workaroundResult: workaroundR, workTypeResult,
-        expectedBehaviour, immediateNeed, activeIncident, decisionContext, inScope,
-        driver, harmTiming, recoverability, systemResult, domainResult,
-        containment, urgencyResult: urg, blockedProcess: consequenceR
-      })
-    });
-    return priorityFor(mod.impact, mod.urgency);
+    const imp = assessImpact(doc, { scopeResult: scopeR, symptom, riskResult: riskSim, deadlineResult: deadlineR, systemResult, consequence: blockedProcess, harmTiming });
+    const urg = assessUrgency(doc, { deadlineResult: deadlineR, workaroundResult: workaroundR, symptom, scopeResult: scopeR, riskResult: riskSim, differential: null, driver, harmTiming, consequence: blockedProcess });
+    return priorityFor(imp.impact, urg.urgency);
   };
 
-  // The one or two facets whose unknown answer could flip this ticket's cell.
   const keyFacets = [];
-  {
-    const changes = (tests) => tests.some((t) => simulate(t) !== priority);
-    if (!scopeResult.explicit && changes([{ scope: 'all-schools' }, { scope: 'one-school' }])) keyFacets.push('i1');
-    if ((!blockedProcess || blockedProcess.level === 'unknown') &&
-        changes([{ consequence: 'blocked' }])) keyFacets.push('i2');
-    if (deadlineResult.deadline === 'unknown' && changes([{ deadline: 'today' }, { deadline: 'days-2-5' }])) keyFacets.push('u5');
-    if (workaroundResult.workaround === 'unknown' && changes([{ workaround: 'no' }, { workaround: 'yes' }])) keyFacets.push('u7');
-    if (risks.dataIntegrity && !modifiers.propagating && changes([{ propagating: true }])) keyFacets.push('i4');
-    if ((risks.privacy || risks.security) && !modifiers.exposureActive && changes([{ exposureActive: true }])) keyFacets.push('u8');
-    if (driver.driver === 'unknown' && deadlineResult.deadline !== 'unknown' &&
-        deadlineResult.deadline !== 'none' && urgencyResult.floorApplied &&
-        priorityFor(impact, 'low') !== priority) keyFacets.push('u6');
-  }
+  const changes = (tests) => tests.some((t) => simulate(t) !== priority);
+  if (!scopeResult.explicit && changes([{ scope: 'all-schools' }, { scope: 'one-school' }])) keyFacets.push('i1');
+  if ((!blockedProcess || blockedProcess.level === 'unknown') && changes([{ consequence: 'blocked' }])) keyFacets.push('i2');
+  if (deadlineResult.deadline === 'unknown' && changes([{ deadline: 'today' }, { deadline: 'days-2-5' }])) keyFacets.push('u5');
+  if (workaroundResult.workaround === 'unknown' && changes([{ workaround: 'no' }, { workaround: 'yes' }])) keyFacets.push('u7');
+  if (risks.dataIntegrity && !modifiers.propagating && changes([{ propagating: true }])) keyFacets.push('i4');
+  if ((risks.privacy || risks.security) && !modifiers.exposureActive && changes([{ exposureActive: true }])) keyFacets.push('u8');
 
-  // --- explanation ------------------------------------------------------
   const confidenceResult = assessConfidence(doc, {
     scopeResult, deadlineResult, workaroundResult, symptom, systemResult,
-    impactResult, urgencyResult, overridesApplied, isQuestion, inScope,
-    consequence: blockedProcess
+    impactResult, urgencyResult, overridesApplied, isQuestion, inScope, consequence: blockedProcess
   });
 
-  // Almost nothing was recognised. That is not evidence of low priority - it
-  // is evidence that the ticket cannot be assessed yet, and the card must say
-  // so rather than quietly returning P4.
-  const sparseUnrecognisedRequest =
-    decisionContext.status === 'active-or-unspecified' &&
-    symptom.severity === 0 &&
-    !scopeResult.explicit &&
-    !systemResult.primary &&
-    deadlineResult.deadline === 'unknown' &&
-    !Object.values(risks).some(Boolean) &&
-    workTypeResult.workType === 'unknown' &&
-    doc.wordCount < 10 &&
-    !isQuestion;
+  const sparseUnrecognisedRequest = decisionContext.status === 'active-or-unspecified' &&
+    symptom.severity === 0 && !scopeResult.explicit && !systemResult.primary &&
+    deadlineResult.deadline === 'unknown' && !Object.values(risks).some(Boolean) &&
+    doc.wordCount < 10 && !isQuestion;
   const insufficientInformation = !inScope || sparseUnrecognisedRequest;
   const assessmentStatus = insufficientInformation ? 'unassessed' : 'assessed';
   const suggestedPriority = insufficientInformation ? null : priority;
 
   const missingInfo = buildMissingInformation({
-    scopeResult, deadlineResult, workaroundResult, systemResult, symptom,
-    risks, modifiers, urgencyResult, impactResult, expectedBehaviour,
-    doc, domainResult, isQuestion, knownAnswer, sourceOfTruth, differential,
-    recurring, undetected, inScope, containment, driver, harmTiming, blockedProcess,
-    simulate, currentPriority: priority, currentImpact: impact
+    scopeResult, deadlineResult, workaroundResult, systemResult, symptom, risks,
+    modifiers, urgencyResult, impactResult, doc, isQuestion, inScope, containment,
+    driver, harmTiming, blockedProcess, simulate, currentPriority: priority, currentImpact: impact
   });
-  // Advisory-only: this is downstream of the frozen v0.8 scoring path.
+
   const nextAction = recommendNextAction(nextActionEvidence({
-    assessmentStatus, workTypeResult, blockedProcess, deadlineResult,
-    workaroundResult, containment, harmTiming, symptom, risks, modifiers,
-    riskResult, sourceOfTruth, urgencyResult, evidenceFacts: evidenceLedger.all(),
-    applied, decisionContext, decisionText
+    assessmentStatus, workTypeResult, blockedProcess, deadlineResult, workaroundResult,
+    containment, harmTiming, symptom, risks, modifiers, urgencyResult, applied, decisionContext
   }));
 
   const rules = modified.rules.slice();
-  if (applied.impact) {
-    rules.push({ label: 'Impact manually set to ' + LEVEL_LABELS[applied.impact] + '.', direction: 'manual' });
-  }
-  if (applied.urgency) {
-    rules.push({ label: 'Urgency manually set to ' + LEVEL_LABELS[applied.urgency] + '.', direction: 'manual' });
-  }
+  if (applied.impact) rules.push({ label: 'Impact manually set to ' + LEVEL_LABELS[applied.impact] + '.', direction: 'manual' });
+  if (applied.urgency) rules.push({ label: 'Urgency manually set to ' + LEVEL_LABELS[applied.urgency] + '.', direction: 'manual' });
+
+  const riskFlags = Object.entries(risks).filter(([, value]) => value).map(([key]) => ({ key, label: RISK_LABELS[key] || key }));
 
   const reasoning = buildReasoning({
-    scopeResult, systemResult, domainResult, symptom, workaroundResult,
-    deadlineResult, impactResult, urgencyResult, rules, priority,
-    impact, urgency, expectedBehaviour, impactBase, urgencyBase, knownAnswer, isQuestion,
-    sourceOfTruth, differential, escalated, recurring, undetected, inScope,
-    containment, driver, harmTiming, blockedProcess, decisionContext
+    scopeResult, systemResult, symptom, workaroundResult, deadlineResult, rules,
+    priority, impact, urgency, impactBase, urgencyBase, isQuestion, recurring,
+    undetected, inScope, containment, driver, harmTiming, blockedProcess, escalated,
+    decisionContext, riskFlags, urgencyResult
   });
 
   const evidenceDetail = [
     ...decisionContext.evidence,
-    ...(supportContext?.evidence || []),
     ...systemResult.evidence,
     ...scopeResult.evidence,
     ...symptom.evidence,
-    ...domainResult.evidence,
     ...workaroundResult.evidence,
     ...deadlineResult.evidence,
     ...recoverability.evidence,
@@ -1372,71 +643,32 @@ export function analyse(rawText, overrides = {}) {
     ...effectiveRisk.evidence
   ];
 
-  // 8-question facets for the dedicated panel
-  const eightFacets = {
-    i1Scope: { question: 'Who and how many are affected?', answer: scopeResult.label, value: scopeResult.scope, explicit: scopeResult.explicit, quote: scopeResult.evidence[0]?.quote || null },
-    // I2 is the business process that cannot continue. A technical symptom can
-    // identify the failure mode, but must not be relabelled as its consequence.
-    i2Blocked: { question: 'What can they not do that they could do yesterday?', answer: blockedProcess ? blockedProcess.label : 'Not stated', quote: blockedProcess?.quote || null, blockedProcess },
-    i3Irreversibility: {
-      question: 'Is anything wrong, exposed, lost or unsafe — and can it be recovered?',
-      answer: irreversibilityAnswer(symptom, risks, modifiers, recoverability),
-      risks: Object.keys(risks).filter(k => risks[k]),
-      modifiers,
-      recoverability: {
-        value: recoverability.value,
-        quote: recoverability.quote,
-        evidence: recoverability.evidence
-      }
-    },
-    i4Containment: { question: 'Contained or spreading / recurring / unknown extent?', answer: containment.summary, containment },
-    u5Deadline: { question: 'When do you need this by?', answer: deadlineResult.label, value: deadlineResult.deadline, committed: deadlineResult.committed, quote: deadlineResult.evidence[0]?.quote || null },
-    u6Driver: { question: 'What creates the deadline — a requirement or a preference?', answer: driver.driver === 'unknown' ? 'Not stated' : driver.label, driver },
-    u7Workaround: { question: 'Can work continue — and at what daily cost?', answer: workaroundResult.label + (workaroundResult.costPerDay ? ' (' + workaroundResult.costPerDay + ')' : ''), workaround: workaroundResult.workaround, costPerDay: workaroundResult.costPerDay },
-    u8HarmTiming: { question: 'Harm happening now or waiting to happen? (expired vs expiring)', answer: harmTiming.timing === 'unknown' ? 'Not stated' : harmTiming.label, harmTiming }
-  };
-
-  const riskFlags = Object.entries(risks)
-    .filter(([, value]) => value)
-    .map(([key]) => ({ key, label: RISK_LABELS[key] || key }));
+  const eightFacets = buildEightFacets({ scopeResult, blockedProcess, symptom, risks, modifiers, recoverability, containment, deadlineResult, driver, workaroundResult, harmTiming });
 
   return {
     empty: false,
-
-    // headline
     priority,
     suggestedPriority,
     assessmentStatus,
     nextAction,
-    justification: buildJustification({
-      scopeResult, workaroundResult, deadlineResult, symptom,
-      riskFlags: Object.entries(risks).filter(([, v]) => v)
-        .map(([k]) => ({ key: k, label: RISK_LABELS[k] || k })),
-      impact, urgency, priority, inScope
-    }),
+    justification: buildJustification({ scopeResult, workaroundResult, deadlineResult, symptom, riskFlags, impact, urgency, priority, inScope }),
     priorityName: priorityDefinition(priority).name,
     priorityHeadline: priorityDefinition(priority).headline,
 
-    // matrix inputs
     impact,
     urgency,
     impactLabel: LEVEL_LABELS[impact],
     urgencyLabel: LEVEL_LABELS[urgency],
 
-    // classification
     workType: workTypeResult.workType,
-    workTypeLabel: workTypeLabel(workTypeResult.workType),
-    technicalDomain: domainResult.domain,
-    technicalDomainLabel: domainLabel(domainResult.domain),
+    workTypeLabel: workTypeResult.label,
+    technicalDomain: 'unknown',
+    technicalDomainLabel: 'Not classified',
     symptom: symptom.symptom,
     symptomLabel: symptom.label,
     system: systemResult.primary ? systemResult.primary.name : null,
     systems: systemResult.systems.map((s) => s.name),
-    systemDetails: systemResult.systems.map((system) => {
-      const { firstIndex, ...detail } = system;
-      return detail;
-    }),
-    platformCategories: [...new Set(systemResult.systems.flatMap((system) => system.categories || []))],
+    platformCategories: [],
     scope: scopeResult.scope,
     scopeLabel: scopeResult.label,
     workaround: workaroundResult.workaround,
@@ -1445,18 +677,13 @@ export function analyse(rawText, overrides = {}) {
     deadlineLabel: deadlineResult.label,
     recoverability: recoverability.value,
     consequence: blockedProcess?.level || 'unknown',
-    businessConsequence: blockedProcess || {
-      level: 'unknown', process: null, label: 'Business consequence not stated',
-      quote: null, source: 'unknown', evidence: []
-    },
+    businessConsequence: blockedProcess || { level: 'unknown', process: null, label: 'Business consequence not stated', quote: null, source: 'unknown', evidence: [] },
 
-    // risk
     risks,
     riskFlags,
     riskModifiers: modifiers,
     dismissedRisks: riskResult.dismissed,
 
-    // confidence and explanation
     confidence: confidenceResult.confidence,
     confidenceBand: confidenceResult.band,
     confidenceLabel: confidenceResult.label,
@@ -1467,10 +694,8 @@ export function analyse(rawText, overrides = {}) {
     inScope,
     decisionContext,
     insufficientInformation,
-    knownAnswer,
-    strippedChars: originalDoc.strippedChars,
-    sourceOfTruth,
-    differential,
+    sourceOfTruth: null,
+    differential: null,
     recurring,
     undetected,
     containment,
@@ -1490,50 +715,37 @@ export function analyse(rawText, overrides = {}) {
     followUpQuestionMeta: missingInfo.meta,
     keyFacets,
 
-    // explainability chain
     chain: {
       evidence: evidenceDetail.slice(0, 6),
       impact: {
         level: impact,
         label: LEVEL_LABELS[impact],
         score: impactResult.score,
-        drivers: impactResult.contributions
-          .filter((c) => c.value !== 0)
-          .sort((a, b) => Math.abs(b.value) - Math.abs(a.value))
-          .slice(0, 4)
+        drivers: impactResult.contributions.filter((c) => c.value !== 0).sort((a, b) => Math.abs(b.value) - Math.abs(a.value)).slice(0, 4)
       },
       urgency: {
         level: urgency,
         label: LEVEL_LABELS[urgency],
         score: urgencyResult.score,
-        drivers: urgencyResult.contributions
-          .filter((c) => c.value !== 0)
-          .sort((a, b) => Math.abs(b.value) - Math.abs(a.value))
-          .slice(0, 4)
+        drivers: urgencyResult.contributions.filter((c) => c.value !== 0).sort((a, b) => Math.abs(b.value) - Math.abs(a.value)).slice(0, 4)
       },
       modifiers: modified.rules,
       priority
     },
 
-    // raw detail, useful for tests and for the "show working" panel
     detail: {
       scope: scopeResult,
       deadline: deadlineResult,
       recoverability,
       workaround: workaroundResult,
       symptom,
-      domain: domainResult,
-      workTypeResult,
       impactResult,
       urgencyResult,
-      expectedBehaviour,
-      immediateNeed,
       relevance,
       overridesApplied: applied,
       wordCount: doc.wordCount,
       normalisedText: doc.text,
-      evidenceFacts: evidenceLedger.all(),
-      decisionText
+      evidenceFacts: evidenceLedger.all()
     }
   };
 }

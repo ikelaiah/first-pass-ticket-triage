@@ -1,16 +1,16 @@
 /**
- * Optional Node runner for the same test suite the browser page uses.
+ * Node runner for the v0.12.0 acceptance suite.
  *
  *   node tests/run.mjs
  *
  * The application itself never needs Node. This file exists so the suite can
- * run in a terminal or in CI as well as in tests/tests.html.
+ * run in a terminal or in CI, and so the privacy guarantee is verified by a
+ * static source scan on every run.
  */
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { runTests } from './tests.js';
-import { buildFacetCoverageReport, formatFacetCoverage } from './facet-report.js';
+import { runTests } from './triage.test.mjs';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 
@@ -25,9 +25,6 @@ for (const result of results) {
   const status = result.pass ? 'PASS' : 'FAIL';
   console.log(status + ' - ' + result.name + '  [' + result.message + ']');
 }
-
-console.log('\n== v0.7.1 semantic corpus coverage ' + '='.repeat(23));
-for (const line of formatFacetCoverage(buildFacetCoverageReport())) console.log(line);
 
 /* --- static privacy check: the app must contain no network calls --------- */
 
