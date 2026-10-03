@@ -393,6 +393,36 @@ export function has(doc, entries, options) {
   return scanPositive(doc, entries, options).length > 0;
 }
 
+/**
+ * Return the first non-negated match across a flat list of patterns, or null.
+ *
+ * Unlike `scan()`, this keeps pattern order and does not apply the
+ * longest-match filter, so it preserves the "first listed wording wins"
+ * behaviour some detectors rely on. Callers may supply a stricter negation
+ * test (for example, one that also guards access/exposure wording).
+ *
+ * @param {any} doc
+ * @param {(string|RegExp)[]} patterns
+ * @param {(doc: any, start: number, end: number) => boolean} [isNegatedFor]
+ * @returns {{ quote: string, start: number, end: number }|null}
+ */
+export function firstMatch(doc, patterns, isNegatedFor = isNegated) {
+  for (const pattern of patterns) {
+    const re = compile(pattern);
+    let m;
+    while ((m = re.exec(doc.text)) !== null) {
+      if (m[0] === '') {
+        re.lastIndex += 1;
+        continue;
+      }
+      const start = m.index;
+      const end = start + m[0].length;
+      if (!isNegatedFor(doc, start, end)) return { quote: m[0].trim(), start, end };
+    }
+  }
+  return null;
+}
+
 /** Index of the clause containing a character offset. */
 export function clauseIndexOf(doc, index) {
   return clauseAt(doc, index).clauseIndex;

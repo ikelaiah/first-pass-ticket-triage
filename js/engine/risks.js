@@ -5,7 +5,7 @@
  * applied, but they never map straight to a priority. "This system contains
  * PII" is not an incident; "parent details are visible to another parent" is.
  */
-import { scan, scanPositive, isNegated } from './negation.js';
+import { scan, scanPositive, firstMatch, isNegated } from './negation.js';
 import {
   PAYROLL_FAILURE_PHRASES,
   PAYROLL_SUCCESS_PHRASES,
@@ -28,25 +28,14 @@ export function emptyRisks() {
   }, {});
 }
 
-/** Run a modifier pattern list, honouring negation. */
+/** Run a modifier pattern list, honouring negation and the access guard. */
 function matchModifier(doc, patterns) {
-  for (const pattern of patterns) {
-    const re = new RegExp(
-      pattern.source,
-      pattern.flags.includes('g') ? pattern.flags : pattern.flags + 'g'
-    );
-    let m;
-    while ((m = re.exec(doc.text)) !== null) {
-      if (m[0] === '') {
-        re.lastIndex += 1;
-        continue;
-      }
-      if (!isNegated(doc, m.index, m.index + m[0].length) && !accessIsNegated(doc, m.index)) {
-        return { quote: m[0].trim(), index: m.index };
-      }
-    }
-  }
-  return null;
+  const hit = firstMatch(
+    doc,
+    patterns,
+    (d, start, end) => isNegated(d, start, end) || accessIsNegated(d, start)
+  );
+  return hit ? { quote: hit.quote, index: hit.start } : null;
 }
 
 // The generic negation linker deliberately does not treat "one" as a linker:

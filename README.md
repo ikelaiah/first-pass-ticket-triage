@@ -25,6 +25,10 @@ runtime dependencies.
 4. Read the verdict, then **Ask the requester** for the unknowns that could change it.
 5. Answer any you already know in **Refine assessment** — the priority recalculates live.
 
+v0.14.0: **Readable and maintainable.** The pipeline, phrase dictionaries and
+result card were split into focused modules; the three re-implemented matchers
+now share one helper. No behaviour change.
+
 v0.13.0: **Usable and learnable.** A prominent _Ask the requester_ block with
 _Copy all questions_, a sticky jump-to index, a live refine verdict, featured
 examples, and accessibility and mobile fixes.
@@ -170,13 +174,28 @@ first-pass-triage/
 │   │   ├── policy.js           the hard-safety calibration
 │   │   ├── confidence.js       how much was actually known
 │   │   ├── next-action.js      Safe Next Action advisory
-│   │   └── priority-matrix.js  the authoritative Impact × Urgency table
+│   │   ├── priority-matrix.js  the authoritative Impact × Urgency table
+│   │   ├── decision-context.js   the explicit-resolution rule
+│   │   ├── blocked-process.js    I2  blocked / impaired business process
+│   │   ├── input-relevance.js    the support-signal boundary
+│   │   ├── facets.js             I1–I4/U5–U8 projections for the card
+│   │   ├── follow-up-questions.js ranked missing information
+│   │   ├── reasoning.js          the reasoning list and one-line justification
+│   │   ├── policy-evidence.js    adapter to the policy layer
+│   │   ├── next-action-evidence.js adapter to Safe Next Action
+│   │   └── overrides.js          manual refinement validation
 │   ├── data/
-│   │   ├── phrases.js          every phrase dictionary
+│   │   ├── phrases.js          the phrase-dictionary barrel
+│   │   ├── phrases/            one module per facet (scope, urgency, deadline,
+│   │   │                       workaround, symptoms, risks, framework, shared)
 │   │   ├── systems.js          configured system detection
 │   │   └── examples.js         the example tickets
-│   └── ui/                     render-result, render-matrix, refine-controls,
-│                               reply, handoff, share, clipboard, dom
+│   └── ui/
+│       ├── render-result.js    composes the result card
+│       ├── render/             banner, ask, chain, eight-questions, projections, panel
+│       ├── render-matrix.js    the interactive matrix
+│       ├── refine-controls.js  the refinement panel
+│       ├── reply.js handoff.js share.js clipboard.js dom.js
 ├── tests/
 │   ├── tests.html              browser test page
 │   ├── triage.test.mjs         the acceptance assertions

@@ -1,5 +1,37 @@
 # Changelog
 
+## [0.14.0] - 2026-10-03 — Readable and Maintainable
+
+A structure-only release. The triage model and every result are unchanged; the
+code was split into focused modules so it is easier to read, navigate and
+change.
+
+### Changed
+
+- `js/engine/analyzer.js` is now a thin pipeline. The pieces moved into their
+  own modules: `decision-context`, `blocked-process`, `input-relevance`,
+  `facets`, `follow-up-questions`, `reasoning`, `policy-evidence`,
+  `next-action-evidence` and `overrides`.
+- `js/data/phrases.js` is a barrel over `js/data/phrases/`, one module per
+  facet (`scope`, `urgency`, `deadline`, `workaround`, `symptoms`, `risks`,
+  `framework`) plus `shared` for matchers used by more than one facet.
+- `js/ui/render-result.js` composes the card from `js/ui/render/`: `banner`,
+  `ask`, `chain`, `eight-questions`, `projections` and `panel`.
+- The three re-implemented matchers in `risks.js`, `containment.js` and
+  `harm-timing.js` now share `firstMatch()` from `negation.js`, keeping each
+  detector's own negation predicate.
+- Every extracted module documents its responsibility and uses one export
+  convention (`detect*` / `assess*` / `build*`).
+- `README.md` and `docs/architecture.md` updated for the new layout.
+
+### Verified
+
+- No behaviour change: `npm run check` green (ESLint, Prettier, `tsc --noEmit`,
+  85 acceptance assertions and the privacy source scan).
+- Headless-Chrome checks of the P1 result card and the no-ticket page, matching
+  the v0.13.0 output.
+- `docsprout check` passes (3 sections, 7 pages).
+
 ## [0.13.0] - 2026-10-03 — Usable and Learnable
 
 The usability release. It keeps the v0.12 model unchanged and reshapes the result
