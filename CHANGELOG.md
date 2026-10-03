@@ -1,5 +1,63 @@
 # Changelog
 
+## [0.12.0] - 2026-10-03 — Core Simplification
+
+A deliberate reduction of the project to the eight-question model and the
+3x3 matrix. The tool now detects what the ticket states and asks about the
+rest, instead of inferring facts from configuration and prose.
+
+### Removed
+
+- Removed the generic Pre-K-12 platform catalogue (`js/data/platform-catalogue.js`,
+  ~1,960 lines) and its source document and reconciliation test. Platform
+  categories never contributed to Impact, Urgency or the matrix; unrecognised
+  platforms now lower confidence and become a follow-up question.
+- Removed the inference layers: decision-context history (`context.js`),
+  technical-domain classifier (`domain.js`), work-type classifier
+  (`work-type.js`), support-context detector (`support-context.js`), the
+  scheduled-job "expected behaviour" and "known answer" logic, source-of-truth
+  flows, differential diagnosis, continuity fallback and status-consequence
+  inference.
+- Removed the organisation-config blocks that fed those layers:
+  `scheduledJobs`, `dataFlows`, `statusConsequences` and `businessCycles`.
+- Removed the v0.8.0 policy table (34 rules) except the hard-safety floor.
+- Removed the evaluation, holdout, facet, catalogue and per-feature test
+  machinery, all frozen corpora, and the historical `docs/` and `tasks/`
+  documents.
+
+### Changed
+
+- Rewrote the pipeline (`js/engine/analyzer.js`) to: normalise text, read the
+  eight decision questions and symptom severity, score Impact and Urgency, apply
+  a small safety calibration, then resolve P1–P4 only through the matrix. Every
+  unknown that could move the cell becomes a ranked follow-up question.
+- Kept one context rule: an explicit "resolved" update is not scored as live.
+- Simplified `policy.js` to the safety floor (resolution, confirmed same-day
+  financial failure, active exposure, compromised account, lost device,
+  safety/safeguarding, propagation, unrecoverable loss, costly workaround,
+  active-incident recovery).
+- Decoupled system detection from the catalogue; it now uses only the
+  organisation's configured aliases.
+- Retained Safe Next Action, Triage Handoff and the suggested reply as pure
+  projections that cannot change Impact, Urgency or the priority.
+- Added a coverage fix so "visible to the wrong person" flags privacy and
+  active exposure.
+
+### Verified
+
+- 51 acceptance assertions pass: the matrix, each of the eight questions,
+  21 framework worked examples, the hard safety invariants, the advisory
+  projections and the share link.
+- Static privacy scan passes; headless-Chrome load of a shared ticket renders
+  the full result card with no console errors.
+
+### Behaviour change
+
+- A subject-less report (for example "Just reporting an issue") and a bare
+  feature request with no named system are now **unassessed** with a follow-up
+  question, rather than being scored as P4. This is the intended "ask, don't
+  guess" contract.
+
 ## [0.11.1] - 2026-09-21 — Replacement Holdout Measurement
 
 ### Added

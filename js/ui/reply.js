@@ -60,7 +60,7 @@ export function buildReply(result) {
   return lines.join('\n');
 }
 
-/** Legacy eight-question Markdown slip retained for compatibility tests. */
+/** The eight-question Markdown slip (used by the handoff and the tests). */
 export function buildMarkdown(result) {
   if (!result || result.empty) return '';
   const assessed = result.assessmentStatus === 'assessed' && Boolean(result.suggestedPriority);

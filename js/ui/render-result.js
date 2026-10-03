@@ -74,10 +74,6 @@ function factChips(result) {
   const chips = [
     ['Scope', result.scopeLabel],
     ['System', result.system || 'Not identified'],
-    ['Platform category', result.platformCategories?.length
-      ? result.platformCategories.join('; ')
-      : 'Not identified'],
-    ['Domain', result.technicalDomainLabel],
     ['Symptom', result.symptomLabel],
     ['Work type', result.workTypeLabel],
     ['Workaround', result.workaroundLabel],
@@ -533,15 +529,6 @@ export function renderResult(container, result, options = {}) {
   replace(container, el('div', { class: 'result' }, [
     banner,
     nextActionSection(result),
-    result.knownAnswer
-      ? el('section', { class: 'known-answer' }, [
-          el('h3', {}, 'This may already be answered'),
-          el('p', { class: 'known-answer-text' }, result.knownAnswer.answer),
-          el('p', { class: 'muted' },
-            'From the configured "' + result.knownAnswer.job + '" schedule. ' +
-            'Confirm it still matches the environment before replying.')
-        ])
-      : null,
     result.justification
       ? el('div', { class: 'justification-line' }, [
           el('span', { class: 'justification-text' }, result.justification),
@@ -569,11 +556,6 @@ export function renderResult(container, result, options = {}) {
             'priority is suggested yet - a request this thin can still turn out to be serious.'),
           el('p', { class: 'muted' }, 'The questions below are the ones worth asking first.')
         ])
-      : null,
-    result.strippedChars > 200
-      ? el('p', { class: 'stripped-note' },
-          'Ignored about ' + result.strippedChars.toLocaleString() +
-          ' characters of email signatures, disclaimers and image references.')
       : null,
     panel('Triage Handoff', handoffSection(result), 'panel-handoff'),
     // Eight questions panel — the framework, visible on every result
