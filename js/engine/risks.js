@@ -20,6 +20,7 @@ export const RISK_LABELS = RISK_DEFINITIONS.reduce((acc, r) => {
   return acc;
 }, {});
 
+/** @returns {Record<string, boolean>} */
 export function emptyRisks() {
   return RISK_KEYS.reduce((acc, key) => {
     acc[key] = false;
@@ -30,10 +31,16 @@ export function emptyRisks() {
 /** Run a modifier pattern list, honouring negation. */
 function matchModifier(doc, patterns) {
   for (const pattern of patterns) {
-    const re = new RegExp(pattern.source, pattern.flags.includes('g') ? pattern.flags : pattern.flags + 'g');
+    const re = new RegExp(
+      pattern.source,
+      pattern.flags.includes('g') ? pattern.flags : pattern.flags + 'g'
+    );
     let m;
     while ((m = re.exec(doc.text)) !== null) {
-      if (m[0] === '') { re.lastIndex += 1; continue; }
+      if (m[0] === '') {
+        re.lastIndex += 1;
+        continue;
+      }
       if (!isNegated(doc, m.index, m.index + m[0].length) && !accessIsNegated(doc, m.index)) {
         return { quote: m[0].trim(), index: m.index };
       }
@@ -49,13 +56,15 @@ function matchModifier(doc, patterns) {
 function accessIsNegated(doc, start) {
   const clause = doc.clauses.find((candidate) => start >= candidate.start && start < candidate.end);
   const before = clause ? doc.text.slice(clause.start, start) : doc.text.slice(0, start);
-  return /\b(?:no one|nobody|not anyone|no user|no users)\b[^.;!?]{0,70}\b(?:can|could|is|are|able to|exposed|visible|accessible|has been shown|have been shown|has been given|have been given)\b[^.;!?]{0,30}$/i.test(before);
+  return /\b(?:no one|nobody|not anyone|no user|no users)\b[^.;!?]{0,70}\b(?:can|could|is|are|able to|exposed|visible|accessible|has been shown|have been shown|has been given|have been given)\b[^.;!?]{0,30}$/i.test(
+    before
+  );
 }
 
 /**
  * @param {object} doc
- * @param {object} context  { symptom, scope }
- * @returns {{ risks, modifiers, evidence, dismissed }}
+ * @param {Record<string, any>} context  { symptom, scope }
+ * @returns {any}
  */
 export function detectRisks(doc, context = {}) {
   const symptom = context.symptom || { hasFailure: false, isDataIssue: false };
@@ -87,18 +96,22 @@ export function detectRisks(doc, context = {}) {
 
   // Keep payroll terminology available to the domain classifier, but do not
   // turn an explicitly successful pay outcome into an active risk flag.
-  const successfulPayroll = scanPositive(doc, [{
-    m: PAYROLL_SUCCESS_PHRASES,
-    v: 'payroll-success',
-    label: 'Payroll success'
-  }]);
-  const payrollFailureEvidence = scanPositive(doc, [{
-    m: PAYROLL_FAILURE_PHRASES,
-    v: 'payroll-failure',
-    label: 'Payroll failure'
-  }]);
-  const hasPayrollFailureEvidence = payrollFailureEvidence.length > 0 ||
-    Boolean(matchModifier(doc, RISK_MODIFIERS.unpaidRisk));
+  const successfulPayroll = scanPositive(doc, [
+    {
+      m: PAYROLL_SUCCESS_PHRASES,
+      v: 'payroll-success',
+      label: 'Payroll success'
+    }
+  ]);
+  const payrollFailureEvidence = scanPositive(doc, [
+    {
+      m: PAYROLL_FAILURE_PHRASES,
+      v: 'payroll-failure',
+      label: 'Payroll failure'
+    }
+  ]);
+  const hasPayrollFailureEvidence =
+    payrollFailureEvidence.length > 0 || Boolean(matchModifier(doc, RISK_MODIFIERS.unpaidRisk));
   if (successfulPayroll.length && !hasPayrollFailureEvidence) {
     risks.payroll = false;
     for (let i = evidence.length - 1; i >= 0; i -= 1) {
@@ -164,16 +177,14 @@ export function detectRisks(doc, context = {}) {
     modifiers,
     rawModifiers,
     dismissed,
-    evidence: evidence.filter(
-      (e) => e.source !== 'risk-modifier' || modifiers[e.key]
-    )
+    evidence: evidence.filter((e) => e.source !== 'risk-modifier' || modifiers[e.key])
   };
 }
 
 const MODIFIER_MEANINGS = {
   unpaidRisk: 'people may not be paid',
   exposureActive: 'information is actively exposed',
-  crossPersonVisibility: 'someone can see another person\'s information',
+  crossPersonVisibility: "someone can see another person's information",
   crossPersonLink: 'a record is attached to the wrong person',
   propagating: 'incorrect data appears to be spreading',
   decisionRisk: 'data may be used to make a decision',

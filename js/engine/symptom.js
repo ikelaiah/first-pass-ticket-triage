@@ -28,13 +28,12 @@ export function symptomLabel(id) {
 /**
  * @returns {{
  *   symptom, label, severity, all, evidence,
- *   hasFailure, isOutage, isDataIssue, isDegraded, negatedSymptoms
+ *   hasFailure, isOutage, isDataIssue, isDegraded
  * }}
  */
 export function detectSymptom(doc) {
   const hits = scan(doc, SYMPTOMS);
   const positive = hits.filter((h) => !h.negated);
-  const negated = hits.filter((h) => h.negated);
 
   const seen = new Map();
   for (const hit of positive) {
@@ -50,9 +49,7 @@ export function detectSymptom(doc) {
     }
   }
 
-  const all = [...seen.values()].sort(
-    (a, b) => b.severity - a.severity || a.index - b.index
-  );
+  const all = [...seen.values()].sort((a, b) => b.severity - a.severity || a.index - b.index);
   const primary = all[0] || null;
 
   return {
@@ -64,7 +61,6 @@ export function detectSymptom(doc) {
     isOutage: all.some((s) => s.severity >= SEVERITY.OUTAGE),
     isDataIssue: all.some((s) => s.severity === SEVERITY.DATA),
     isDegraded: Boolean(primary) && primary.severity <= SEVERITY.DEGRADED && primary.severity > 0,
-    negatedSymptoms: negated.map((h) => ({ quote: h.quote, meaning: h.entry.label })),
     evidence: all.slice(0, 3).map((s) => ({
       quote: s.quote,
       meaning: s.label + ' detected',

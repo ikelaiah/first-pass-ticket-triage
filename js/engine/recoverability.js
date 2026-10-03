@@ -40,7 +40,13 @@ export function detectRecoverability(doc) {
     return {
       value: 'unrecoverable',
       quote: unrecoverable,
-      evidence: [{ quote: unrecoverable, meaning: 'data is explicitly not recoverable', source: 'recoverability' }]
+      evidence: [
+        {
+          quote: unrecoverable,
+          meaning: 'data is explicitly not recoverable',
+          source: 'recoverability'
+        }
+      ]
     };
   }
   const recoverable = firstMatch(doc?.text, RECOVERABLE);
@@ -48,7 +54,13 @@ export function detectRecoverability(doc) {
     return {
       value: 'recoverable',
       quote: recoverable,
-      evidence: [{ quote: recoverable, meaning: 'a recovery path is explicitly available', source: 'recoverability' }]
+      evidence: [
+        {
+          quote: recoverable,
+          meaning: 'a recovery path is explicitly available',
+          source: 'recoverability'
+        }
+      ]
     };
   }
   return { value: 'unknown', quote: null, evidence: [] };

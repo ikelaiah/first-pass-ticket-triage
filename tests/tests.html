@@ -1,66 +1,104 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en-AU">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>First Pass: Test Suite</title>
-<style>
-  :root { color-scheme: light dark; }
-  body { font: 14px/1.5 system-ui, sans-serif; margin: 2rem auto; max-width: 60rem; padding: 0 1rem; }
-  h1 { font-size: 1.3rem; }
-  .summary { font-weight: 700; margin: 1rem 0; }
-  .pass { color: #1a7f37; }
-  .fail { color: #b42318; }
-  .group { margin-top: 1.25rem; font-weight: 600; border-bottom: 1px solid #8884; padding-bottom: .25rem; }
-  ul { list-style: none; padding-left: 0; }
-  li { padding: .15rem 0; }
-  code { background: #8882; padding: 0 .25rem; border-radius: 3px; }
-  button { margin: .5rem 0; padding: .4rem .8rem; }
-</style>
-</head>
-<body>
-<h1>First Pass: Test Suite</h1>
-<p class="summary" id="summary">Running…</p>
-<button type="button" id="toggle">Show failures only</button>
-<div id="results"></div>
-<script type="module">
-  import { runTests } from './triage.test.mjs';
-
-  const summary = document.getElementById('summary');
-  const resultsEl = document.getElementById('results');
-  const toggle = document.getElementById('toggle');
-  let failuresOnly = false;
-
-  function render() {
-    const { results, passed, failed, total } = runTests();
-    summary.textContent = passed + ' passed, ' + failed + ' failed, ' + total + ' total';
-    summary.className = 'summary ' + (failed ? 'fail' : 'pass');
-    resultsEl.textContent = '';
-    let currentGroup = '';
-    for (const result of results) {
-      if (failuresOnly && result.pass) continue;
-      if (result.group !== currentGroup) {
-        currentGroup = result.group;
-        const h = document.createElement('div');
-        h.className = 'group';
-        h.textContent = currentGroup;
-        resultsEl.appendChild(h);
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>First Pass: Test Suite</title>
+    <style>
+      :root {
+        color-scheme: light dark;
       }
-      const li = document.createElement('li');
-      li.className = result.pass ? 'pass' : 'fail';
-      li.textContent = (result.pass ? 'PASS' : 'FAIL') + ' - ' + result.name +
-        (result.pass ? '' : '  [' + result.message + ']');
-      resultsEl.appendChild(li);
-    }
-  }
+      body {
+        font:
+          14px/1.5 system-ui,
+          sans-serif;
+        margin: 2rem auto;
+        max-width: 60rem;
+        padding: 0 1rem;
+      }
+      h1 {
+        font-size: 1.3rem;
+      }
+      .summary {
+        font-weight: 700;
+        margin: 1rem 0;
+      }
+      .pass {
+        color: #1a7f37;
+      }
+      .fail {
+        color: #b42318;
+      }
+      .group {
+        margin-top: 1.25rem;
+        font-weight: 600;
+        border-bottom: 1px solid #8884;
+        padding-bottom: 0.25rem;
+      }
+      ul {
+        list-style: none;
+        padding-left: 0;
+      }
+      li {
+        padding: 0.15rem 0;
+      }
+      code {
+        background: #8882;
+        padding: 0 0.25rem;
+        border-radius: 3px;
+      }
+      button {
+        margin: 0.5rem 0;
+        padding: 0.4rem 0.8rem;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>First Pass: Test Suite</h1>
+    <p class="summary" id="summary">Running…</p>
+    <button type="button" id="toggle">Show failures only</button>
+    <div id="results"></div>
+    <script type="module">
+      import { runTests } from './triage.test.mjs';
 
-  toggle.addEventListener('click', () => {
-    failuresOnly = !failuresOnly;
-    toggle.textContent = failuresOnly ? 'Show all' : 'Show failures only';
-    render();
-  });
+      const summary = document.getElementById('summary');
+      const resultsEl = document.getElementById('results');
+      const toggle = document.getElementById('toggle');
+      let failuresOnly = false;
 
-  render();
-</script>
-</body>
+      function render() {
+        const { results, passed, failed, total } = runTests();
+        summary.textContent = passed + ' passed, ' + failed + ' failed, ' + total + ' total';
+        summary.className = 'summary ' + (failed ? 'fail' : 'pass');
+        resultsEl.textContent = '';
+        let currentGroup = '';
+        for (const result of results) {
+          if (failuresOnly && result.pass) continue;
+          if (result.group !== currentGroup) {
+            currentGroup = result.group;
+            const h = document.createElement('div');
+            h.className = 'group';
+            h.textContent = currentGroup;
+            resultsEl.appendChild(h);
+          }
+          const li = document.createElement('li');
+          li.className = result.pass ? 'pass' : 'fail';
+          li.textContent =
+            (result.pass ? 'PASS' : 'FAIL') +
+            ' - ' +
+            result.name +
+            (result.pass ? '' : '  [' + result.message + ']');
+          resultsEl.appendChild(li);
+        }
+      }
+
+      toggle.addEventListener('click', () => {
+        failuresOnly = !failuresOnly;
+        toggle.textContent = failuresOnly ? 'Show all' : 'Show failures only';
+        render();
+      });
+
+      render();
+    </script>
+  </body>
 </html>

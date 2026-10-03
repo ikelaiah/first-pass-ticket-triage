@@ -49,8 +49,13 @@ export function buildReply(result) {
     'Thanks for raising this — here is where it stands.',
     '',
     'What we understood so far: ' + understood.join('; ') + '.',
-    'Suggested priority: ' + result.priority + ' (' + result.impactLabel +
-      ' impact, ' + result.urgencyLabel + ' urgency).',
+    'Suggested priority: ' +
+      result.priority +
+      ' (' +
+      result.impactLabel +
+      ' impact, ' +
+      result.urgencyLabel +
+      ' urgency).',
     priorityQs.length
       ? 'To confirm or change this, we still need: ' + priorityQs.join(' ')
       : 'The information provided is enough to proceed; no blocking questions remain.',
@@ -72,8 +77,13 @@ export function buildMarkdown(result) {
     return '| ' + label + ' | ' + String(item.answer).replace(/\|/g, '\\|') + ' |';
   };
   const out = [];
-  out.push('# Triage — ' + recommendation + ' (' +
-    (assessed ? result.priorityName : 'More information needed') + ')');
+  out.push(
+    '# Triage — ' +
+      recommendation +
+      ' (' +
+      (assessed ? result.priorityName : 'More information needed') +
+      ')'
+  );
   out.push('');
   out.push('- Impact: ' + result.impactLabel);
   out.push('- Urgency: ' + result.urgencyLabel);

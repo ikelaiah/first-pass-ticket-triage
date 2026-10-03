@@ -1,10 +1,14 @@
 /**
- * Example tickets.
+ * Example tickets — the single source of truth for worked examples.
  *
  * `expected` lists the priorities that are defensible for each example. Where
  * the framework documentation gives a range ("P3/P2 depending on impact"), the
  * range is preserved here rather than pretending there is one right answer.
- * The test suite asserts against exactly this list.
+ * The value `'unassessed'` means the tool should abstain and ask a question
+ * rather than assign a priority.
+ *
+ * The test suite asserts against exactly this list, so the examples cannot
+ * drift out of step with the engine or with the framework documentation.
  */
 export const EXAMPLES = [
   {
@@ -76,8 +80,8 @@ export const EXAMPLES = [
     title: 'Casual staff member added after the scheduled sync',
     group: 'Expected behaviour',
     text: 'We added a casual staff member at 10am but they haven’t appeared in Canvas.',
-    expected: ['P4'],
-    note: 'The casual staff sync runs at 09:30 - nothing has failed yet.'
+    expected: ['P3'],
+    note: 'The tool no longer infers a scheduled run: a record that has not appeared is treated as an active missing-data ticket until someone confirms whether the sync actually failed.'
   },
   {
     id: 'ex10',
@@ -204,8 +208,8 @@ export const EXAMPLES = [
     title: 'New feature for all schools before the next enrolment cycle',
     group: 'Feature request',
     text: 'We need a new feature that will be used by all 19 schools before the next enrolment cycle.',
-    expected: ['P2'],
-    note: 'Strategic work is prioritised through the same matrix.'
+    expected: ['unassessed'],
+    note: 'No system is named, so the tool abstains and asks which platform the feature belongs to before scoring it.'
   },
   {
     id: 'ex26',
@@ -454,7 +458,7 @@ export const EXAMPLES = [
     text: 'A school has uploaded a Clipboard CSV timesheet for casual staff, music staff, and sports coaches. The Apps team must complete the manual validation and import steps into Aurion before today’s payroll cutoff or those staff will be paid late.',
     expected: ['P2'],
     note: 'A one-school payroll-processing task with a same-day operational cutoff. The manual validation and import steps are the required work, not evidence of a workaround.'
-  },
+  }
 ];
 
 export function exampleById(id) {

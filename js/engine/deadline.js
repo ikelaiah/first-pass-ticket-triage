@@ -35,7 +35,12 @@ const STATE_ADVERB_NOW_RE =
   /^\s+(?:can not|can|cannot|could|will|would|may|might|must|should|does|do|did|has|have|is|are|was|were)\b/i;
 
 const ASSERTED_TIME_WORDS = [
-  'now', 'right now', 'immediately', 'straight away', 'this minute', 'any minute'
+  'now',
+  'right now',
+  'immediately',
+  'straight away',
+  'this minute',
+  'any minute'
 ];
 
 const COMMITMENT_RE = new RegExp(
@@ -52,8 +57,10 @@ const OBSERVATION_RE = new RegExp(
  */
 const COUNTERFACTUAL_RE = /\b(?:would have|could have|might have|would be|should have)\b/;
 const QUESTION_ABOUT_RE = /\b(?:a |the )?(?:question|enquiry|inquiry)\s+about\b/;
-const OBSERVED_STATE_RE = /\b(?:was|were|is|are)\s+(?:used|checked|observed)\b|\b(?:has|have)\s+happened\b/;
-const EXPLICIT_NO_REQUIREMENT_RE = /\b(?:no\s+(?:required[- ]by|requirement|deadline|due date)|nobody\s+has\s+(?:given|supplied|provided)(?:\s+\w+){0,2}\s+(?:a\s+)?required[- ]by\s+date)\b/i;
+const OBSERVED_STATE_RE =
+  /\b(?:was|were|is|are)\s+(?:used|checked|observed)\b|\b(?:has|have)\s+happened\b/;
+const EXPLICIT_NO_REQUIREMENT_RE =
+  /\b(?:no\s+(?:required[- ]by|requirement|deadline|due date)|nobody\s+has\s+(?:given|supplied|provided)(?:\s+\w+){0,2}\s+(?:a\s+)?required[- ]by\s+date)\b/i;
 
 /**
  * "Today we discover..." and "three schools logged this this morning" state
@@ -63,16 +70,22 @@ const EXPLICIT_NO_REQUIREMENT_RE = /\b(?:no\s+(?:required[- ]by|requirement|dead
 function isObservationOnly(clauseText) {
   if (COMMITMENT_RE.test(clauseText)) return false;
   if (QUESTION_ABOUT_RE.test(clauseText)) return true;
-  return OBSERVATION_RE.test(clauseText) || COUNTERFACTUAL_RE.test(clauseText) ||
-    OBSERVED_STATE_RE.test(clauseText);
+  return (
+    OBSERVATION_RE.test(clauseText) ||
+    COUNTERFACTUAL_RE.test(clauseText) ||
+    OBSERVED_STATE_RE.test(clauseText)
+  );
 }
 
 /** Clause indices where the requester said it is NOT needed yet. */
 function findNotNeededClauses(doc) {
   const indices = new Set();
   doc.clauses.forEach((clause, index) => {
-    if (NOT_NEEDED_PATTERNS.some((re) => re.test(clause.text)) ||
-        EXPLICIT_NO_REQUIREMENT_RE.test(clause.text)) indices.add(index);
+    if (
+      NOT_NEEDED_PATTERNS.some((re) => re.test(clause.text)) ||
+      EXPLICIT_NO_REQUIREMENT_RE.test(clause.text)
+    )
+      indices.add(index);
   });
   return indices;
 }
@@ -90,12 +103,13 @@ function bucketOfFragment(fragment) {
 }
 
 /**
- * @returns {{ deadline, label, committed, notNeededNow, evidence, candidates }}
+ * @returns {any}
  */
 export function detectDeadline(doc) {
   const notNeeded = findNotNeededClauses(doc);
   const explicitNoRequirement = doc.clauses.some((clause) =>
-    EXPLICIT_NO_REQUIREMENT_RE.test(clause.text));
+    EXPLICIT_NO_REQUIREMENT_RE.test(clause.text)
+  );
   const candidates = [];
 
   // "not needed until next week" - the tail carries the real deadline.
@@ -118,10 +132,14 @@ export function detectDeadline(doc) {
     const clause = doc.clauses[hit.clauseIndex];
     const clauseText = clause ? clause.text : doc.text;
     if (hit.quote === 'now' && STATE_ADVERB_NOW_RE.test(doc.text.slice(hit.end))) continue;
-    if (hit.quote === 'now' && clause &&
-        STATE_BEFORE_NOW_RE.test(doc.text.slice(clause.start, hit.start))) continue;
-    const suppressed = def.id !== 'none' &&
-      (notNeeded.has(hit.clauseIndex) || isObservationOnly(clauseText));
+    if (
+      hit.quote === 'now' &&
+      clause &&
+      STATE_BEFORE_NOW_RE.test(doc.text.slice(clause.start, hit.start))
+    )
+      continue;
+    const suppressed =
+      def.id !== 'none' && (notNeeded.has(hit.clauseIndex) || isObservationOnly(clauseText));
     if (suppressed) continue;
     candidates.push({
       bucket: def.id,
@@ -168,8 +186,6 @@ export function detectDeadline(doc) {
     explicitNoRequirement,
     notNeededNow: notNeeded.size > 0,
     candidates,
-    evidence: chosen
-      ? [{ quote: chosen.quote, meaning: chosen.meaning, source: 'deadline' }]
-      : []
+    evidence: chosen ? [{ quote: chosen.quote, meaning: chosen.meaning, source: 'deadline' }] : []
   };
 }

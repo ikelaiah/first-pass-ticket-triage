@@ -2,10 +2,14 @@
 
 > Local-first, explainable P1–P4 suggestions for IT and application support.
 
+v0.12.1: **Hygiene, tooling and docs.** Development checks (ESLint, Prettier,
+TypeScript), a single source of truth for the worked examples, dead-code removal,
+and a proper `docs/` set.
+
 v0.12.0: **Core simplification.** The project was reduced to the eight-question
 model and the 3×3 matrix. It now detects what a ticket states and asks about the
-rest, instead of inferring deadlines, consequences, upstream systems and
-platform categories from configuration.
+rest, instead of inferring deadlines, consequences, upstream systems and platform
+categories from configuration.
 
 Paste a messy ticket, email or work request. Get a suggested priority, the
 evidence behind it, the facts that are missing, and the questions worth asking
@@ -13,7 +17,7 @@ next. Plain HTML, CSS and vanilla JavaScript — no framework, no build step, no
 backend, no dependencies.
 
 The full contract — every input the priority is calculated from, and the eight
-decision questions — is [PRIORITY-FRAMEWORK.md](PRIORITY-FRAMEWORK.md).
+decision questions — is [PRIORITY-FRAMEWORK.md](https://github.com/ikelaiah/first-pass-ticket-triage/blob/main/PRIORITY-FRAMEWORK.md).
 
 ---
 
@@ -26,7 +30,7 @@ provider, no server, no analytics, no telemetry, no cookies, no account, no API
 key. The application contains no `fetch()`, `XMLHttpRequest`, `WebSocket`,
 `sendBeacon` or `EventSource` call, and loads no external font, script or
 stylesheet. Ticket text lives in memory only and disappears when you refresh or
-close the tab. See [PRIVACY.md](PRIVACY.md) to verify this yourself.
+close the tab. See [PRIVACY.md](https://github.com/ikelaiah/first-pass-ticket-triage/blob/main/PRIVACY.md) to verify this yourself.
 
 ---
 
@@ -41,7 +45,7 @@ close the tab. See [PRIVACY.md](PRIVACY.md) to verify this yourself.
   I3 Wrong/exposed/lost/unsafe — recoverable? · I4 Contained or spreading? ·
   U5 When needed? · U6 Requirement vs preference? · U7 Workaround cost? ·
   U8 Harm now or waiting? — each shown as Answered / Inferred / Unknown, with
-  *key driver* badges on the unknowns that could flip the cell
+  _key driver_ badges on the unknowns that could flip the cell
 - **Ask, don't guess** — an unknown that could change the priority becomes a
   ranked follow-up question instead of an inference
 - **Manual refinement** — confirm any question and watch the priority
@@ -102,18 +106,23 @@ Then open <http://localhost:8000>.
 On Windows, double-click **`serve.bat`** (a thin wrapper around `serve.ps1`).
 The dev server is not part of the application and is not deployed.
 
-### 🧪 Tests
+### 🧪 Tests and checks
 
 ```bash
-node tests/run.mjs      # 51 acceptance assertions + privacy source scan
-npm test                # same
+npm install     # once — dev-only tools (ESLint, Prettier, TypeScript)
+npm test        # acceptance suite + privacy source scan
+npm run check   # lint + format check + type check + tests
 ```
 
-Open <http://localhost:8000/tests/tests.html> to run the suite in a browser.
+The acceptance suite asserts the matrix, each of the eight questions, every
+worked example in `js/data/examples.js`, the safety invariants and the advisory
+projections. The Node runner also performs a static source scan that fails the
+build if any `fetch`, `XMLHttpRequest`, `WebSocket`, `sendBeacon` or remote asset
+reference is ever introduced.
 
-The Node runner also performs a static source scan that fails the build if any
-`fetch`, `XMLHttpRequest`, `WebSocket`, `sendBeacon` or remote asset reference is
-ever introduced.
+Open <http://localhost:8000/tests/tests.html> to run the same suite in a browser.
+The dev tools are development-only: the application itself has no dependencies
+and no build step.
 
 ---
 
@@ -155,7 +164,19 @@ first-pass-triage/
 │   ├── tests.html              browser test page
 │   ├── triage.test.mjs         the acceptance assertions
 │   └── run.mjs                 Node runner + privacy source scan
+├── docs/                       developer and user documentation
+│   ├── user-guide.md           how to use the tool
+│   ├── architecture.md         module map, pipeline and invariants
+│   ├── glossary.md             terms (facet, evidence ledger, projection, …)
+│   ├── contributing.md         dev setup, checks and pull requests
+│   ├── extending.md            add wording, a risk, a facet or an example
+│   ├── framework.md            pointer to the priority contract
+│   └── docsprout.json/layout.json  DocSprout (local preview only)
 ├── serve.bat / serve.ps1       local dev server for Windows (not deployed)
+├── eslint.config.js            ESLint (development only)
+├── .prettierrc.json            Prettier (development only)
+├── tsconfig.json               JavaScript type checking (development only)
+├── package.json                scripts and dev-only tooling
 ├── PRIORITY-FRAMEWORK.md       the authoritative contract
 ├── PRIVACY.md
 └── CHANGELOG.md
@@ -163,9 +184,23 @@ first-pass-triage/
 
 ---
 
+## 📚 Documentation
+
+- [User guide](docs/user-guide.md) — paste, read, ask, refine.
+- [Architecture](docs/architecture.md) — how the engine is put together.
+- [Glossary](docs/glossary.md) — the vocabulary.
+- [Contributing](docs/contributing.md) and [Extending the rules](docs/extending.md).
+- [PRIORITY-FRAMEWORK.md](https://github.com/ikelaiah/first-pass-ticket-triage/blob/main/PRIORITY-FRAMEWORK.md) — the authoritative priority contract.
+
+The `docs/` pages are plain Markdown. Preview them locally with
+[DocSprout](https://github.com/ikelaiah/docsprout): `pip install` the pinned
+release, then run `docsprout serve`. They are not deployed as a site.
+
+---
+
 ## 🔧 Configuration
 
-Organisation-specific values live in [`js/config.js`](js/config.js): the school
+Organisation-specific values live in [js/config.js](https://github.com/ikelaiah/first-pass-ticket-triage/blob/main/js/config.js): the school
 count and the known systems and their aliases. Adding a system or an alias needs
 no engine changes.
 
@@ -206,4 +241,4 @@ Ticket age must not silently increase impact or urgency.
 
 ## 📄 Licence
 
-[MIT](LICENSE).
+[MIT](https://github.com/ikelaiah/first-pass-ticket-triage/blob/main/LICENSE).

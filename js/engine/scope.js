@@ -4,7 +4,7 @@
  * Scope is deliberately allowed to stay "unknown". Inventing a scope is the
  * fastest way to produce a confident and wrong priority.
  */
-import { clauseIndexOf, scan, scanPositive } from './negation.js';
+import { clauseIndexOf, scanPositive } from './negation.js';
 import { createEvidenceLedger } from './evidence.js';
 import { SCOPE_DEFINITIONS, SCOPE_PHRASES, ALL_USERS_PHRASES } from '../data/phrases.js';
 import { organisationConfig } from '../config.js';
@@ -23,25 +23,44 @@ export function scopeLabel(id) {
 }
 
 /** People counts: "35 casual staff" -> team. Also "1847 records affected" -> cohort for batch data validation. */
-const PEOPLE_COUNT = /\b(\d{1,4})\s+(?:casual\s+|part[- ]time\s+|full[- ]time\s+|new\s+|additional\s+|affected\s+)?(staff|users|employees|teachers|students|people|parents|accounts|administrators|admins|adviser|advisers|registrar|registrars|timesheets|records|mailboxes|girls|boys|children|kids|pupils|applicants|enrolments|families|treaties)\b/g;
+const PEOPLE_COUNT =
+  /\b(\d{1,4})\s+(?:casual\s+|part[- ]time\s+|full[- ]time\s+|new\s+|additional\s+|affected\s+)?(staff|users|employees|teachers|students|people|parents|accounts|administrators|admins|adviser|advisers|registrar|registrars|timesheets|records|mailboxes|girls|boys|children|kids|pupils|applicants|enrolments|families|treaties)\b/g;
 
 const WRITTEN_NUMBER_VALUES = new Map([
-  ['one', 1], ['two', 2], ['three', 3], ['four', 4], ['five', 5],
-  ['six', 6], ['seven', 7], ['eight', 8], ['nine', 9], ['ten', 10],
-  ['eleven', 11], ['twelve', 12], ['thirteen', 13], ['fourteen', 14],
-  ['fifteen', 15], ['sixteen', 16], ['seventeen', 17], ['eighteen', 18],
-  ['nineteen', 19], ['twenty', 20]
+  ['one', 1],
+  ['two', 2],
+  ['three', 3],
+  ['four', 4],
+  ['five', 5],
+  ['six', 6],
+  ['seven', 7],
+  ['eight', 8],
+  ['nine', 9],
+  ['ten', 10],
+  ['eleven', 11],
+  ['twelve', 12],
+  ['thirteen', 13],
+  ['fourteen', 14],
+  ['fifteen', 15],
+  ['sixteen', 16],
+  ['seventeen', 17],
+  ['eighteen', 18],
+  ['nineteen', 19],
+  ['twenty', 20]
 ]);
 const PEOPLE_WORD_COUNT = new RegExp(
-  '\\b(' + [...WRITTEN_NUMBER_VALUES.keys()].join('|') +
-  ')\\s+(?:(?:casual|part[- ]time|full[- ]time|new|additional|affected)\\s+)?' +
-  '(staff|users|employees|teachers|students|people|parents|accounts|administrators|admins|adviser|advisers|registrar|registrars|timesheets|records|mailboxes|girls|boys|children|kids|pupils|applicants|enrolments|families|treaties)\\b', 'g'
+  '\\b(' +
+    [...WRITTEN_NUMBER_VALUES.keys()].join('|') +
+    ')\\s+(?:(?:casual|part[- ]time|full[- ]time|new|additional|affected)\\s+)?' +
+    '(staff|users|employees|teachers|students|people|parents|accounts|administrators|admins|adviser|advisers|registrar|registrars|timesheets|records|mailboxes|girls|boys|children|kids|pupils|applicants|enrolments|families|treaties)\\b',
+  'g'
 );
 
 // Rows and submitted forms are a batch of records, rather than a team of
 // people. Their count does not change the fact that the affected object is a
 // cohort of records that needs coordinated remediation.
-const BATCH_RECORD_COUNT = /\b(\d{1,4}|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty)\s+(?:submitted\s+)?(?:(?:enrolment|permission)\s+)?(?:rows?|forms?)\b/g;
+const BATCH_RECORD_COUNT =
+  /\b(\d{1,4}|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty)\s+(?:submitted\s+)?(?:(?:enrolment|permission)\s+)?(?:rows?|forms?)\b/g;
 
 /** School counts: "three schools" is handled by phrases, "4 schools" here. */
 const SCHOOL_COUNT = /\b(\d{1,3})\s+schools\b/g;
@@ -91,8 +110,10 @@ const NON_POPULATION_SUFFIX =
 
 function isValueNotPopulation(doc, quote, start, end) {
   if (!BARE_YEAR.test(quote)) return false;
-  return MOVEMENT_NEARBY.test(doc.text.slice(Math.max(0, start - 60), start)) ||
-    NON_POPULATION_SUFFIX.test(doc.text.slice(end, end + 40));
+  return (
+    MOVEMENT_NEARBY.test(doc.text.slice(Math.max(0, start - 60), start)) ||
+    NON_POPULATION_SUFFIX.test(doc.text.slice(end, end + 40))
+  );
 }
 
 /**
@@ -122,7 +143,8 @@ function isHistoricalOnlyHit(doc, start) {
   if (!HISTORICAL_SCOPE_MARKER.test(before)) return false;
   // A current display can show yesterday's values.  The possessive timestamp
   // qualifies the displayed data, not when the stated population is affected.
-  if (/\b(?:is|are|remain|remains|still)\s+(?:showing|displaying|listing)\b/i.test(before)) return false;
+  if (/\b(?:is|are|remain|remains|still)\s+(?:showing|displaying|listing)\b/i.test(before))
+    return false;
   const current = clause.text.search(CURRENT_SCOPE_MARKER);
   return current < 0 || current > before.length;
 }
@@ -154,8 +176,10 @@ function scopeTemporal(doc, start) {
 function isUnaffectedCount(doc, start, end) {
   const before = doc.text.slice(Math.max(0, start - 24), start);
   const after = doc.text.slice(end, end + 80);
-  return /\b(?:other|remaining)\s*$/i.test(before) &&
-    /\b(?:working|works|fine|normal|normally|unaffected|unimpacted)\b/i.test(after);
+  return (
+    /\b(?:other|remaining)\s*$/i.test(before) &&
+    /\b(?:working|works|fine|normal|normally|unaffected|unimpacted)\b/i.test(after)
+  );
 }
 
 function isComparison(doc, start, end) {
@@ -172,27 +196,30 @@ function isIndividualLocationDescriptor(doc, hit) {
   if (hit.entry.v !== 'one-school' || !/^at\s+.+\s+campus$/i.test(hit.quote)) return false;
   const clause = doc.clauses[hit.clauseIndex];
   const before = doc.text.slice(clause?.start || 0, hit.start);
-  return /\b(?:one|a)\s+(?:teacher|tutor|coordinator|staff member|student|employee|parent|guardian|user)\s*$/i.test(before);
+  return /\b(?:one|a)\s+(?:teacher|tutor|coordinator|staff member|student|employee|parent|guardian|user)\s*$/i.test(
+    before
+  );
 }
 
 function isUnaffectedComparison(doc, end) {
   return UNAFFECTED_COMPARISON_SUFFIX.test(doc.text.slice(end, end + 80));
 }
 
-/**
- * @returns {{
- *   scope: string, label: string, explicit: boolean, allUsers: boolean,
- *   candidates: Array, evidence: Array
- * }}
- */
+/** @returns {any} */
 export function extractScopeEvidence(doc, ledger = createEvidenceLedger(doc)) {
   const candidates = [];
   const addCandidate = (candidate) => {
     const fact = ledger.addFromHit({
-      type: 'scope', value: candidate.scope, quote: candidate.quote,
-      hit: candidate.hit, start: candidate.start, end: candidate.end,
-      clauseIndex: candidate.clauseIndex, authority: candidate.authority,
-      temporal: candidate.temporal, role: candidate.role || 'primary'
+      type: 'scope',
+      value: candidate.scope,
+      quote: candidate.quote,
+      hit: candidate.hit,
+      start: candidate.start,
+      end: candidate.end,
+      clauseIndex: candidate.clauseIndex,
+      authority: candidate.authority,
+      temporal: candidate.temporal,
+      role: candidate.role || 'primary'
     });
     candidates.push({ ...candidate, fact });
   };
@@ -216,7 +243,8 @@ export function extractScopeEvidence(doc, ledger = createEvidenceLedger(doc)) {
         weight: 3,
         quote: hit.quote + ' else',
         meaning: 'everyone except the requester is unaffected',
-        hit, temporal: scopeTemporal(doc, hit.start)
+        hit,
+        temporal: scopeTemporal(doc, hit.start)
       });
       continue;
     }
@@ -227,7 +255,8 @@ export function extractScopeEvidence(doc, ledger = createEvidenceLedger(doc)) {
       weight: hit.entry.w || 1,
       quote: hit.quote,
       meaning: hit.entry.label,
-      hit, temporal: scopeTemporal(doc, hit.start)
+      hit,
+      temporal: scopeTemporal(doc, hit.start)
     });
   }
 
@@ -244,7 +273,10 @@ export function extractScopeEvidence(doc, ledger = createEvidenceLedger(doc)) {
       weight: 3,
       quote: m[0],
       meaning: count + ' ' + m[2] + ' affected',
-      start: m.index, end: m.index + m[0].length, clauseIndex: clauseIndexOf(doc, m.index), temporal: scopeTemporal(doc, m.index)
+      start: m.index,
+      end: m.index + m[0].length,
+      clauseIndex: clauseIndexOf(doc, m.index),
+      temporal: scopeTemporal(doc, m.index)
     });
   }
 
@@ -259,7 +291,10 @@ export function extractScopeEvidence(doc, ledger = createEvidenceLedger(doc)) {
       weight: 3,
       quote: m[0],
       meaning: count + ' ' + m[2] + ' affected',
-      start: m.index, end: m.index + m[0].length, clauseIndex: clauseIndexOf(doc, m.index), temporal: scopeTemporal(doc, m.index)
+      start: m.index,
+      end: m.index + m[0].length,
+      clauseIndex: clauseIndexOf(doc, m.index),
+      temporal: scopeTemporal(doc, m.index)
     });
   }
 
@@ -273,7 +308,10 @@ export function extractScopeEvidence(doc, ledger = createEvidenceLedger(doc)) {
       weight: 3,
       quote: m[0],
       meaning: count + ' records affected as a batch',
-      start: m.index, end: m.index + m[0].length, clauseIndex: clauseIndexOf(doc, m.index), temporal: scopeTemporal(doc, m.index)
+      start: m.index,
+      end: m.index + m[0].length,
+      clauseIndex: clauseIndexOf(doc, m.index),
+      temporal: scopeTemporal(doc, m.index)
     });
   }
 
@@ -288,7 +326,10 @@ export function extractScopeEvidence(doc, ledger = createEvidenceLedger(doc)) {
       weight: 3,
       quote: m[0],
       meaning: count + ' schools affected',
-      start: m.index, end: m.index + m[0].length, clauseIndex: clauseIndexOf(doc, m.index), temporal: scopeTemporal(doc, m.index)
+      start: m.index,
+      end: m.index + m[0].length,
+      clauseIndex: clauseIndexOf(doc, m.index),
+      temporal: scopeTemporal(doc, m.index)
     });
   }
 
@@ -297,16 +338,22 @@ export function extractScopeEvidence(doc, ledger = createEvidenceLedger(doc)) {
 
 /** Project I1 from current, positive, primary clause evidence. */
 export function projectScope(extraction) {
-  const candidates = extraction.candidates.filter(({ fact }) =>
-    fact.temporal === 'current' && fact.polarity === 'positive' &&
-    fact.context === 'primary' && fact.role === 'primary'
+  const candidates = extraction.candidates.filter(
+    ({ fact }) =>
+      fact.temporal === 'current' &&
+      fact.polarity === 'positive' &&
+      fact.context === 'primary' &&
+      fact.role === 'primary'
   );
   // The broadest credible current scope wins; history and comparators are
   // preserved in the ledger but cannot expand the current affected population.
   let chosen = null;
   for (const candidate of candidates) {
-    if (!chosen || candidate.rank > chosen.rank ||
-        (candidate.rank === chosen.rank && candidate.weight > chosen.weight)) {
+    if (
+      !chosen ||
+      candidate.rank > chosen.rank ||
+      (candidate.rank === chosen.rank && candidate.weight > chosen.weight)
+    ) {
       chosen = candidate;
     }
   }
@@ -335,6 +382,3 @@ export function projectScope(extraction) {
 export function detectScope(doc, ledger) {
   return projectScope(extractScopeEvidence(doc, ledger));
 }
-
-/** Exported for the test suite. */
-export const _internal = { scopeForPeople, scopeForSchools, scan };

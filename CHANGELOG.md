@@ -1,5 +1,65 @@
 # Changelog
 
+## [0.12.1] - 2026-10-03 — Hygiene, Tooling and Docs
+
+A maintenance release on top of the v0.12.0 simplification: remove dead weight,
+add development checks, and document the project properly. No user-facing
+behaviour change except the two bug fixes noted below.
+
+### Added
+
+- Development-only tooling: ESLint, Prettier and TypeScript (`checkJs`) with a
+  `npm run check` aggregate that runs lint, format check, type check and tests.
+  The shipped application stays dependency-free and buildless.
+- `.editorconfig`, `.prettierrc.json`, `eslint.config.js`, `tsconfig.json`, and
+  a `package-lock.json` for reproducible dev installs.
+- Developer documentation under `docs/`: a user guide, architecture, glossary,
+  contributing and extending guides, plus a framework pointer, configured for
+  local preview and checks with DocSprout. Docs are not deployed; they are read
+  on GitHub.
+- A separate CI job that runs `docsprout check`; the app checks are split into
+  distinct lint, format, type and test steps.
+
+### Changed
+
+- `js/data/examples.js` is now the single source of truth for worked examples;
+  the test suite imports it instead of keeping a duplicate list that had already
+  drifted. The 56 examples are asserted directly.
+- Restored the documented `criticality.failure` calibration: a shared delivery
+  pipeline with an active build failure is High impact (the "all Azure DevOps
+  pipelines failing before a payroll fix" example is P2 again).
+- School-count displays derive from `js/config.js` rather than hardcoding "19".
+- `js/data/examples.js` expectations for the two examples whose behaviour the
+  v0.12.0 simplification intentionally changed are now explicit: the
+  after-the-sync casual staff record is P3 (no scheduled-run inference), and the
+  bare feature request with no named system is unassessed.
+
+### Removed
+
+- Dead code and exports: `sourceOfTruth`, `differential`, `technicalDomain`,
+  `platformCategories`, `confidenceNotes`, `appliedRules`, `matrixCells`,
+  `negatedSymptoms`, `rawPropagating`, `strippedChars`, `IMPACT_LEVELS`,
+  `URGENCY_LEVELS`, `scope._internal`, `dom.fact`, unused imports, and several
+  unused phrase dictionaries left over from the removed inference layers.
+- Dead CSS (`.tagline`, `.known-answer`, `.stripped-note`, and a conflicting
+  duplicate `.justification-text` block).
+- The stale `tests/fixtures` reference in `.gitattributes`.
+
+### Fixed
+
+- The "About this example" note no longer appears before any example is loaded
+  (a first-run staleness bug).
+- **Share Link** now explains itself when the input is empty instead of silently
+  doing nothing, and its feedback is announced to assistive technology.
+
+### Verified
+
+- `npm run check` is green: ESLint, Prettier, `tsc --noEmit` and 85 acceptance
+  assertions, plus the privacy source scan.
+- `docsprout check` passes (3 sections, 7 pages).
+- Headless-Chrome load of a shared ticket still renders the full result card
+  with no console errors.
+
 ## [0.12.0] - 2026-10-03 — Core Simplification
 
 A deliberate reduction of the project to the eight-question model and the

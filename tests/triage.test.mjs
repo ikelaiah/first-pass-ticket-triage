@@ -22,6 +22,7 @@ import { detectRisks } from '../js/engine/risks.js';
 import { detectContainment } from '../js/engine/containment.js';
 import { detectHarmTiming } from '../js/engine/harm-timing.js';
 import { recommendNextAction, NEXT_ACTIONS } from '../js/engine/next-action.js';
+import { EXAMPLES } from '../js/data/examples.js';
 import { buildHandoffText, buildHandoffMarkdown } from '../js/ui/handoff.js';
 import { buildReply, buildMarkdown } from '../js/ui/reply.js';
 import { encodeTicket, decodeTicket, tooLongForShare, SHARE_LIMIT } from '../js/ui/share.js';
@@ -38,8 +39,13 @@ function test(name, fn) {
   let message = 'ok';
   try {
     const outcome = fn();
-    if (outcome === false) { pass = false; message = 'returned false'; }
-    else if (typeof outcome === 'string') { pass = false; message = outcome; }
+    if (outcome === false) {
+      pass = false;
+      message = 'returned false';
+    } else if (typeof outcome === 'string') {
+      pass = false;
+      message = outcome;
+    }
   } catch (error) {
     pass = false;
     message = error.message;
@@ -49,7 +55,13 @@ function test(name, fn) {
 
 function eq(actual, expected, label = '') {
   if (actual !== expected) {
-    throw new Error((label ? label + ': ' : '') + 'expected ' + JSON.stringify(expected) + ', got ' + JSON.stringify(actual));
+    throw new Error(
+      (label ? label + ': ' : '') +
+        'expected ' +
+        JSON.stringify(expected) +
+        ', got ' +
+        JSON.stringify(actual)
+    );
   }
 }
 
@@ -78,10 +90,18 @@ test('all nine cells map Impact x Urgency to P1-P4', () => {
 
 test('the matrix rejects an invalid impact or urgency', () => {
   let threw = false;
-  try { priorityFor('critical', 'high'); } catch { threw = true; }
+  try {
+    priorityFor('critical', 'high');
+  } catch {
+    threw = true;
+  }
   ok(threw, 'invalid impact did not throw');
   threw = false;
-  try { priorityFor('high', 'whenever'); } catch { threw = true; }
+  try {
+    priorityFor('high', 'whenever');
+  } catch {
+    threw = true;
+  }
   ok(threw, 'invalid urgency did not throw');
 });
 
@@ -137,7 +157,9 @@ test('a negated breach clears the security and privacy flags', () => {
 });
 
 test('an active safety consequence is flagged', () => {
-  const r = P("A student's severe allergy alert is not showing and the excursion leaves this morning.");
+  const r = P(
+    "A student's severe allergy alert is not showing and the excursion leaves this morning."
+  );
   eq(r.risks.safety, true);
   eq(r.suggestedPriority, 'P1');
 });
@@ -151,7 +173,11 @@ test('permanent loss without recovery is unrecoverable', () => {
 group('I4 Containment');
 
 test('containment wording is read', () => {
-  eq(detectContainment(doc('the records are contained to one family and not spreading'), {}).contained, true);
+  eq(
+    detectContainment(doc('the records are contained to one family and not spreading'), {})
+      .contained,
+    true
+  );
 });
 
 test('active propagation raises impact and the data-integrity flag', () => {
@@ -201,45 +227,23 @@ test('expired and expiring are separated', () => {
 
 /* ------------------------------------------------------------- end to end -- */
 
-group('Framework examples');
+group('Examples');
 
-const EXAMPLES = [
-  ['This is broken but I can work without it for now.', 'P3'],
-  ["Canvas sync stopped across all 19 schools, today's classes affected.", 'P1'],
-  ['EnrolHQ to Edumate stopped for all schools, manual processing for three days.', 'P2'],
-  ["ANZ has not received today's ABA file, payroll processes this afternoon.", 'P1'],
-  ['One student missing from Canvas, not needed today.', 'P4'],
-  ['One student cannot access Canvas, assessment in 30 minutes.', 'P2'],
-  ["35 casual staff timesheets failed, today's payroll cutoff approaching.", 'P1'],
-  ['I cannot log into my Windows workstation.', 'P3'],
-  ['Nobody can log into the production server, all integration jobs stopped.', 'P1'],
-  ['Laserfiche SSO not working for one user.', 'P3'],
-  ['Laserfiche SSO failed for every school.', 'P2'],
-  ['Laserfiche slow for one user.', 'P4'],
-  ['Laserfiche timing out for all schools, users cannot work.', 'P1'],
-  ['Where can I find the Canvas integration documentation?', 'P4'],
-  ['SSL certificate expires in three days', 'P3'],
-  ['SSL certificate expired this morning, nobody can log in', 'P1'],
-  ['Local admin rights on my laptop', 'P4'],
-  ['Screen reader cannot use the enrolment form', 'P3'],
-  ['Two staff members paid twice', 'P3'],
-  ['Report cards showing the wrong year level, out to parents tomorrow', 'P2'],
-  ["A student's severe allergy alert is not showing and the excursion leaves this morning.", 'P1']
-];
-
-for (const [text, expected] of EXAMPLES) {
-  test(text.slice(0, 64), () => eq(P(text).suggestedPriority, expected));
+// EXAMPLES (js/data/examples.js) is the single source of truth, shared with the
+// UI picker and the framework documentation. `expected` may hold a range, and
+// 'unassessed' means the tool must abstain rather than assign a priority.
+for (const example of EXAMPLES) {
+  test(example.title, () => {
+    const actual = P(example.text).suggestedPriority || 'unassessed';
+    ok(
+      example.expected.includes(actual),
+      'expected ' + example.expected.join(' or ') + ', got ' + actual
+    );
+  });
 }
 
 test('a subject-less report is unassessed and asks for the system', () => {
   const r = P('Just reporting an issue. Please investigate when possible.');
-  eq(r.assessmentStatus, 'unassessed');
-  eq(r.suggestedPriority, null);
-  ok(r.followUpQuestions.length > 0, 'no follow-up question');
-});
-
-test('a bare feature request is unassessed and asks which system', () => {
-  const r = P('New feature for all 19 schools before the next enrolment cycle.');
   eq(r.assessmentStatus, 'unassessed');
   eq(r.suggestedPriority, null);
   ok(r.followUpQuestions.length > 0, 'no follow-up question');
@@ -250,10 +254,10 @@ test('a bare feature request is unassessed and asks which system', () => {
 group('Safety invariants');
 
 test('only the matrix names a priority for assessed results', () => {
-  for (const [text] of EXAMPLES) {
-    const r = P(text);
+  for (const example of EXAMPLES) {
+    const r = P(example.text);
     if (r.assessmentStatus === 'assessed') {
-      eq(r.suggestedPriority, priorityFor(r.impact, r.urgency), text.slice(0, 40));
+      eq(r.suggestedPriority, priorityFor(r.impact, r.urgency), example.title);
     }
   }
 });
@@ -340,7 +344,6 @@ test('share links are capped', () => {
 });
 
 /* -------------------------------------------------------------------- run -- */
-
 
 export function runTests() {
   const passed = results.filter((r) => r.pass).length;

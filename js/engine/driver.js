@@ -23,7 +23,13 @@ export function detectDriver(doc) {
   // Also try to capture actor even without driver phrase
   const actorMatch = doc.text.match(DRIVER_ACTOR_RE);
   if (actorMatch) {
-    return { driver: 'unknown', label: 'deadline actor mentioned', quote: actorMatch[0].trim(), actor: actorMatch[0].trim(), committed: false };
+    return {
+      driver: 'unknown',
+      label: 'deadline actor mentioned',
+      quote: actorMatch[0].trim(),
+      actor: actorMatch[0].trim(),
+      committed: false
+    };
   }
   return { driver: 'unknown', label: null, quote: null, actor: null, committed: false };
 }

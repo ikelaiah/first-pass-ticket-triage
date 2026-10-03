@@ -19,7 +19,6 @@ import { deadlineDefinition } from './deadline.js';
 import { scopeDefinition } from './scope.js';
 import { SEVERITY } from './symptom.js';
 
-export const URGENCY_LEVELS = ['low', 'medium', 'high'];
 export const URGENCY_THRESHOLDS = { high: 2.5, medium: 0.75 };
 export const URGENCY_RANGE = { min: -4, max: 6 };
 
@@ -43,9 +42,9 @@ export function urgencyLevelFromScore(score) {
 
 /**
  * @param {object} doc
- * @param {object} ctx { deadlineResult, workaroundResult, symptom, scopeResult,
+ * @param {Record<string, any>} ctx { deadlineResult, workaroundResult, symptom, scopeResult,
  *   riskResult, driver, harmTiming }
- * @returns {{ urgency, score, contributions, claimedOnly, floorApplied }}
+ * @returns {any}
  */
 export function assessUrgency(doc, ctx) {
   const { deadlineResult, workaroundResult, symptom, scopeResult, riskResult, consequence } = ctx;
@@ -105,23 +104,26 @@ export function assessUrgency(doc, ctx) {
     // "no workaround" and "completely blocked" describe the same fact once,
     // and a confirmed workaround means work is not, in fact, fully blocked.
     const blockedWeight =
-      workaroundResult.workaround === 'yes' ? 0 :
-      workaroundResult.workaround === 'no' ? 0.75 : 1.75;
+      workaroundResult.workaround === 'yes'
+        ? 0
+        : workaroundResult.workaround === 'no'
+          ? 0.75
+          : 1.75;
     add(blockedWeight, 'Work is currently blocked', blocked[0].quote);
   } else if (consequence?.level === 'blocked' && consequence.source !== 'inferred') {
     const blockedWeight =
-      workaroundResult.workaround === 'yes' ? 0 :
-      workaroundResult.workaround === 'no' ? 0.75 : 1.75;
+      workaroundResult.workaround === 'yes'
+        ? 0
+        : workaroundResult.workaround === 'no'
+          ? 0.75
+          : 1.75;
     add(blockedWeight, 'Business process is currently blocked', consequence.quote);
   }
 
   // Breadth only adds urgency when something is actually failing. Records that
   // were never created across many schools are a big *impact*; they are not an
   // outage in progress, and the deadline decides how soon they matter.
-  const broad =
-    scopeDefinition(scopeResult.scope).rank >= scopeDefinition('multiple-schools').rank;
-  // A differential changes where to investigate, not how broadly the failure
-  // is reported. Explicit broad scope remains authoritative.
+  const broad = scopeDefinition(scopeResult.scope).rank >= scopeDefinition('multiple-schools').rank;
   if (broad && symptom.severity >= SEVERITY.FAILURE) {
     add(1, 'A failure is affecting many schools at once');
   }
@@ -143,19 +145,21 @@ export function assessUrgency(doc, ctx) {
   }
 
   let activeBonus = 0;
-  for (const hit of scanPositive(doc, ACTIVE_NOW_PHRASES)
-    .filter((candidate) => !isCurrentStateNegated(doc, candidate.start))) {
+  for (const hit of scanPositive(doc, ACTIVE_NOW_PHRASES).filter(
+    (candidate) => !isCurrentStateNegated(doc, candidate.start)
+  )) {
     if (activeBonus >= 0.5) break;
     activeBonus += hit.entry.w;
     add(hit.entry.w, hit.entry.label, hit.quote);
   }
 
   // Preference driver — "would like by Friday" is not a deadline
-  const prefHit = scanPositive(doc, DRIVER_PHRASES.filter(e => e.driver === 'preference'));
+  const prefHit = scanPositive(
+    doc,
+    DRIVER_PHRASES.filter((e) => e.driver === 'preference')
+  );
   if (preferenceOnly || prefHit.length) {
-    add(-0.5,
-      ctx.driver?.label || prefHit[0].entry.label,
-      ctx.driver?.quote || prefHit[0].quote);
+    add(-0.5, ctx.driver?.label || prefHit[0].entry.label, ctx.driver?.quote || prefHit[0].quote);
   }
 
   // Automatic harm timing remains explanatory until calibrated. A human
@@ -181,8 +185,8 @@ export function assessUrgency(doc, ctx) {
   }
 
   const raw = contributions.reduce((sum, c) => sum + c.value, 0);
-  let score = Math.max(URGENCY_RANGE.min, Math.min(URGENCY_RANGE.max, raw));
-  let urgency = urgencyLevelFromScore(score);
+  const score = Math.max(URGENCY_RANGE.min, Math.min(URGENCY_RANGE.max, raw));
+  const urgency = urgencyLevelFromScore(score);
   const lowUrgencySignal = lowTotal < 0 || preferenceOnly;
 
   // Urgency claimed, but nothing corroborates it.

@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "unlisted": "exclude",
+  "home": { "path": "README.md", "source": "root" },
+  "navigation": [
+    {
+      "title": "Overview",
+      "pages": [
+        { "title": "Overview", "path": "README.md", "source": "root" },
+        { "title": "User guide", "path": "user-guide.md" },
+        { "title": "Priority framework", "path": "framework.md" }
+      ]
+    },
+    {
+      "title": "Reference",
+      "pages": [
+        { "title": "Architecture", "path": "architecture.md" },
+        { "title": "Glossary", "path": "glossary.md" }
+      ]
+    },
+    {
+      "title": "Contributing",
+      "pages": [
+        { "title": "Contributing", "path": "contributing.md" },
+        { "title": "Extending the rules", "path": "extending.md" }
+      ]
+    }
+  ]
+}

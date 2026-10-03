@@ -1,4 +1,4 @@
-name: Test
+name: CI
 
 on:
   push:
@@ -8,7 +8,8 @@ permissions:
   contents: read
 
 jobs:
-  test:
+  app:
+    name: App (lint, format, types, tests)
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
@@ -17,7 +18,29 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: lts/*
-      - name: Run test gate
+          cache: npm
+      - name: Install dev tooling
+        run: npm ci
+      - name: Lint
+        run: npm run lint
+      - name: Format check
+        run: npm run format:check
+      - name: Type check
+        run: npm run typecheck
+      - name: Tests
         run: npm test
-      - name: Run release gate
-        run: npm run test:release
+
+  docs:
+    name: Docs (DocSprout check)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Install DocSprout
+        run: python -m pip install "https://github.com/ikelaiah/docsprout/archive/refs/tags/v1.3.1.zip"
+      - name: Check documentation
+        run: docsprout check

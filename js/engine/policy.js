@@ -13,25 +13,91 @@ import { raiseLevel, lowerLevel, LEVEL_RANK } from './priority-matrix.js';
 
 /** Documented rule ids, kept for the contract doc and tests. */
 export const TRIAGE_POLICY_DECISIONS = Object.freeze([
-  { id: 'context.resolved', impact: 'lower', urgency: 'lower', rationale: 'An explicit resolution is not live work.' },
-  { id: 'context.unassessed', impact: 'lower', urgency: 'lower', rationale: 'Unrecognised input is not scored as an IT consequence.' },
-  { id: 'deadline.hard-future', impact: 'unchanged', urgency: 'minimum-medium', rationale: 'A committed statutory or operational event is time-sensitive.' },
-  { id: 'financial.confirmed', impact: 'high', urgency: 'high', rationale: 'A same-day confirmed payroll or payment failure.' },
-  { id: 'privacy.active', impact: 'high', urgency: 'high', rationale: 'Actual exposure is a current consequence.' },
-  { id: 'security.active', impact: 'medium', urgency: 'high', rationale: 'A compromised account requires rapid containment.' },
-  { id: 'safety.active', impact: 'high', urgency: 'high-when-imminent', rationale: 'Active safety consequence is severe and time-sensitive.' },
-  { id: 'safeguarding.active', impact: 'high', urgency: 'high', rationale: 'An active safeguarding breach is occurring now.' },
-  { id: 'propagation.active', impact: 'high', urgency: 'minimum-medium', rationale: 'Increasing consequence needs attention without inventing a P1.' },
-  { id: 'loss.unrecoverable', impact: 'high', urgency: 'consequence-dependent', rationale: 'Permanent material loss cannot be undone.' },
-  { id: 'loss.recoverable', impact: 'lower-high-to-medium', urgency: 'unchanged', rationale: 'A usable recovery path removes the permanent-loss dimension.' },
-  { id: 'workaround.costly', impact: 'unchanged', urgency: 'minimum-medium', rationale: 'Material manual effort keeps an active issue time-sensitive.' },
-  { id: 'context.active-incident', impact: 'high', urgency: 'high', rationale: 'Recovery work inherits the incident consequence.' }
+  {
+    id: 'context.resolved',
+    impact: 'lower',
+    urgency: 'lower',
+    rationale: 'An explicit resolution is not live work.'
+  },
+  {
+    id: 'context.unassessed',
+    impact: 'lower',
+    urgency: 'lower',
+    rationale: 'Unrecognised input is not scored as an IT consequence.'
+  },
+  {
+    id: 'deadline.hard-future',
+    impact: 'unchanged',
+    urgency: 'minimum-medium',
+    rationale: 'A committed statutory or operational event is time-sensitive.'
+  },
+  {
+    id: 'financial.confirmed',
+    impact: 'high',
+    urgency: 'high',
+    rationale: 'A same-day confirmed payroll or payment failure.'
+  },
+  {
+    id: 'criticality.failure',
+    impact: 'high',
+    urgency: 'unchanged',
+    rationale: 'A shared delivery pipeline with an active build failure is High impact.'
+  },
+  {
+    id: 'privacy.active',
+    impact: 'high',
+    urgency: 'high',
+    rationale: 'Actual exposure is a current consequence.'
+  },
+  {
+    id: 'security.active',
+    impact: 'medium',
+    urgency: 'high',
+    rationale: 'A compromised account requires rapid containment.'
+  },
+  {
+    id: 'safety.active',
+    impact: 'high',
+    urgency: 'high-when-imminent',
+    rationale: 'Active safety consequence is severe and time-sensitive.'
+  },
+  {
+    id: 'safeguarding.active',
+    impact: 'high',
+    urgency: 'high',
+    rationale: 'An active safeguarding breach is occurring now.'
+  },
+  {
+    id: 'propagation.active',
+    impact: 'high',
+    urgency: 'minimum-medium',
+    rationale: 'Increasing consequence needs attention without inventing a P1.'
+  },
+  {
+    id: 'loss.unrecoverable',
+    impact: 'high',
+    urgency: 'consequence-dependent',
+    rationale: 'Permanent material loss cannot be undone.'
+  },
+  {
+    id: 'loss.recoverable',
+    impact: 'lower-high-to-medium',
+    urgency: 'unchanged',
+    rationale: 'A usable recovery path removes the permanent-loss dimension.'
+  },
+  {
+    id: 'workaround.costly',
+    impact: 'unchanged',
+    urgency: 'minimum-medium',
+    rationale: 'Material manual effort keeps an active issue time-sensitive.'
+  },
+  {
+    id: 'context.active-incident',
+    impact: 'high',
+    urgency: 'high',
+    rationale: 'Recovery work inherits the incident consequence.'
+  }
 ]);
-
-const SCOPE_RANK = {
-  unknown: 0, individual: 1, 'few-users': 2, team: 3, cohort: 4,
-  'one-school': 5, 'multiple-schools': 6, 'all-schools': 7, 'corporation-wide': 8
-};
 
 const DEFAULT_EVIDENCE = {
   inScope: true,
@@ -102,22 +168,37 @@ export function applyTriagePolicy(context) {
   };
 
   if (evidence.decisionContext === 'resolved') {
-    lower('low', 'low', 'context.resolved', 'The latest explicit update says the incident is resolved or contained.');
+    lower(
+      'low',
+      'low',
+      'context.resolved',
+      'The latest explicit update says the incident is resolved or contained.'
+    );
     return { impact, urgency, rules, policyIds, floorApplied };
   }
   if (!evidence.inScope) {
-    lower('low', 'low', 'context.unassessed', 'No IT system, application-support request or technical symptom was recognised.');
+    lower(
+      'low',
+      'low',
+      'context.unassessed',
+      'No IT system, application-support request or technical symptom was recognised.'
+    );
     return { impact, urgency, rules, policyIds, floorApplied };
   }
 
   // A committed statutory or operational future deadline sets a Medium floor.
-  const hardFuture = evidence.deadlineCommitted &&
+  const hardFuture =
+    evidence.deadlineCommitted &&
     ['statutory', 'operational'].includes(evidence.deadlineDriver) &&
     ['tomorrow', 'days-2-5', 'weeks-1-2'].includes(evidence.deadline);
   if (hardFuture && urgency === 'low') {
     urgency = 'medium';
     floorApplied = true;
-    record('deadline.hard-future', 'A committed statutory or operational deadline sets a Medium urgency floor.', 'raise');
+    record(
+      'deadline.hard-future',
+      'A committed statutory or operational deadline sets a Medium urgency floor.',
+      'raise'
+    );
   }
 
   const risks = evidence.risks;
@@ -126,29 +207,74 @@ export function applyTriagePolicy(context) {
   const sameDay = ['now', 'today'].includes(evidence.deadline);
   const contained = Boolean(evidence.containment?.contained);
 
-  const financialFailure = (risks.financial || risks.payroll) &&
-    (symptom.hasFailure || symptom.isOutage || (symptom.isDataIssue && !contained) ||
-      modifiers.unpaidRisk || evidence.consequence === 'blocked');
+  const financialFailure =
+    (risks.financial || risks.payroll) &&
+    (symptom.hasFailure ||
+      symptom.isOutage ||
+      (symptom.isDataIssue && !contained) ||
+      modifiers.unpaidRisk ||
+      evidence.consequence === 'blocked');
   if (sameDay && financialFailure) {
-    raise('high', 'high', 'financial.confirmed', 'Payroll or payment processing is failing against a same-day deadline.');
+    raise(
+      'high',
+      'high',
+      'financial.confirmed',
+      'Payroll or payment processing is failing against a same-day deadline.'
+    );
   } else if (modifiers.unpaidRisk && (risks.payroll || risks.financial)) {
     raise('high', null, 'financial.confirmed', 'People may not be paid.');
   }
 
   if (modifiers.exposureActive && (risks.privacy || risks.security)) {
-    raise('high', 'high', 'privacy.active', 'Information appears to be actively exposed to the wrong people.');
+    raise(
+      'high',
+      'high',
+      'privacy.active',
+      'Information appears to be actively exposed to the wrong people.'
+    );
   }
   if (evidence.activeIncident) {
-    raise('high', 'high', 'context.active-incident', 'This is needed to recover from an incident already in progress.');
+    raise(
+      'high',
+      'high',
+      'context.active-incident',
+      'This is needed to recover from an incident already in progress.'
+    );
   }
   if (symptom.id === 'account-compromise') {
-    raise('medium', 'high', 'security.active', 'An account appears to be compromised and the attacker is active.');
+    raise(
+      'medium',
+      'high',
+      'security.active',
+      'An account appears to be compromised and the attacker is active.'
+    );
   }
   if (symptom.id === 'device-lost' && (risks.privacy || risks.security)) {
-    raise('high', 'high', 'privacy.active', 'A lost or stolen device may hold personal information.');
+    raise(
+      'high',
+      'high',
+      'privacy.active',
+      'A lost or stolen device may hold personal information.'
+    );
   }
   if (symptom.id === 'consent-granted' && (risks.privacy || risks.security)) {
-    raise('high', null, 'privacy.active', 'A third party appears to have been granted access to personal data.');
+    raise(
+      'high',
+      null,
+      'privacy.active',
+      'A third party appears to have been granted access to personal data.'
+    );
+  }
+  // A shared delivery pipeline that is failing to build blocks everything that
+  // depends on it. The critical-integration risk is only raised with failure
+  // evidence, so reaching here means the pipeline really is broken.
+  if (risks.criticalIntegration && symptom.id === 'build-failed' && symptom.hasFailure) {
+    raise(
+      'high',
+      null,
+      'criticality.failure',
+      'A shared delivery pipeline has an active build failure.'
+    );
   }
 
   if (risks.safety && symptom.severity >= 1.5) {
@@ -158,20 +284,42 @@ export function applyTriagePolicy(context) {
   if (modifiers.immediateSafeguarding) {
     raise('high', 'high', 'safeguarding.active', 'An immediate safeguarding risk was described.');
   }
-  if (risks.safeguarding && (symptom.id === 'access-not-revoked' || modifiers.crossPersonVisibility)) {
-    raise('high', 'high', 'safeguarding.active', 'A person who should be excluded still appears to have access.');
+  if (
+    risks.safeguarding &&
+    (symptom.id === 'access-not-revoked' || modifiers.crossPersonVisibility)
+  ) {
+    raise(
+      'high',
+      'high',
+      'safeguarding.active',
+      'A person who should be excluded still appears to have access.'
+    );
   }
 
   if (modifiers.propagating && evidence.scope !== 'individual') {
-    raise('high', null, 'propagation.active', 'Incorrect data appears to be actively propagating across systems.');
-    minimumUrgency('medium', 'propagation.active', 'Active propagation requires prompt containment, but does not by itself create High urgency.');
+    raise(
+      'high',
+      null,
+      'propagation.active',
+      'Incorrect data appears to be actively propagating across systems.'
+    );
+    minimumUrgency(
+      'medium',
+      'propagation.active',
+      'Active propagation requires prompt containment, but does not by itself create High urgency.'
+    );
   }
 
   if (evidence.recoverability === 'unrecoverable') {
     raise('high', null, 'loss.unrecoverable', 'Material data loss is not recoverable.');
   }
   if (evidence.recoverability === 'recoverable' && impact === 'high') {
-    lower('medium', null, 'loss.recoverable', 'A usable recovery path removes the permanent-loss dimension from Impact.');
+    lower(
+      'medium',
+      null,
+      'loss.recoverable',
+      'A usable recovery path removes the permanent-loss dimension from Impact.'
+    );
   }
 
   if (evidence.workaroundCost) {
