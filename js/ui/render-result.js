@@ -5,6 +5,7 @@
  * evidence, the two matrix inputs it produced, and the matrix step itself.
  */
 import { el, replace, quote } from './dom.js';
+import { copyButton } from './clipboard.js';
 import {
   priorityDefinition,
   MATRIX,
@@ -265,26 +266,6 @@ function missingSection(result) {
       )
     );
   }
-  if (result.followUpQuestions.length) {
-    const metaBy = new Map((result.followUpQuestionMeta || []).map((m) => [m.text, m.kind]));
-    nodes.push(el('h4', {}, 'Suggested follow-up questions'));
-    nodes.push(
-      el(
-        'ul',
-        { class: 'questions' },
-        result.followUpQuestions.map((q) => {
-          const kind = metaBy.get(q) || 'confidence';
-          const tag =
-            kind === 'diagnostic'
-              ? 'changes what to do next'
-              : kind === 'priority'
-                ? 'would change priority'
-                : 'raises confidence';
-          return el('li', {}, [el('span', { class: 'q-tag q-tag--' + kind }, tag), q]);
-        })
-      )
-    );
-  }
   if (!nodes.length) {
     nodes.push(
       el(
@@ -348,26 +329,89 @@ function nextActionSection(result) {
       )
     );
   }
-  if (next.clarificationQuestions?.length) {
-    nodes.push(el('h4', {}, 'Confirm'));
-    nodes.push(
-      el(
-        'ul',
-        { class: 'questions' },
-        next.clarificationQuestions.map((item) => el('li', {}, item))
-      )
-    );
-  }
   nodes.push(
     el('details', { class: 'next-action-diagnostic' }, [
       el('summary', {}, 'Diagnostic rule'),
       el('code', {}, next.ruleId)
     ])
   );
-  return el('section', { class: 'panel panel-next-action' }, [
+  return el('section', { class: 'panel panel-next-action', id: 'next-action' }, [
     el('h3', {}, 'Safe Next Action'),
     el('div', {}, nodes)
   ]);
+}
+
+/** The ranked questions worth asking the requester, de-duplicated. */
+function askQuestions(result) {
+  const list = [];
+  const push = (q) => {
+    const text = String(q || '').trim();
+    if (text && !list.includes(text)) list.push(text);
+  };
+  const metaBy = new Map((result.followUpQuestionMeta || []).map((m) => [m.text, m.kind]));
+  for (const q of result.followUpQuestions || []) push(q);
+  for (const q of result.nextAction?.clarificationQuestions || []) push(q);
+  return list.map((text) => ({ text, kind: metaBy.get(text) || 'confidence' }));
+}
+
+function kindLabel(kind) {
+  return kind === 'diagnostic'
+    ? 'changes what to do next'
+    : kind === 'priority'
+      ? 'would change priority'
+      : 'raises confidence';
+}
+
+/**
+ * The single, prominent place to see and copy what to ask the requester. The
+ * ranked follow-up questions and the Safe Next Action clarifications are merged
+ * here so the same question is never shown twice.
+ */
+function askSection(result) {
+  const questions = askQuestions(result);
+  if (!questions.length) return null;
+  const asText = questions.map((q, i) => i + 1 + '. ' + q.text).join('\n');
+  return el('section', { class: 'panel panel-ask', id: 'ask' }, [
+    el('h3', {}, 'Ask the requester'),
+    el(
+      'p',
+      { class: 'hint muted' },
+      'The unknowns that could change this priority. Send them as they are, or answer ' +
+        'them in Refine assessment below.'
+    ),
+    el(
+      'ol',
+      { class: 'ask-list' },
+      questions.map((q) =>
+        el('li', {}, [el('span', { class: 'q-tag q-tag--' + q.kind }, kindLabel(q.kind)), q.text])
+      )
+    ),
+    el('div', { class: 'actions' }, [
+      copyButton(asText, 'Copy all questions', {
+        announce: 'Questions',
+        ariaLabel: 'Copy all follow-up questions'
+      })
+    ])
+  ]);
+}
+
+/** A sticky, keyboard-friendly index of the result panels. */
+function jumpNav(result) {
+  const links = [
+    ['verdict', 'Verdict'],
+    ...(askQuestions(result).length ? [['ask', 'Ask the requester']] : []),
+    ['next-action', 'Next action'],
+    ['eight', '8 Questions'],
+    ['why', 'Why this priority'],
+    ['handoff', 'Handoff'],
+    ['reply', 'Reply'],
+    ['details', 'Details']
+  ];
+  return el(
+    'nav',
+    { class: 'jump-nav', 'aria-label': 'Jump to result section' },
+    links.map(([id, label]) => el('a', { href: '#' + id }, label))
+  );
 }
 
 function confidenceSection(result) {
@@ -376,7 +420,10 @@ function confidenceSection(result) {
       el('strong', {}, 'Assessment confidence: ' + result.confidenceLabel)
     ]),
     el('p', { class: 'muted' }, [
-      'Evidence completeness: ' + result.confidence + '% (heuristic; not a probability)'
+      'Evidence completeness: ' +
+        result.confidence +
+        '% — a heuristic for how much ' +
+        'decision-relevant information the ticket contained, not a probability.'
     ]),
     el(
       'div',
@@ -573,41 +620,8 @@ function eightQuestionsPanel(result) {
   ]);
 }
 
-function panel(title, body, extraClass) {
-  return el('section', { class: 'panel ' + (extraClass || '') }, [el('h3', {}, title), body]);
-}
-
-function copyButton(text, label) {
-  return el(
-    'button',
-    {
-      class: 'btn btn-quiet btn-copy',
-      type: 'button',
-      onClick: (e) => {
-        const btn = e.currentTarget;
-        const done = () => {
-          const prev = btn.textContent;
-          btn.textContent = 'Copied';
-          setTimeout(() => {
-            btn.textContent = prev;
-          }, 1400);
-        };
-        const fallback = () => {
-          const ta = document.createElement('textarea');
-          ta.value = text;
-          document.body.appendChild(ta);
-          ta.select();
-          document.execCommand('copy');
-          document.body.removeChild(ta);
-          done();
-        };
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-          navigator.clipboard.writeText(text).then(done).catch(fallback);
-        } else fallback();
-      }
-    },
-    label
-  );
+function panel(title, body, extraClass, id) {
+  return el('section', { class: 'panel ' + (extraClass || ''), id }, [el('h3', {}, title), body]);
 }
 
 function downloadMarkdown(markdown, filename) {
@@ -751,12 +765,12 @@ export function renderResult(container, result, options = {}) {
       container,
       el('div', { class: 'card empty-state' }, [
         el('div', { class: 'empty-copy' }, [
-          el('h2', {}, 'No analysis yet'),
+          el('h2', {}, 'How this works'),
           el(
             'p',
             {},
-            'Paste a ticket, email or work request above and select ' +
-              '"Analyse Priority". Nothing you paste leaves this browser.'
+            'Paste a ticket, email or work request above and select "Analyse Priority". ' +
+              'Nothing you paste leaves this browser.'
           ),
           el('ol', { class: 'empty-steps' }, [
             el(
@@ -765,7 +779,29 @@ export function renderResult(container, result, options = {}) {
               'Evidence is read from the wording — scope, deadline, workaround, symptom.'
             ),
             el('li', {}, 'That evidence produces an Impact and an Urgency.'),
-            el('li', {}, 'The matrix turns those two into P1–P4. Nothing else decides it.')
+            el('li', {}, 'The matrix turns those two into P1–P4. Nothing else decides it.'),
+            el('li', {}, 'Any unknown that could change the priority becomes a question to ask.')
+          ]),
+          el('p', {}, [
+            el(
+              'a',
+              {
+                href: 'https://github.com/ikelaiah/first-pass-ticket-triage/blob/main/PRIORITY-FRAMEWORK.md',
+                target: '_blank',
+                rel: 'noopener'
+              },
+              'Read the framework'
+            ),
+            ' · ',
+            el(
+              'a',
+              {
+                href: 'https://github.com/ikelaiah/first-pass-ticket-triage/blob/main/docs/user-guide.md',
+                target: '_blank',
+                rel: 'noopener'
+              },
+              'User guide'
+            )
           ]),
           el('p', { class: 'muted' }, organisationConfig.disclaimer)
         ]),
@@ -799,6 +835,7 @@ export function renderResult(container, result, options = {}) {
   const banner = el(
     'div',
     {
+      id: 'verdict',
       class: 'banner ' + (displayPriority ? 'priority-' + displayPriority : 'priority-unassessed')
     },
     [
@@ -807,11 +844,13 @@ export function renderResult(container, result, options = {}) {
           displayPriority ? 'Suggested priority' : 'Assessment status',
           el('span', { class: 'refined-tag' }, options.refined ? 'manually refined' : 'automatic')
         ]),
-        el('p', { class: 'banner-priority' }, [
-          el('span', { class: 'banner-code' }, displayPriority || '—'),
-          el('span', { class: 'banner-sep', 'aria-hidden': 'true' }, ' — '),
-          el('span', { class: 'banner-name' }, def.name)
-        ]),
+        displayPriority
+          ? el('p', { class: 'banner-priority' }, [
+              el('span', { class: 'banner-code' }, displayPriority),
+              el('span', { class: 'banner-sep', 'aria-hidden': 'true' }, ' — '),
+              el('span', { class: 'banner-name' }, def.name)
+            ])
+          : el('p', { class: 'banner-priority' }, [el('span', { class: 'banner-name' }, def.name)]),
         el('p', { class: 'banner-headline' }, def.headline),
         heroLevels(result),
         refinedLine(result),
@@ -825,42 +864,17 @@ export function renderResult(container, result, options = {}) {
     container,
     el('div', { class: 'result' }, [
       banner,
+      jumpNav(result),
+      askSection(result),
       nextActionSection(result),
       result.justification
         ? el('div', { class: 'justification-line' }, [
             el('span', { class: 'justification-text' }, result.justification),
-            el(
-              'button',
-              {
-                class: 'btn btn-quiet btn-copy justification-copy',
-                type: 'button',
-                'aria-label': 'Copy justification',
-                onClick: (e) => {
-                  const btn = e.currentTarget;
-                  if (navigator.clipboard && navigator.clipboard.writeText) {
-                    navigator.clipboard.writeText(result.justification).then(() => {
-                      const prev = btn.textContent;
-                      btn.textContent = 'Copied';
-                      setTimeout(() => {
-                        btn.textContent = prev;
-                      }, 1400);
-                    });
-                  } else {
-                    const ta = document.createElement('textarea');
-                    ta.value = result.justification;
-                    document.body.appendChild(ta);
-                    ta.select();
-                    document.execCommand('copy');
-                    document.body.removeChild(ta);
-                    btn.textContent = 'Copied';
-                    setTimeout(() => {
-                      btn.textContent = 'Copy';
-                    }, 1400);
-                  }
-                }
-              },
-              'Copy'
-            )
+            copyButton(result.justification, 'Copy', {
+              class: 'justification-copy',
+              ariaLabel: 'Copy justification',
+              announce: 'Justification'
+            })
           ])
         : null,
       result.insufficientInformation
@@ -872,21 +886,22 @@ export function renderResult(container, result, options = {}) {
               'Almost nothing in this request could be recognised. No actionable ' +
                 'priority is suggested yet - a request this thin can still turn out to be serious.'
             ),
-            el('p', { class: 'muted' }, 'The questions below are the ones worth asking first.')
+            el('p', { class: 'muted' }, 'The questions above are the ones worth asking first.')
           ])
         : null,
-      panel('Triage Handoff', handoffSection(result), 'panel-handoff'),
-      // Eight questions panel — the framework, visible on every result
-      panel('8 Questions — Impact vs Urgency', eightQuestionsPanel(result), 'panel-eight'),
-      panel('Suggested reply (draft)', replySection(result), 'panel-reply'),
       // The reasoning chain is the point of the tool, and it holds a two-column
       // split of its own, so it gets the full width rather than half of it.
       panel(
         displayPriority ? 'Why ' + displayPriority + '?' : 'How the matrix assessed this request',
         chainSection(result),
-        'panel-chain'
+        'panel-chain',
+        'why'
       ),
-      el('div', { class: 'result-grid' }, [
+      // Eight questions panel — the framework, visible on every result
+      panel('8 Questions — Impact vs Urgency', eightQuestionsPanel(result), 'panel-eight', 'eight'),
+      panel('Triage Handoff', handoffSection(result), 'panel-handoff', 'handoff'),
+      panel('Suggested reply (draft)', replySection(result), 'panel-reply', 'reply'),
+      el('div', { class: 'result-grid', id: 'details' }, [
         el('div', { class: 'result-col' }, [
           panel('Classification', factChips(result), 'panel-facts'),
           panel('Assessment confidence', confidenceSection(result)),

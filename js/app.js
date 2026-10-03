@@ -22,15 +22,18 @@ const dom = {
   shareBtn: document.getElementById('share-btn'),
   clearBtn: document.getElementById('clear-btn'),
   relevanceHint: document.getElementById('relevance-hint'),
-  exampleBtn: document.getElementById('example-btn'),
   exampleSelect: document.getElementById('example-select'),
   exampleNote: document.getElementById('example-note'),
   exampleNoteWrap: document.querySelector('.example-note-wrap'),
+  featured: document.getElementById('featured-examples'),
   themeSelect: document.getElementById('theme-select'),
   result: document.getElementById('result-region'),
+  resultHeading: document.getElementById('result-heading'),
   status: document.getElementById('result-status'),
   refinePanel: document.getElementById('refine-panel'),
   refineReset: document.getElementById('refine-reset'),
+  refineVerdict: document.getElementById('refine-verdict'),
+  refineCount: document.getElementById('refine-count'),
   matrix: document.getElementById('matrix-table'),
   matrixExplain: document.getElementById('matrix-explain'),
   definitions: document.getElementById('priority-definitions'),
@@ -45,9 +48,31 @@ function announce(result) {
   dom.status.textContent = statusSentence(result);
 }
 
+/** Keep the refine summary in step with the current result. */
+function syncRefineSummary() {
+  const result = state.result;
+  if (dom.refineVerdict) {
+    const priority = result && !result.empty ? result.suggestedPriority || 'Unassessed' : '';
+    dom.refineVerdict.textContent = priority;
+    dom.refineVerdict.className =
+      'refine-verdict ' +
+      (result && result.suggestedPriority
+        ? 'priority-' + result.suggestedPriority
+        : 'priority-unassessed');
+    dom.refineVerdict.hidden = !priority;
+  }
+  if (dom.refineCount) {
+    const unknown = document.querySelectorAll('#eight .facet-row.facet--unknown').length;
+    dom.refineCount.textContent = unknown
+      ? unknown + (unknown === 1 ? ' unknown to confirm' : ' unknowns to confirm')
+      : 'the key facts are present';
+  }
+}
+
 function render(refined) {
   renderResult(dom.result, state.result, { refined });
   renderMatrix(dom.matrix, dom.matrixExplain, state.result);
+  syncRefineSummary();
   announce(state.result);
 }
 
@@ -59,6 +84,7 @@ function analyseFresh() {
   render(false);
   if (!state.result.empty) {
     requestAnimationFrame(() => {
+      if (dom.resultHeading) dom.resultHeading.focus({ preventScroll: true });
       dom.result.scrollIntoView({ block: 'start', behavior: 'smooth' });
     });
   }
@@ -145,12 +171,35 @@ function updateRelevanceHint() {
   }, 400);
 }
 
-function loadExample() {
-  const example = exampleById(dom.exampleSelect.value) || EXAMPLES[0];
+function loadExampleById(id) {
+  const example = exampleById(id);
+  if (!example) return;
   dom.input.value = example.text;
   dom.exampleNote.textContent = example.note;
   if (dom.exampleNoteWrap) dom.exampleNoteWrap.hidden = false;
   dom.input.focus();
+}
+
+/** One example per priority band, so a first impression covers the range. */
+function featuredExamples() {
+  const out = [];
+  for (const wanted of ['P1', 'P2', 'P3', 'P4']) {
+    const found = EXAMPLES.find((example) => example.expected.includes(wanted));
+    if (found) out.push(found);
+  }
+  return out;
+}
+
+function populateFeatured() {
+  if (!dom.featured) return;
+  for (const example of featuredExamples()) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'btn btn-quiet featured-example';
+    button.textContent = example.title;
+    button.addEventListener('click', () => loadExampleById(example.id));
+    dom.featured.appendChild(button);
+  }
 }
 
 function populateExamples() {
@@ -199,6 +248,7 @@ function init() {
   }
   initTheme();
   populateExamples();
+  populateFeatured();
   renderDefinitions(dom.definitions);
   refine.reset();
   render(false);
@@ -218,7 +268,7 @@ function init() {
   dom.shareBtn.addEventListener('click', shareLink);
   dom.clearBtn.addEventListener('click', clearAll);
   dom.input.addEventListener('input', updateRelevanceHint);
-  dom.exampleBtn.addEventListener('click', loadExample);
+  dom.exampleSelect.addEventListener('change', () => loadExampleById(dom.exampleSelect.value));
   dom.refineReset.addEventListener('click', () => {
     refine.sync(analyse(state.text));
     reanalyse();

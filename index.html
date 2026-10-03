@@ -40,10 +40,6 @@
             <span aria-hidden="true">&#128274;</span> Local-only — on this device
           </p>
           <p class="privacy-line">Ticket content never leaves this browser.</p>
-          <p class="privacy-sub">
-            No AI provider &middot; No server &middot; No tracking &middot; Works offline &middot;
-            Verify: Network tab → 0 requests
-          </p>
           <button
             type="button"
             id="privacy-toggle"
@@ -117,10 +113,12 @@
           <span class="example-row-label">Try an example</span>
           <div class="example-picker">
             <label class="field-label inline sr-only" for="example-select">Example ticket</label>
-            <select id="example-select"></select>
-            <button type="button" id="example-btn" class="btn">Try Example</button>
+            <select id="example-select">
+              <option value="" disabled selected>Choose an example…</option>
+            </select>
           </div>
         </div>
+        <div class="featured-examples" id="featured-examples" aria-label="Featured examples"></div>
         <div class="example-note-wrap" aria-live="polite" hidden>
           <p class="hint example-note-kicker">
             <span aria-hidden="true">ℹ️</span> About this example
@@ -133,8 +131,9 @@
       </section>
 
       <!-- ----------------------------------------------------------- result -->
-      <h2 class="section-heading" id="result-heading">Result</h2>
+      <h2 class="section-heading" id="result-heading" tabindex="-1">Result</h2>
       <p id="result-status" class="sr-only" role="status" aria-live="polite"></p>
+      <p id="copy-status" class="sr-only" role="status" aria-live="polite"></p>
       <div id="result-region" aria-labelledby="result-heading"></div>
 
       <!-- ----------------------------------------------------------- refine -->
@@ -143,109 +142,119 @@
           <summary>
             <h2 class="summary-title" id="refine-heading">Refine assessment</h2>
             <span class="summary-hint"
-              >Confirm what the ticket did not say. The priority recalculates immediately.</span
+              >Confirm what the ticket did not say — the priority recalculates immediately.</span
             >
+            <span class="refine-verdict" id="refine-verdict" hidden></span>
+            <span class="refine-count" id="refine-count"></span>
           </summary>
           <div id="refine-panel" class="refine-panel">
-            <div class="refine-grid">
-              <div class="refine-field">
-                <label for="refine-scope">Scope</label>
-                <select id="refine-scope">
-                  <option value="unknown">Unknown</option>
-                  <option value="individual">Individual</option>
-                  <option value="few-users">Few users</option>
-                  <option value="team">Team / department</option>
-                  <option value="cohort">Cohort</option>
-                  <option value="one-school">One school</option>
-                  <option value="multiple-schools">Multiple schools</option>
-                  <option value="all-schools">All schools</option>
-                  <option value="corporation-wide">Corporation-wide</option>
-                </select>
-              </div>
+            <fieldset class="refine-group">
+              <legend>Impact — how much, and how badly</legend>
+              <div class="refine-grid">
+                <div class="refine-field">
+                  <label for="refine-scope">Scope</label>
+                  <select id="refine-scope">
+                    <option value="unknown">Unknown</option>
+                    <option value="individual">Individual</option>
+                    <option value="few-users">Few users</option>
+                    <option value="team">Team / department</option>
+                    <option value="cohort">Cohort</option>
+                    <option value="one-school">One school</option>
+                    <option value="multiple-schools">Multiple schools</option>
+                    <option value="all-schools">All schools</option>
+                    <option value="corporation-wide">Corporation-wide</option>
+                  </select>
+                </div>
 
-              <div class="refine-field">
-                <label for="refine-workaround">Workaround</label>
-                <select id="refine-workaround">
-                  <option value="unknown">Unknown</option>
-                  <option value="yes">Yes</option>
-                  <option value="partial">Partial</option>
-                  <option value="no">No</option>
-                </select>
-              </div>
+                <div class="refine-field">
+                  <label for="refine-consequence">Business consequence</label>
+                  <select id="refine-consequence">
+                    <option value="unknown">Unknown</option>
+                    <option value="impaired">Process impaired — work can continue</option>
+                    <option value="blocked">Process blocked — work cannot continue</option>
+                  </select>
+                </div>
 
-              <div class="refine-field">
-                <label for="refine-consequence">Business consequence</label>
-                <select id="refine-consequence">
-                  <option value="unknown">Unknown</option>
-                  <option value="impaired">Process impaired — work can continue</option>
-                  <option value="blocked">Process blocked — work cannot continue</option>
-                </select>
-              </div>
+                <div class="refine-field">
+                  <label for="refine-contained">Containment</label>
+                  <select id="refine-contained">
+                    <option value="auto">Auto (from evidence)</option>
+                    <option value="contained">Contained — one record/context</option>
+                    <option value="spreading">Spreading / recurring</option>
+                    <option value="unknown">Unknown extent</option>
+                  </select>
+                </div>
 
-              <div class="refine-field">
-                <label for="refine-deadline">Deadline</label>
-                <select id="refine-deadline">
-                  <option value="unknown">Unknown</option>
-                  <option value="now">Now</option>
-                  <option value="today">Today</option>
-                  <option value="tomorrow">Tomorrow</option>
-                  <option value="days-2-5">2&ndash;5 days</option>
-                  <option value="weeks-1-2">1&ndash;2 weeks or later</option>
-                  <option value="none">No deadline</option>
-                </select>
+                <div class="refine-field">
+                  <label for="refine-impact">Impact override</label>
+                  <select id="refine-impact">
+                    <option value="auto">Auto (from evidence)</option>
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                  </select>
+                </div>
               </div>
+            </fieldset>
 
-              <div class="refine-field">
-                <label for="refine-contained">Containment</label>
-                <select id="refine-contained">
-                  <option value="auto">Auto (from evidence)</option>
-                  <option value="contained">Contained — one record/context</option>
-                  <option value="spreading">Spreading / recurring</option>
-                  <option value="unknown">Unknown extent</option>
-                </select>
-              </div>
+            <fieldset class="refine-group">
+              <legend>Urgency — what happens if we wait</legend>
+              <div class="refine-grid">
+                <div class="refine-field">
+                  <label for="refine-deadline">Deadline</label>
+                  <select id="refine-deadline">
+                    <option value="unknown">Unknown</option>
+                    <option value="now">Now</option>
+                    <option value="today">Today</option>
+                    <option value="tomorrow">Tomorrow</option>
+                    <option value="days-2-5">2&ndash;5 days</option>
+                    <option value="weeks-1-2">1&ndash;2 weeks or later</option>
+                    <option value="none">No deadline</option>
+                  </select>
+                </div>
 
-              <div class="refine-field">
-                <label for="refine-driver">Deadline driver</label>
-                <select id="refine-driver">
-                  <option value="auto">Auto (from evidence)</option>
-                  <option value="statutory">Statutory / compliance (census, NAPLAN, WWCC)</option>
-                  <option value="operational">Operational (payroll cutoff, class starts)</option>
-                  <option value="preference">Preference ("would like by Friday")</option>
-                  <option value="none">No deadline</option>
-                </select>
-              </div>
+                <div class="refine-field">
+                  <label for="refine-driver">Deadline driver</label>
+                  <select id="refine-driver">
+                    <option value="auto">Auto (from evidence)</option>
+                    <option value="statutory">Statutory / compliance (census, NAPLAN, WWCC)</option>
+                    <option value="operational">Operational (payroll cutoff, class starts)</option>
+                    <option value="preference">Preference ("would like by Friday")</option>
+                    <option value="none">No deadline</option>
+                  </select>
+                </div>
 
-              <div class="refine-field">
-                <label for="refine-harm">Harm timing</label>
-                <select id="refine-harm">
-                  <option value="auto">Auto (from evidence)</option>
-                  <option value="active">Happening now (expired / exposed)</option>
-                  <option value="pending">Waiting to happen (expiring / pending)</option>
-                  <option value="unknown">Unknown</option>
-                </select>
-              </div>
+                <div class="refine-field">
+                  <label for="refine-harm">Harm timing</label>
+                  <select id="refine-harm">
+                    <option value="auto">Auto (from evidence)</option>
+                    <option value="active">Happening now (expired / exposed)</option>
+                    <option value="pending">Waiting to happen (expiring / pending)</option>
+                    <option value="unknown">Unknown</option>
+                  </select>
+                </div>
 
-              <div class="refine-field">
-                <label for="refine-impact">Impact override</label>
-                <select id="refine-impact">
-                  <option value="auto">Auto (from evidence)</option>
-                  <option value="low">Low</option>
-                  <option value="medium">Medium</option>
-                  <option value="high">High</option>
-                </select>
-              </div>
+                <div class="refine-field">
+                  <label for="refine-workaround">Workaround</label>
+                  <select id="refine-workaround">
+                    <option value="unknown">Unknown</option>
+                    <option value="yes">Yes</option>
+                    <option value="partial">Partial</option>
+                    <option value="no">No</option>
+                  </select>
+                </div>
 
-              <div class="refine-field">
-                <label for="refine-urgency">Urgency override</label>
-                <select id="refine-urgency">
-                  <option value="auto">Auto (from evidence)</option>
-                  <option value="low">Low</option>
-                  <option value="medium">Medium</option>
-                  <option value="high">High</option>
-                </select>
+                <div class="refine-field">
+                  <label for="refine-urgency">Urgency override</label>
+                  <select id="refine-urgency">
+                    <option value="auto">Auto (from evidence)</option>
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                  </select>
+                </div>
               </div>
-            </div>
+            </fieldset>
 
             <fieldset class="risk-fieldset">
               <legend>Critical risk</legend>
@@ -289,7 +298,13 @@
           Impact and urgency are established from the ticket first. This table is the only place a P
           number is decided. Selecting a cell explains it &mdash; it does not change the assessment.
         </p>
-        <div class="matrix-wrap" id="matrix-table"></div>
+        <div
+          class="matrix-wrap"
+          id="matrix-table"
+          role="region"
+          aria-label="Priority matrix. Scroll horizontally to see all columns."
+          tabindex="0"
+        ></div>
         <div class="matrix-explain" id="matrix-explain" aria-live="polite"></div>
 
         <details class="definitions-details">

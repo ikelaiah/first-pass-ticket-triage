@@ -18,20 +18,23 @@ See [PRIVACY.md](https://github.com/ikelaiah/first-pass-ticket-triage/blob/main/
 
 ## Reading the result
 
-The card shows, in order:
+A sticky **jump-to** bar indexes every panel. The card shows, in order:
 
 - **Suggested priority** — P1–P4, or _Unassessed_ when nothing recognisable was
   stated.
 - **Impact** and **Urgency** — the two inputs the matrix uses.
+- **Ask the requester** — the ranked unknowns that could change the priority,
+  with **Copy all questions**. This is the same list whether you read it here or
+  copy the handoff.
 - **Safe Next Action** — a suggestion of what to do next (Clarify, Verify,
   Investigate, Contain, Escalate, Plan). It is advisory and never changes the
   priority.
+- **Why P#?** — the evidence → Impact/Urgency → matrix chain.
 - **8 Questions — Impact vs Urgency** — each question is _Answered_,
   _Inferred_ or _Unknown_, with the quote that decided it.
-- **Why P#?** — the evidence → Impact/Urgency → matrix chain.
-- **Missing information** — the ranked questions that would change the answer.
-- **Triage Handoff**, **Suggested reply**, **Classification**,
-  **Assessment confidence**, **Risk flags** and **Reasoning**.
+- **Triage Handoff**, **Suggested reply**, then **Classification**,
+  **Assessment confidence**, **Risk flags**, **Reasoning** and
+  **Missing information**.
 
 ## The eight questions
 
