@@ -339,14 +339,6 @@ a {
   color: var(--text);
   line-height: 1.45;
 }
-.privacy-sub {
-  margin: 0 0 0.4rem;
-  font-size: 0.72rem;
-  line-height: 1.45;
-  color: var(--muted);
-  letter-spacing: 0.01em;
-}
-
 .link-button {
   background: none;
   border: 0;
@@ -562,8 +554,8 @@ select:focus {
 }
 .btn-copy {
   font-size: 0.82rem;
-  min-height: 32px;
-  padding: 0.3rem 0.6rem;
+  min-height: 36px;
+  padding: 0.4rem 0.7rem;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -1689,12 +1681,112 @@ summary::marker {
   font-size: 0.85rem;
 }
 
+/* ------------------------------------------------ v0.13.0 usability ------ */
+
+/* A sticky index of the result panels. */
+.jump-nav {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.9rem;
+  margin: 0.75rem 0 0.25rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  font-size: 0.82rem;
+}
+.jump-nav a {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 600;
+  min-height: 24px;
+  display: inline-flex;
+  align-items: center;
+}
+.jump-nav a:hover {
+  text-decoration: underline;
+}
+
+/* The single place to see and copy what to ask the requester. */
+.panel-ask {
+  border-left: 4px solid var(--accent);
+}
+.ask-list {
+  margin: 0.4rem 0 0;
+  padding-left: 1.2rem;
+  display: grid;
+  gap: 0.4rem;
+}
+.ask-list li {
+  line-height: 1.5;
+}
+
+.featured-examples {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.6rem;
+}
+.featured-example {
+  font-size: 0.82rem;
+  min-height: 34px;
+  text-align: left;
+}
+
+/* Refine summary: the live verdict and the open-question count. */
+.refine-verdict {
+  display: inline-block;
+  margin-left: 0.5rem;
+  padding: 0.05rem 0.5rem;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 0.78rem;
+  color: var(--p-color);
+  background: var(--p-tint);
+}
+.refine-count {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+/* Refine grouping into Impact and Urgency. */
+.refine-group {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.75rem 0.9rem;
+  margin: 0 0 0.9rem;
+}
+.refine-group legend {
+  padding: 0 0.4rem;
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+/* The matrix scroll container is keyboard focusable on small screens. */
+.matrix-wrap:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+@media (pointer: coarse) {
+  .btn-copy {
+    min-height: 40px;
+    padding: 0.5rem 0.8rem;
+  }
+}
+
 @media print {
   .site-header .header-privacy,
   .actions,
   .site-footer,
   #refine-details,
-  .matrix-explain {
+  .matrix-explain,
+  .jump-nav {
     display: none;
   }
   body {

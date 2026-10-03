@@ -2,22 +2,39 @@
 
 > Local-first, explainable P1–P4 suggestions for IT and application support.
 
-v0.12.1: **Hygiene, tooling and docs.** Development checks (ESLint, Prettier,
-TypeScript), a single source of truth for the worked examples, dead-code removal,
-and a proper `docs/` set.
+[![CI](https://github.com/ikelaiah/first-pass-ticket-triage/actions/workflows/test.yml/badge.svg)](https://github.com/ikelaiah/first-pass-ticket-triage/actions/workflows/test.yml)
+[![Release](https://img.shields.io/github/v/release/ikelaiah/first-pass-ticket-triage)](https://github.com/ikelaiah/first-pass-ticket-triage/releases/latest)
+[![Licence: MIT](https://img.shields.io/badge/licence-MIT-blue.svg)](https://github.com/ikelaiah/first-pass-ticket-triage/blob/main/LICENSE)
 
-v0.12.0: **Core simplification.** The project was reduced to the eight-question
-model and the 3×3 matrix. It now detects what a ticket states and asks about the
-rest, instead of inferring deadlines, consequences, upstream systems and platform
-categories from configuration.
+**Live demo:** <https://ikelaiah.github.io/first-pass-ticket-triage/>
 
 Paste a messy ticket, email or work request. Get a suggested priority, the
 evidence behind it, the facts that are missing, and the questions worth asking
-next. Plain HTML, CSS and vanilla JavaScript — no framework, no build step, no
-backend, no dependencies.
+next. Everything runs in your browser — no AI provider, no server, no tracking.
+
+Plain HTML, CSS and vanilla JavaScript. No framework, no build step, and no
+runtime dependencies.
+
+![The result card: a suggested priority, the evidence to Impact/Urgency chain, and the ranked questions to ask the requester.](docs/assets/result-card.png)
+
+## 60-second quickstart
+
+1. Open the [live demo](https://ikelaiah.github.io/first-pass-ticket-triage/) — or run it locally (below).
+2. Paste a ticket, or press one of the **featured examples**.
+3. Select **Analyse Priority**.
+4. Read the verdict, then **Ask the requester** for the unknowns that could change it.
+5. Answer any you already know in **Refine assessment** — the priority recalculates live.
+
+v0.13.0: **Usable and learnable.** A prominent _Ask the requester_ block with
+_Copy all questions_, a sticky jump-to index, a live refine verdict, featured
+examples, and accessibility and mobile fixes.
 
 The full contract — every input the priority is calculated from, and the eight
 decision questions — is [PRIORITY-FRAMEWORK.md](https://github.com/ikelaiah/first-pass-ticket-triage/blob/main/PRIORITY-FRAMEWORK.md).
+
+| Desktop                                                                 | Mobile                                               |
+| ----------------------------------------------------------------------- | ---------------------------------------------------- |
+| ![The input, featured examples and privacy note.](docs/assets/hero.png) | ![The same page on a phone.](docs/assets/mobile.png) |
 
 ---
 
@@ -159,7 +176,7 @@ first-pass-triage/
 │   │   ├── systems.js          configured system detection
 │   │   └── examples.js         the example tickets
 │   └── ui/                     render-result, render-matrix, refine-controls,
-│                               reply, handoff, share, dom
+│                               reply, handoff, share, clipboard, dom
 ├── tests/
 │   ├── tests.html              browser test page
 │   ├── triage.test.mjs         the acceptance assertions

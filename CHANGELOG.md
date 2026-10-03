@@ -1,5 +1,60 @@
 # Changelog
 
+## [0.13.0] - 2026-10-03 — Usable and Learnable
+
+The usability release. It keeps the v0.12 model unchanged and reshapes the result
+card and inputs around the workflow the tool exists for: get a priority, then ask
+for the facts the ticket did not state.
+
+### Added
+
+- **Ask the requester** — a prominent panel directly under the verdict that lists
+  the ranked unknowns which could change the priority, with a **Copy all
+  questions** button. It merges the follow-up questions and the Safe Next Action
+  clarifications, so the same question is never shown twice.
+- A sticky **jump-to** bar indexing every result panel (Verdict, Ask the
+  requester, Next action, 8 Questions, Why this priority, Handoff, Reply,
+  Details).
+- A live **refine verdict chip** and an **open-question count** in the refine
+  summary, so a recalculation is visible right where the analyst is working.
+- **Featured example** buttons (one per priority band) and example loading on
+  selection, replacing the two-step picker.
+- In-app **How this works** empty state with links to the framework and user
+  guide.
+- README screenshots (result card, input, mobile), CI/release/licence badges and
+  a 60-second quickstart.
+
+### Changed
+
+- The result card is reordered for scanning: verdict → Ask the requester → Safe
+  Next Action → Why → 8 Questions → Handoff → Reply → details. Everything stays
+  visible; nothing is hidden behind a collapse.
+- The refine panel is grouped into **Impact** and **Urgency** fieldsets, with the
+  risk flags in their own fieldset.
+- **Assessment confidence** now explains that its percentage is a heuristic
+  evidence-completeness score, not a probability.
+- All copy actions share one implementation (`js/ui/clipboard.js`) with a single
+  polite live region, so screen readers hear "… copied".
+- CI/formatting is cross-platform (`prettier` `endOfLine: auto`).
+
+### Fixed
+
+- The unassessed banner no longer renders “— — Unassessed”; it shows a plain
+  _Unassessed_ label with the reason.
+- Focus moves to the result heading after analysis, and the matrix scroll
+  container is keyboard-focusable with a visible focus outline.
+- The header privacy block is slimmer; the detail is one click away.
+- Copy buttons have larger touch targets.
+
+### Verified
+
+- `npm run check` green: ESLint, Prettier, `tsc --noEmit` and 85 acceptance
+  assertions plus the privacy source scan.
+- Headless-Chrome checks: the P1 card renders the Ask block, jump nav and refine
+  chip; the unassessed path renders without the doubled dash; the no-ticket page
+  shows the How this works state and featured examples.
+- `docsprout check` passes (3 sections, 7 pages).
+
 ## [0.12.1] - 2026-10-03 — Hygiene, Tooling and Docs
 
 A maintenance release on top of the v0.12.0 simplification: remove dead weight,

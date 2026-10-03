@@ -50,7 +50,7 @@ It returns a plain object that the UI renders.
 | `js/data/systems.js`                | Configured system detection.                                                                                                     |
 | `js/data/examples.js`               | The worked examples — also the test oracle.                                                                                      |
 | `js/config.js`                      | Organisation settings: school count and systems.                                                                                 |
-| `js/ui/*`                           | Rendering, the matrix, refinement controls, reply, handoff, share.                                                               |
+| `js/ui/*`                           | Rendering, the matrix, refinement controls, reply, handoff, share, clipboard.                                                    |
 
 ## Invariants
 
