@@ -5,24 +5,18 @@
  * adds the positive "contained" signal so the 8-question panel can show
  * "appears contained" vs "no evidence of spreading" vs active spreading.
  */
-import { scanPositive } from './negation.js';
-import { CONTAINED_PHRASES, RECURRENCE_PHRASES, UNDETECTED_PHRASES } from '../data/phrases.js';
-import { RISK_MODIFIERS } from '../data/phrases.js';
-import { isNegated } from './negation.js';
+import { scanPositive, firstMatch } from './negation.js';
+import {
+  CONTAINED_PHRASES,
+  RECURRENCE_PHRASES,
+  UNDETECTED_PHRASES,
+  RISK_MODIFIERS
+} from '../data/phrases.js';
 
+/** First affirmative modifier hit, or null. */
 function hasModifier(doc, patterns) {
-  for (const p of patterns) {
-    const re = new RegExp(p.source, p.flags.includes('g') ? p.flags : p.flags + 'g');
-    let m;
-    while ((m = re.exec(doc.text)) !== null) {
-      if (!m[0]) {
-        re.lastIndex += 1;
-        continue;
-      }
-      if (!isNegated(doc, m.index, m.index + m[0].length)) return { quote: m[0].trim() };
-    }
-  }
-  return null;
+  const hit = firstMatch(doc, patterns);
+  return hit ? { quote: hit.quote } : null;
 }
 
 // A phrase such as "does not show that data is spreading" is an evidence

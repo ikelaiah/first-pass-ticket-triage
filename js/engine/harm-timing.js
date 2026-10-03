@@ -2,47 +2,30 @@
  * Harm timing — U8: is harm happening now (expired/active) vs waiting to happen (expiring/pending).
  * Generalises the existing expired vs expiring distinction beyond certificates.
  */
-import { clauseIndexOf, scanPositive, isCurrentStateNegated, isNegated } from './negation.js';
+import {
+  clauseIndexOf,
+  scanPositive,
+  isCurrentStateNegated,
+  isNegated,
+  firstMatch
+} from './negation.js';
 import { createEvidenceLedger } from './evidence.js';
 import { HARM_TIMING_PHRASES, ACTIVE_NOW_PHRASES } from '../data/phrases.js';
 
+/** First harm-timing hit that is not negated, or null. */
 function matchesAny(doc, patterns) {
-  for (const p of patterns) {
-    if (typeof p === 'string') {
-      const needle = p.toLowerCase();
-      let start = doc.text.indexOf(needle);
-      while (start >= 0) {
-        const end = start + needle.length;
-        if (!isNegated(doc, start, end) && !explicitlyNegated(doc, start)) {
-          return {
-            quote: doc.text.slice(start, end).trim(),
-            start,
-            end,
-            clauseIndex: clauseIndexOf(doc, start)
-          };
-        }
-        start = doc.text.indexOf(needle, start + 1);
-      }
-    } else {
-      const re = new RegExp(p.source, p.flags.includes('g') ? p.flags : p.flags + 'g');
-      let m;
-      while ((m = re.exec(doc.text)) !== null) {
-        if (!m[0]) {
-          re.lastIndex += 1;
-          continue;
-        }
-        if (!isNegated(doc, m.index, m.index + m[0].length) && !explicitlyNegated(doc, m.index)) {
-          return {
-            quote: m[0].trim(),
-            start: m.index,
-            end: m.index + m[0].length,
-            clauseIndex: clauseIndexOf(doc, m.index)
-          };
-        }
-      }
-    }
-  }
-  return null;
+  const hit = firstMatch(
+    doc,
+    patterns,
+    (d, start, end) => isNegated(d, start, end) || explicitlyNegated(d, start)
+  );
+  if (!hit) return null;
+  return {
+    quote: hit.quote,
+    start: hit.start,
+    end: hit.end,
+    clauseIndex: clauseIndexOf(doc, hit.start)
+  };
 }
 
 function explicitlyNegated(doc, start) {

@@ -45,12 +45,24 @@ It returns a plain object that the UI renders.
 | `js/engine/priority-matrix.js`      | The authoritative Impact × Urgency table and `priorityFor`.                                                                      |
 | `js/engine/confidence.js`           | Heuristic evidence completeness and conflicts.                                                                                   |
 | `js/engine/next-action.js`          | Safe Next Action policy (structured evidence in, advisory out).                                                                  |
-| `js/engine/analyzer.js`             | The pipeline and the result model.                                                                                               |
-| `js/data/phrases.js`                | Every phrase dictionary, grouped by facet.                                                                                       |
+| `js/engine/analyzer.js`             | The pipeline: composes the modules below into the result model.                                                                  |
+| `js/engine/decision-context.js`     | The one context rule kept: an explicit "resolved" update is not live.                                                            |
+| `js/engine/blocked-process.js`      | I2 — the blocked or impaired business process.                                                                                   |
+| `js/engine/input-relevance.js`      | The support-signal boundary (system, symptom or risk).                                                                           |
+| `js/engine/facets.js`               | I1–I4/U5–U8 projections shown on the result card.                                                                                |
+| `js/engine/follow-up-questions.js`  | Ranked missing information (diagnostic → priority → confidence).                                                                 |
+| `js/engine/reasoning.js`            | The reasoning list and the one-line justification.                                                                               |
+| `js/engine/policy-evidence.js`      | Adapter from detector results to the policy evidence shape.                                                                      |
+| `js/engine/next-action-evidence.js` | Adapter from the result to the Safe Next Action evidence shape.                                                                  |
+| `js/engine/overrides.js`            | Validation of manual refinement overrides.                                                                                       |
+| `js/data/phrases.js`                | The phrase-dictionary barrel; re-exports every facet module.                                                                     |
+| `js/data/phrases/*`                 | One module per facet (`scope`, `urgency`, `deadline`, `workaround`, `symptoms`, `risks`, `framework`) plus `shared`.             |
 | `js/data/systems.js`                | Configured system detection.                                                                                                     |
 | `js/data/examples.js`               | The worked examples — also the test oracle.                                                                                      |
 | `js/config.js`                      | Organisation settings: school count and systems.                                                                                 |
-| `js/ui/*`                           | Rendering, the matrix, refinement controls, reply, handoff, share, clipboard.                                                    |
+| `js/ui/render-result.js`            | Composes the result card from `js/ui/render/*`.                                                                                  |
+| `js/ui/render/*`                    | `banner`, `ask`, `chain`, `eight-questions`, `projections`, `panel`.                                                             |
+| `js/ui/*` (other)                   | The matrix, refinement controls, reply, handoff, share, clipboard, dom.                                                          |
 
 ## Invariants
 
