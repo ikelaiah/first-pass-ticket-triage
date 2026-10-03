@@ -1,11 +1,25 @@
 {
   "name": "first-pass-triage",
-  "version": "0.12.0",
+  "version": "0.12.1",
   "private": true,
   "type": "module",
   "description": "Local-first IT task triage and priority decision support. Static site - no dependencies, no build step.",
   "scripts": {
     "test": "node tests/run.mjs",
-    "test:release": "node tests/run.mjs"
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "tsc --noEmit",
+    "check": "npm run lint && npm run format:check && npm run typecheck && npm test",
+    "docs:check": "docsprout check",
+    "docs:serve": "docsprout serve"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^26.6.4",
+    "eslint": "^10.12.0",
+    "globals": "^17.13.0",
+    "prettier": "^3.9.9",
+    "typescript": "^7.0.2"
   }
 }

@@ -18,7 +18,15 @@
 
 /** Words that negate a nearby phrase. */
 const NEGATION_CUES = new Set([
-  'no', 'not', 'never', 'without', 'none', 'lacking', 'lacks', 'lack', 'excluding'
+  'no',
+  'not',
+  'never',
+  'without',
+  'none',
+  'lacking',
+  'lacks',
+  'lack',
+  'excluding'
 ]);
 
 /**
@@ -27,14 +35,74 @@ const NEGATION_CUES = new Set([
  * what keeps "has not received today's ABA file" a genuine failure report.
  */
 const NEGATION_LINKERS = new Set([
-  'a', 'an', 'the', 'any', 'of', 'been', 'be', 'is', 'are', 'was', 'were',
-  'currently', 'actually', 'really', 'yet', 'to', 'that', 'this', 'these',
-  'those', 'our', 'their', 'its', 'his', 'her', 'my', 'your', 'other',
-  'apparent', 'known', 'evidence', 'sign', 'signs', 'indication', 'indications',
-  'report', 'reports', 'further', 'more', 'real', 'actual', 'data', 'information', 'records', 'in',
-  'service', 'services', 'system', 'systems', 'application', 'applications', 'platform', 'job', 'jobs',
-  'process', 'processes', 'integration', 'integrations', 'sync', 'submission', 'submissions', 'transaction', 'transactions',
-  'have', 'has', 'had', 'got', 'get'
+  'a',
+  'an',
+  'the',
+  'any',
+  'of',
+  'been',
+  'be',
+  'is',
+  'are',
+  'was',
+  'were',
+  'currently',
+  'actually',
+  'really',
+  'yet',
+  'to',
+  'that',
+  'this',
+  'these',
+  'those',
+  'our',
+  'their',
+  'its',
+  'his',
+  'her',
+  'my',
+  'your',
+  'other',
+  'apparent',
+  'known',
+  'evidence',
+  'sign',
+  'signs',
+  'indication',
+  'indications',
+  'report',
+  'reports',
+  'further',
+  'more',
+  'real',
+  'actual',
+  'data',
+  'information',
+  'records',
+  'in',
+  'service',
+  'services',
+  'system',
+  'systems',
+  'application',
+  'applications',
+  'platform',
+  'job',
+  'jobs',
+  'process',
+  'processes',
+  'integration',
+  'integrations',
+  'sync',
+  'submission',
+  'submissions',
+  'transaction',
+  'transactions',
+  'have',
+  'has',
+  'had',
+  'got',
+  'get'
 ]);
 
 /** Cancels a preceding phrase: "<phrase> is not affected". */
@@ -42,7 +110,8 @@ const NEGATION_LINKERS = new Set([
  * "everyone else is unaffected" names an unaffected comparison group, not a
  * cancellation of the matched phrase's subject.
  */
-const COMPARATOR_UNAFFECTED = /\b(?:everyone|all|the rest|others?)\b[^.;!?]{0,24}\belse\b[^.;!?]{0,24}\b(?:is|are|was|were)\s+(?:still\s+)?unaffected\b/i;
+const COMPARATOR_UNAFFECTED =
+  /\b(?:everyone|all|the rest|others?)\b[^.;!?]{0,24}\belse\b[^.;!?]{0,24}\b(?:is|are|was|were)\s+(?:still\s+)?unaffected\b/i;
 
 const FORWARD_CANCEL = new RegExp(
   '^[^.;!?]{0,44}?\\b(?:' +
@@ -50,7 +119,7 @@ const FORWARD_CANCEL = new RegExp(
     '|unaffected|unimpacted' +
     '|(?:is|are|was|were|seems|seem|looks|look) (?:fine|ok|okay|healthy|normal|unaffected)' +
     '|working (?:fine|normally|as expected|correctly)' +
-  ')\\b'
+    ')\\b'
 );
 
 // Subject-level negatives are not ordinary one-word cues: "no one" and
@@ -59,7 +128,7 @@ const FORWARD_CANCEL = new RegExp(
 const SUBJECT_NEGATION = /\b(?:no one|nobody|not anyone|no users?)\b[^.;!?]{0,42}$/i;
 const EVIDENCE_NEGATION = /\bno (?:evidence|indication)\b[^.;!?]{0,42}$/i;
 
-/** Contractions expanded so dictionaries only need one spelling. */
+/** Contractions expanded so dictionaries only need one spelling. @type {[RegExp, string][]} */
 const CONTRACTIONS = [
   [/\bcannot\b/g, 'can not'],
   [/\bcan[’']t\b/g, 'can not'],
@@ -89,9 +158,12 @@ const CONTRACTIONS = [
   [/\bthere[’']s\b/g, 'there is']
 ];
 
-/** US -> AU/UK spelling for the handful of stems this domain actually uses. */
+/** US -> AU/UK spelling for the handful of stems this domain actually uses. @type {[RegExp, string][]} */
 const SPELLING = [
-  [/\b(synchroni|organi|prioriti|authori|recogni|categori|normali|minimi|maximi|utili|analy|apologi|summari|standardi)z/g, '$1s'],
+  [
+    /\b(synchroni|organi|prioriti|authori|recogni|categori|normali|minimi|maximi|utili|analy|apologi|summari|standardi)z/g,
+    '$1s'
+  ],
   [/\benrollments\b/g, 'enrolments'],
   [/\benrollment\b/g, 'enrolment'],
   [/\blicense\b/g, 'licence']
@@ -139,12 +211,12 @@ export function splitClauses(text) {
  * carry the substance of the request.
  */
 const EMAIL_FURNITURE = [
-  /\[cid:[^\]]*\]/gi,                                  // inline image references
-  /<mailto:[^>]*>/gi,                                  // duplicated mail links
-  /<https?:\/\/[^>]*>/gi,                              // duplicated web links
-  /https?:\/\/urldefense\.com\/\S+/gi,                 // link-rewriting wrappers
-  /^\s*caution:.*$/gim,                                // external-sender banners
-  /^\s*unless explicitly attributed.*$/gim,            // corporate disclaimer
+  /\[cid:[^\]]*\]/gi, // inline image references
+  /<mailto:[^>]*>/gi, // duplicated mail links
+  /<https?:\/\/[^>]*>/gi, // duplicated web links
+  /https?:\/\/urldefense\.com\/\S+/gi, // link-rewriting wrappers
+  /^\s*caution:.*$/gim, // external-sender banners
+  /^\s*unless explicitly attributed.*$/gim, // corporate disclaimer
   // Confidentiality footers only - matched on their stock phrasing, never on
   // the bare word "confidential", which is exactly what a privacy ticket says.
   /^.*if you are not the intended recipient.*$/gim,
@@ -153,10 +225,10 @@ const EMAIL_FURNITURE = [
   /^.*please notify the sender.*$/gim,
   /^\s*image\d+\.(?:png|jpe?g|gif)\s*\([^)]*\)\s*$/gim, // attachment listings
   /^\s*-{3,}\s*original message\s*-{3,}\s*$/gim,
-  /^\s*_{5,}\s*$/gm,                                   // separator rules
-  /^\s*0\d{1,2}\s?\d{4}\s?\d{4}\s*$/gm,                // landline on its own line
-  /^\s*04\d{2}\s?\d{3}\s?\d{3}\s*$/gm,                 // mobile on its own line
-  /^\s*level\s+\d+,\s*\d+\s+\w+.*$/gim,                // "Level 3, 8 Woodville St"
+  /^\s*_{5,}\s*$/gm, // separator rules
+  /^\s*0\d{1,2}\s?\d{4}\s?\d{4}\s*$/gm, // landline on its own line
+  /^\s*04\d{2}\s?\d{3}\s?\d{3}\s*$/gm, // mobile on its own line
+  /^\s*level\s+\d+,\s*\d+\s+\w+.*$/gim, // "Level 3, 8 Woodville St"
   /^\s*[a-z' ]+\s+(?:nsw|vic|qld|wa|sa|tas|act|nt)\s+\d{4}\s*$/gim,
   /^\s*office address\s*$/gim,
   /^\s*www\.\S+\s*$/gim
@@ -179,9 +251,6 @@ export function createDocument(rawText) {
     raw,
     text,
     clauses,
-    // How much of the paste was packaging rather than request.
-    strippedChars: Math.max(0, raw.replace(/\s+/g, ' ').length -
-      stripped.replace(/\s+/g, ' ').length),
     wordCount: text ? text.split(/\s+/).filter(Boolean).length : 0
   };
 }
@@ -234,8 +303,11 @@ export function isNegated(doc, start, end) {
   // "Nothing is failing" denies a failure; unlike "nothing is working", it
   // must not be treated as an outage. Keep this subject-level form narrow so
   // it does not change ordinary negation behaviour for other symptoms.
-  if (/\bnothing\s*$/i.test(before) &&
-      /^(?:is|was|has been)\s+(?:failing|failed|broken|wrong)$/i.test(phrase)) return true;
+  if (
+    /\bnothing\s*$/i.test(before) &&
+    /^(?:is|was|has been)\s+(?:failing|failed|broken|wrong)$/i.test(phrase)
+  )
+    return true;
 
   // Backward: cue, then up to four linker words, then the phrase.
   const tokens = tokenise(before);
@@ -265,9 +337,9 @@ export function isCurrentStateNegated(doc, start) {
 /**
  * Match dictionary entries against the document.
  *
- * @param {object} doc      document from createDocument()
+ * @param {any} doc      document from createDocument()
  * @param {Array}  entries  [{ m: string|RegExp|Array, ...payload }]
- * @param {object} options  { negate: false } for topical dictionaries (system
+ * @param {Record<string, any>} options  { negate: false } for topical dictionaries (system
  *                          names, technical domains) where a nearby negation
  *                          does not change what the ticket is *about*.
  * @returns {Array} [{ entry, quote, match, start, end, negated, clauseIndex }]
@@ -282,7 +354,10 @@ export function scan(doc, entries, options = {}) {
       const re = compile(pattern);
       let m;
       while ((m = re.exec(doc.text)) !== null) {
-        if (m[0] === '') { re.lastIndex += 1; continue; }
+        if (m[0] === '') {
+          re.lastIndex += 1;
+          continue;
+        }
         const start = m.index;
         const end = start + m[0].length;
         const negated = applyNegation && entry.negate !== false && isNegated(doc, start, end);
@@ -296,12 +371,16 @@ export function scan(doc, entries, options = {}) {
 
   // Longest match wins: "no data breach" must not also register as "breach",
   // or the negated phrase would be cancelled out by the word inside it.
-  return ordered.filter((hit) => !ordered.some((other) =>
-    other !== hit &&
-    other.start <= hit.start &&
-    other.end >= hit.end &&
-    (other.end - other.start) > (hit.end - hit.start)
-  ));
+  return ordered.filter(
+    (hit) =>
+      !ordered.some(
+        (other) =>
+          other !== hit &&
+          other.start <= hit.start &&
+          other.end >= hit.end &&
+          other.end - other.start > hit.end - hit.start
+      )
+  );
 }
 
 /** Convenience: only the hits that were not negated. */

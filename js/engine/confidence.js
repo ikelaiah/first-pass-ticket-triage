@@ -20,14 +20,23 @@ export function bandFor(score) {
 }
 
 /**
- * @param {object} doc
- * @param {object} ctx  detector results plus impact/urgency assessments
+ * @param {any} doc
+ * @param {Record<string, any>} ctx  detector results plus impact/urgency assessments
  * @returns {{ confidence, band, label, positives, negatives, conflicts }}
  */
 export function assessConfidence(doc, ctx) {
   const {
-    scopeResult, deadlineResult, workaroundResult, symptom,
-    systemResult, impactResult, urgencyResult, overridesApplied, isQuestion, inScope, consequence
+    scopeResult,
+    deadlineResult,
+    workaroundResult,
+    symptom,
+    systemResult,
+    impactResult,
+    urgencyResult,
+    overridesApplied,
+    isQuestion,
+    inScope,
+    consequence
   } = ctx;
 
   if (inScope === false) {
@@ -56,14 +65,18 @@ export function assessConfidence(doc, ctx) {
   // failure behind it does not depend on them, so their absence is not
   // uncertainty - and "this is a question, so it is P4" is a confident call.
   if (isQuestion) {
-    credit(20, 'A question with no stated consequence does not depend on scope, ' +
-      'deadline or workaround');
+    credit(
+      20,
+      'A question with no stated consequence does not depend on scope, ' + 'deadline or workaround'
+    );
   } else {
     if (scopeResult.explicit) credit(12, 'Scope is stated (' + scopeResult.label + ')');
-    else if (scopeResult.allUsers) credit(4, 'Wording implies all users of the system are affected');
+    else if (scopeResult.allUsers)
+      credit(4, 'Wording implies all users of the system are affected');
     else credit(-8, 'Scope was not stated');
 
-    if (deadlineResult.deadline === 'unknown') credit(-8, 'No deadline or business consequence was given');
+    if (deadlineResult.deadline === 'unknown')
+      credit(-8, 'No deadline or business consequence was given');
     else if (deadlineResult.committed) credit(14, 'A business deadline is stated');
     else credit(7, 'A time reference was found, but not stated as a deadline');
 
@@ -71,10 +84,12 @@ export function assessConfidence(doc, ctx) {
     else credit(10, 'Workaround availability is stated (' + workaroundResult.label + ')');
   }
 
-  if (symptom.severity > 0) credit(8, 'A technical symptom is identifiable (' + symptom.label + ')');
+  if (symptom.severity > 0)
+    credit(8, 'A technical symptom is identifiable (' + symptom.label + ')');
   else if (!isQuestion) credit(-5, 'No clear technical symptom was described');
 
-  if (systemResult.primary) credit(6, 'The affected system is named (' + systemResult.primary.name + ')');
+  if (systemResult.primary)
+    credit(6, 'The affected system is named (' + systemResult.primary.name + ')');
   else credit(-4, 'No system or application was named');
 
   if (consequence?.level && consequence.level !== 'unknown') {

@@ -26,7 +26,10 @@ const FACET_UNKNOWN_LABELS = Object.freeze({
 });
 
 function singleLine(value) {
-  return String(value ?? '').replace(/[\r\n]+/g, ' ').replace(/\s+/g, ' ').trim();
+  return String(value ?? '')
+    .replace(/[\r\n]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 function present(value) {
@@ -69,18 +72,29 @@ function knownFacts(result) {
 
   const consequence = result.businessConsequence;
   if (consequence?.level && consequence.level !== 'unknown' && present(consequence.label)) {
-    addUnique(facts, 'Business consequence: ' + consequence.label + manualSuffix(result, 'consequence'));
+    addUnique(
+      facts,
+      'Business consequence: ' + consequence.label + manualSuffix(result, 'consequence')
+    );
   }
 
   const i3 = f.i3Irreversibility;
-  if (present(i3?.answer) && i3.answer !== 'No irreversibility flagged' &&
-      i3.answer !== 'Unavailable/outage') {
+  if (
+    present(i3?.answer) &&
+    i3.answer !== 'No irreversibility flagged' &&
+    i3.answer !== 'Unavailable/outage'
+  ) {
     addUnique(facts, 'Consequence / recoverability: ' + i3.answer);
   }
 
   const containment = f.i4Containment?.containment;
-  if (containment && (containment.contained || containment.propagating ||
-      containment.recurring || containment.undetected)) {
+  if (
+    containment &&
+    (containment.contained ||
+      containment.propagating ||
+      containment.recurring ||
+      containment.undetected)
+  ) {
     addUnique(facts, 'Extent: ' + f.i4Containment.answer);
   }
 
@@ -92,7 +106,10 @@ function knownFacts(result) {
   const workaround = f.u7Workaround;
   if (workaround?.workaround && workaround.workaround !== 'unknown') {
     const cost = present(workaround.costPerDay) ? ' — ' + workaround.costPerDay + '/day' : '';
-    addUnique(facts, 'Workaround: ' + workaround.answer + cost + manualSuffix(result, 'workaround'));
+    addUnique(
+      facts,
+      'Workaround: ' + workaround.answer + cost + manualSuffix(result, 'workaround')
+    );
   }
 
   const harmTiming = f.u8HarmTiming?.harmTiming;
@@ -118,7 +135,8 @@ function unknownFacts(result) {
 function askQuestions(result) {
   const questions = [];
   for (const question of result.followUpQuestions || []) addUnique(questions, question);
-  for (const question of result.nextAction?.clarificationQuestions || []) addUnique(questions, question);
+  for (const question of result.nextAction?.clarificationQuestions || [])
+    addUnique(questions, question);
   return questions.slice(0, 3);
 }
 
@@ -126,7 +144,7 @@ function buildModel(result) {
   if (!result || result.empty) return null;
   const assessed = result.assessmentStatus === 'assessed' && Boolean(result.suggestedPriority);
   const next = result.nextAction || null;
-  const action = next ? (ACTION_LABELS[next.action] || singleLine(next.action)) : '';
+  const action = next ? ACTION_LABELS[next.action] || singleLine(next.action) : '';
   const unknown = unknownFacts(result);
   if (!assessed && !unknown.length) unknown.push('Affected system, current problem, and scope');
   const known = knownFacts(result);
@@ -134,7 +152,8 @@ function buildModel(result) {
   return {
     assessed,
     priority: assessed
-      ? singleLine(result.suggestedPriority) + (present(result.priorityName) ? ' — ' + singleLine(result.priorityName) : '')
+      ? singleLine(result.suggestedPriority) +
+        (present(result.priorityName) ? ' — ' + singleLine(result.priorityName) : '')
       : '',
     impact: assessed ? singleLine(result.impactLabel) : '',
     urgency: assessed ? singleLine(result.urgencyLabel) : '',
@@ -199,7 +218,9 @@ export function buildHandoffMarkdown(result) {
     lines.push('- Assessment: **Unassessed**');
   } else {
     lines.push('- Priority: **' + escapeMarkdown(model.priority) + '**');
-    lines.push('- Impact: ' + escapeMarkdown(model.impact) + ' · Urgency: ' + escapeMarkdown(model.urgency));
+    lines.push(
+      '- Impact: ' + escapeMarkdown(model.impact) + ' · Urgency: ' + escapeMarkdown(model.urgency)
+    );
   }
   if (model.action) lines.push('- Safe Next Action: ' + escapeMarkdown(model.action));
   if (model.reason) lines.push('- Action note: ' + escapeMarkdown(model.reason));

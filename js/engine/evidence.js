@@ -8,8 +8,10 @@
  * or priority policy.
  */
 
-const HISTORICAL = /\b(?:yesterday|last\s+(?:term|week|month|year|night|monday|tuesday|wednesday|thursday|friday)|previous(?:ly)?|earlier|formerly|was|were)\b/i;
-const RESOLVED = /\b(?:resolved|fixed|restored|recovered|working again|completed successfully|no longer at risk)\b/i;
+const HISTORICAL =
+  /\b(?:yesterday|last\s+(?:term|week|month|year|night|monday|tuesday|wednesday|thursday|friday)|previous(?:ly)?|earlier|formerly|was|were)\b/i;
+const RESOLVED =
+  /\b(?:resolved|fixed|restored|recovered|working again|completed successfully|no longer at risk)\b/i;
 const HYPOTHETICAL = /\b(?:if|unless|could|may|might|would|planned|proposed|queued)\b/i;
 const FUTURE = /\bwill\b/i;
 
@@ -17,7 +19,13 @@ const VALID_AUTHORITY = new Set(['explicit', 'inferred', 'analyst-confirmed']);
 const VALID_POLARITY = new Set(['positive', 'negated']);
 const VALID_TEMPORAL = new Set(['current', 'future', 'historical', 'resolved', 'hypothetical']);
 const VALID_CONTEXT = new Set(['primary', 'quoted']);
-const VALID_ROLE = new Set(['primary', 'alternative-path', 'comparator', 'observation', 'requirement']);
+const VALID_ROLE = new Set([
+  'primary',
+  'alternative-path',
+  'comparator',
+  'observation',
+  'requirement'
+]);
 
 function oneOf(value, values, fallback) {
   return values.has(value) ? value : fallback;
@@ -51,7 +59,9 @@ export function normaliseEvidenceFact(doc, fact = {}) {
   const hit = fact.hit || null;
   const clauseIndex = Number.isInteger(fact.clauseIndex)
     ? fact.clauseIndex
-    : Number.isInteger(hit?.clauseIndex) ? hit.clauseIndex : null;
+    : Number.isInteger(hit?.clauseIndex)
+      ? hit.clauseIndex
+      : null;
   const clause = clauseIndex === null ? null : doc?.clauses?.[clauseIndex] || null;
   const temporal = oneOf(fact.temporal, VALID_TEMPORAL, temporalForClause(doc, clauseIndex));
   const polarity = oneOf(fact.polarity, VALID_POLARITY, hit?.negated ? 'negated' : 'positive');
@@ -62,7 +72,11 @@ export function normaliseEvidenceFact(doc, fact = {}) {
     quote: String(fact.quote || hit?.quote || '').trim(),
     clauseIndex,
     clause: clause ? clause.text : null,
-    start: Number.isInteger(fact.start) ? fact.start : Number.isInteger(hit?.start) ? hit.start : null,
+    start: Number.isInteger(fact.start)
+      ? fact.start
+      : Number.isInteger(hit?.start)
+        ? hit.start
+        : null,
     end: Number.isInteger(fact.end) ? fact.end : Number.isInteger(hit?.end) ? hit.end : null,
     authority: oneOf(fact.authority, VALID_AUTHORITY, 'explicit'),
     polarity,
@@ -99,11 +113,12 @@ export function createEvidenceLedger(doc) {
   }
 
   function currentPrimary(type) {
-    return byType(type).filter((fact) =>
-      fact.temporal === 'current' &&
-      fact.polarity === 'positive' &&
-      fact.context === 'primary' &&
-      fact.role === 'primary'
+    return byType(type).filter(
+      (fact) =>
+        fact.temporal === 'current' &&
+        fact.polarity === 'positive' &&
+        fact.context === 'primary' &&
+        fact.role === 'primary'
     );
   }
 

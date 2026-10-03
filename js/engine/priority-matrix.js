@@ -124,21 +124,3 @@ export const PRIORITY_DEFINITIONS = {
 export function priorityDefinition(id) {
   return PRIORITY_DEFINITIONS[id] || PRIORITY_DEFINITIONS.P4;
 }
-
-/** Flat cell list for rendering the interactive matrix. */
-export function matrixCells() {
-  const cells = [];
-  for (const urgency of URGENCY_ORDER) {
-    for (const impact of IMPACT_ORDER) {
-      cells.push({
-        urgency,
-        impact,
-        priority: priorityFor(impact, urgency),
-        description:
-          LEVEL_LABELS[impact] + ' impact with ' + LEVEL_LABELS[urgency].toLowerCase() +
-          ' urgency maps to ' + priorityFor(impact, urgency) + '.'
-      });
-    }
-  }
-  return cells;
-}

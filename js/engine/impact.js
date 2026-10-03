@@ -12,15 +12,12 @@ import {
   IMPACT_LOW_PHRASES,
   SERIOUS_CONSEQUENCE_PHRASES,
   BLOCKED_PHRASES,
-  ESCALATION_PHRASES,
   RECURRENCE_PHRASES,
-  UNDETECTED_PHRASES,
-  CONTAINED_PHRASES
+  UNDETECTED_PHRASES
 } from '../data/phrases.js';
 import { scopeDefinition } from './scope.js';
 import { SEVERITY } from './symptom.js';
 
-export const IMPACT_LEVELS = ['low', 'medium', 'high'];
 export const IMPACT_THRESHOLDS = { high: 3.5, medium: 1.75 };
 export const IMPACT_RANGE = { min: 0, max: 6 };
 
@@ -42,9 +39,9 @@ export function impactLevelFromScore(score) {
 }
 
 /**
- * @param {object} doc
- * @param {object} ctx { scopeResult, symptom, riskResult, deadlineResult, systemResult, consequence }
- * @returns {{ impact, score, contributions, seriousConsequence }}
+ * @param {any} doc
+ * @param {Record<string, any>} ctx { scopeResult, symptom, riskResult, deadlineResult, systemResult, consequence }
+ * @returns {any}
  */
 export function assessImpact(doc, ctx) {
   const { scopeResult, symptom, riskResult, deadlineResult, systemResult, consequence } = ctx;
@@ -78,8 +75,11 @@ export function assessImpact(doc, ctx) {
   // When the action-blocked symptom and the blocked business process quote
   // the same wording, they are one piece of evidence, not two.
   const symptomQuote = symptom.evidence[0] ? symptom.evidence[0].quote : '';
-  const blockedIsSameEvidence = symptom.symptom === 'action-blocked' &&
-    consequence?.level === 'blocked' && Boolean(symptomQuote) && Boolean(consequence.quote) &&
+  const blockedIsSameEvidence =
+    symptom.symptom === 'action-blocked' &&
+    consequence?.level === 'blocked' &&
+    Boolean(symptomQuote) &&
+    Boolean(consequence.quote) &&
     (consequence.quote.includes(symptomQuote) || symptomQuote.includes(consequence.quote));
   if (symptom.severity && !blockedIsSameEvidence) {
     add(
@@ -112,13 +112,9 @@ export function assessImpact(doc, ctx) {
     add(undetected[0].entry.w, undetected[0].entry.label, undetected[0].quote);
   }
 
-  // Contained vs spreading — contained does not reduce impact (still a fault)
-  // but is recorded for the 8-question panel; spreading already +1.5 via propagating.
-  const contained = scanPositive(doc, CONTAINED_PHRASES);
-  if (contained.length) {
-    // No numeric change — containment is informational, not a discount.
-    // The panel shows "appears contained" and missing-info avoids asking about spread.
-  }
+  // Containment is informational, not a discount: "appears contained" is shown
+  // in the 8-question panel, while spreading already scores +1.5 via propagating.
+  // The detector is deliberately not scored here.
 
   // Deletion and lost backups are about *recoverability*, which the ordinary
   // severity table does not capture: the work may simply be gone.
@@ -152,8 +148,12 @@ export function assessImpact(doc, ctx) {
   if (risks.dataIntegrity) {
     // "incorrect totals" already counted once as the symptom; the risk flag
     // adds the business dimension, not a second copy of the same evidence.
-    const alreadyCounted = ['incorrect-data', 'duplicate-data', 'corrupt-data', 'unstable-data']
-      .includes(symptom.symptom);
+    const alreadyCounted = [
+      'incorrect-data',
+      'duplicate-data',
+      'corrupt-data',
+      'unstable-data'
+    ].includes(symptom.symptom);
     add(alreadyCounted ? 0.5 : 0.75, 'Data integrity is in question');
   }
   if (modifiers.propagating) add(1.5, 'Incorrect data appears to be spreading');
@@ -198,9 +198,12 @@ export function assessImpact(doc, ctx) {
   const urgentDeadline = ['now', 'today'].includes(deadlineResult.deadline);
   // A consequence named as a system or artefact ("assessment portal") is a
   // topic, not an imminent personal consequence.
-  const serious = scanPositive(doc, SERIOUS_CONSEQUENCE_PHRASES).filter((hit) =>
-    !/\s+(?:portals?|services?|platforms?|systems?|applications?|apps?|tools?|folders?)\b/i.test(
-      doc.text.slice(hit.end, hit.end + 24)));
+  const serious = scanPositive(doc, SERIOUS_CONSEQUENCE_PHRASES).filter(
+    (hit) =>
+      !/\s+(?:portals?|services?|platforms?|systems?|applications?|apps?|tools?|folders?)\b/i.test(
+        doc.text.slice(hit.end, hit.end + 24)
+      )
+  );
   const seriousConsequence = smallScope && urgentDeadline && serious.length > 0;
   if (seriousConsequence) {
     add(1.75, 'A serious consequence for the individual is imminent', serious[0].quote);

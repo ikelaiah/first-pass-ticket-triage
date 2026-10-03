@@ -11,12 +11,11 @@ import { renderResult, statusSentence } from './ui/render-result.js';
 import { renderMatrix, renderDefinitions } from './ui/render-matrix.js';
 import { initRefineControls } from './ui/refine-controls.js';
 import { organisationConfig } from './config.js';
-import {
-  encodeTicket, readTicketFromLocation, writeTicketToLocation, tooLongForShare
-} from './ui/share.js';
+import { readTicketFromLocation, writeTicketToLocation, tooLongForShare } from './ui/share.js';
 import { CLAIMED_URGENCY_PHRASES, BLOCKED_PHRASES } from './data/phrases.js';
 import { has, createDocument } from './engine/negation.js';
 
+/** @type {Record<string, any>} */
 const dom = {
   input: document.getElementById('ticket-input'),
   analyseBtn: document.getElementById('analyse-btn'),
@@ -89,7 +88,10 @@ function clearAll() {
 
 /** The URL fragment is the only share channel; it carries the ticket text. */
 function shareLink() {
-  if (!dom.input.value.trim()) return;
+  if (!dom.input.value.trim()) {
+    flashShare('Paste a ticket first, then create a share link.');
+    return;
+  }
   if (tooLongForShare(dom.input.value)) {
     flashShare('Too long to share — links hold the first 2000 characters.');
     return;
@@ -111,7 +113,8 @@ function flashShare(message) {
   hint.textContent = message;
   clearTimeout(shareTimer);
   shareTimer = setTimeout(() => {
-    hint.textContent = 'The share link contains ticket text in the URL fragment — fragments are not sent to the server; do not use it for sensitive tickets.';
+    hint.textContent =
+      'The share link contains ticket text in the URL fragment — fragments are not sent to the server; do not use it for sensitive tickets.';
   }, 3000);
 }
 
@@ -162,7 +165,6 @@ function populateExamples() {
     }
     dom.exampleSelect.appendChild(optgroup);
   }
-  dom.exampleNote.textContent = EXAMPLES[0].note;
 }
 
 function togglePrivacy() {
@@ -174,13 +176,17 @@ function togglePrivacy() {
 function applyTheme(value) {
   if (value === 'auto') document.documentElement.removeAttribute('data-theme');
   else document.documentElement.setAttribute('data-theme', value);
-  try { localStorage.setItem('theme', value); } catch {}
+  try {
+    localStorage.setItem('theme', value);
+  } catch {}
 }
 
 function initTheme() {
   if (!dom.themeSelect) return;
   let saved = 'auto';
-  try { saved = localStorage.getItem('theme') || 'auto'; } catch {}
+  try {
+    saved = localStorage.getItem('theme') || 'auto';
+  } catch {}
   if (!['auto', 'light', 'dark'].includes(saved)) saved = 'auto';
   dom.themeSelect.value = saved;
   applyTheme(saved);

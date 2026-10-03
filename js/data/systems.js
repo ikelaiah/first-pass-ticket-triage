@@ -28,7 +28,7 @@ export function buildSystemEntries(config = organisationConfig) {
 const ENTRIES = buildSystemEntries();
 
 /**
- * @returns {{ systems: Array, primary: (object|null), criticalSystem: boolean, evidence: Array }}
+ * @returns {any}
  */
 export function detectSystems(doc, config = organisationConfig) {
   const entries = config === organisationConfig ? ENTRIES : buildSystemEntries(config);

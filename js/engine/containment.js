@@ -15,7 +15,10 @@ function hasModifier(doc, patterns) {
     const re = new RegExp(p.source, p.flags.includes('g') ? p.flags : p.flags + 'g');
     let m;
     while ((m = re.exec(doc.text)) !== null) {
-      if (!m[0]) { re.lastIndex += 1; continue; }
+      if (!m[0]) {
+        re.lastIndex += 1;
+        continue;
+      }
       if (!isNegated(doc, m.index, m.index + m[0].length)) return { quote: m[0].trim() };
     }
   }
@@ -26,7 +29,9 @@ function hasModifier(doc, patterns) {
 // limitation, not a claim that the data is contained. Keep the answer unknown
 // until the ticket states an affirmative containment fact.
 function propagationIsUnasserted(doc) {
-  return /\b(?:does not|doesn't|cannot|can not|not clear|cannot confirm|can not confirm|no evidence)\b[^.;!?]{0,70}\b(?:spread|spreading|propagat)/i.test(doc.text);
+  return /\b(?:does not|doesn't|cannot|can not|not clear|cannot confirm|can not confirm|no evidence)\b[^.;!?]{0,70}\b(?:spread|spreading|propagat)/i.test(
+    doc.text
+  );
 }
 
 export function detectContainment(doc, risks = {}) {
@@ -38,26 +43,25 @@ export function detectContainment(doc, risks = {}) {
     : hasModifier(doc, RISK_MODIFIERS.propagating);
 
   const propagating = Boolean(propagatingHit && risks.dataIntegrity);
-  const rawPropagating = Boolean(propagatingHit);
 
   return {
     contained: containedHit.length > 0 && !propagating && recurringHit.length === 0,
     containedEvidence: containedHit[0] || null,
     propagating,
     propagatingEvidence: propagatingHit,
-    rawPropagating,
     recurring: recurringHit.length > 0,
     recurringEvidence: recurringHit[0] || null,
     undetected: undetectedHit.length > 0,
     undetectedEvidence: undetectedHit[0] || null,
-    summary: containedHit.length > 0 && !propagating
-      ? 'appears contained'
-      : propagating
-        ? 'appears to be spreading'
-        : recurringHit.length > 0
-          ? 'recurring — pattern, not single instance'
-          : undetectedHit.length > 0
-            ? 'unknown extent — more may exist unreported'
-            : 'no evidence of spreading'
+    summary:
+      containedHit.length > 0 && !propagating
+        ? 'appears contained'
+        : propagating
+          ? 'appears to be spreading'
+          : recurringHit.length > 0
+            ? 'recurring — pattern, not single instance'
+            : undetectedHit.length > 0
+              ? 'unknown extent — more may exist unreported'
+              : 'no evidence of spreading'
   };
 }

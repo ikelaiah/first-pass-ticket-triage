@@ -9,6 +9,11 @@
 /**
  * el('p', { class: 'hint' }, 'text')
  * el('ul', {}, [el('li', {}, 'one'), el('li', {}, 'two')])
+ *
+ * @param {string} tag
+ * @param {Record<string, any>} [attrs]
+ * @param {any} [children] a node, a string, or an array of either
+ * @returns {any} the created element
  */
 export function el(tag, attrs = {}, children = []) {
   const node = document.createElement(tag);
@@ -30,12 +35,16 @@ export function el(tag, attrs = {}, children = []) {
   return node;
 }
 
-/** Remove every child of a node. */
+/** Remove every child of a node. @param {any} node */
 export function clear(node) {
   while (node.firstChild) node.removeChild(node.firstChild);
 }
 
-/** Replace a node's contents in one step. */
+/**
+ * Replace a node's contents in one step.
+ * @param {any} node
+ * @param {any} children
+ */
 export function replace(node, children) {
   clear(node);
   const list = Array.isArray(children) ? children : [children];
@@ -44,14 +53,6 @@ export function replace(node, children) {
     node.appendChild(typeof child === 'string' ? document.createTextNode(child) : child);
   }
   return node;
-}
-
-/** A definition-list row. */
-export function fact(term, value, extraClass) {
-  return [
-    el('dt', {}, term),
-    el('dd', { class: extraClass }, value)
-  ];
 }
 
 /** "quoted evidence" rendered safely. */

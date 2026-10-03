@@ -21,7 +21,9 @@ export function encodeTicket(text) {
 
 export function decodeTicket(encoded) {
   try {
-    let b64 = String(encoded == null ? '' : encoded).replace(/-/g, '+').replace(/_/g, '/');
+    let b64 = String(encoded == null ? '' : encoded)
+      .replace(/-/g, '+')
+      .replace(/_/g, '/');
     while (b64.length % 4) b64 += '=';
     return decodeURIComponent(escape(atob(b64)));
   } catch {

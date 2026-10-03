@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "project": {
+    "name": "First Pass: Ticket Triage",
+    "description": "Local-first, explainable P1-P4 suggestions for IT and application support.",
+    "repository_url": "https://github.com/ikelaiah/first-pass-ticket-triage"
+  },
+  "theme": {
+    "accent": "#0f766e",
+    "accent_secondary": "#0891b2"
+  },
+  "identity": {
+    "footer": "Local-first, offline-capable ticket triage. Advisory only.",
+    "links": [
+      {
+        "label": "Live demo",
+        "url": "https://ikelaiah.github.io/first-pass-ticket-triage/"
+      },
+      {
+        "label": "Source code",
+        "url": "https://github.com/ikelaiah/first-pass-ticket-triage"
+      }
+    ]
+  }
+}

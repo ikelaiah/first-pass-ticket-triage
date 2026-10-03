@@ -129,15 +129,15 @@ introduced.
 
 ## What is loaded from where
 
-| Asset | Origin |
-| ----- | ------ |
-| `index.html` | the host serving the site |
-| `css/styles.css` | the host serving the site |
-| `js/**/*.js` | the host serving the site |
-| Fonts | none — the page uses fonts already installed on your device |
-| Icons | none — the favicon is an inline SVG data URI |
-| Third-party scripts | none |
-| CDN resources | none |
+| Asset               | Origin                                                      |
+| ------------------- | ----------------------------------------------------------- |
+| `index.html`        | the host serving the site                                   |
+| `css/styles.css`    | the host serving the site                                   |
+| `js/**/*.js`        | the host serving the site                                   |
+| Fonts               | none — the page uses fonts already installed on your device |
+| Icons               | none — the favicon is an inline SVG data URI                |
+| Third-party scripts | none                                                        |
+| CDN resources       | none                                                        |
 
 There is nothing in the repository that is fetched from a third party, at load time or
 afterwards.

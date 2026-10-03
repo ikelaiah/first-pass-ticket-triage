@@ -18,7 +18,7 @@ export function initRefineControls(root, onChange) {
   for (const key of [...SELECT_KEYS, ...LEVEL_KEYS, ...FACET_KEYS]) {
     fields[key] = root.querySelector('#refine-' + key);
   }
-  const riskInputs = Array.from(root.querySelectorAll('input[data-risk]'));
+  const riskInputs = /** @type {any[]} */ (Array.from(root.querySelectorAll('input[data-risk]')));
   const dirty = new Set();
 
   for (const [key, node] of Object.entries(fields)) {
@@ -46,7 +46,8 @@ export function initRefineControls(root, onChange) {
         if (fields[key] && fields[key].value !== 'auto') overrides[key] = fields[key].value;
       }
       for (const key of FACET_KEYS) {
-        if (dirty.has(key) && fields[key] && fields[key].value !== 'auto') overrides[key] = fields[key].value;
+        if (dirty.has(key) && fields[key] && fields[key].value !== 'auto')
+          overrides[key] = fields[key].value;
       }
       const risks = {};
       for (const input of riskInputs) {

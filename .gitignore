@@ -1,0 +1,6 @@
+node_modules/
+build/
+docs/_site/
+.docsprout-site/
+*.log
+.DS_Store
