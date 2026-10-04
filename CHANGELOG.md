@@ -1,5 +1,64 @@
 # Changelog
 
+## [0.15.0] - 2026-10-04 — Platform catalogue restored
+
+Restores the generic Pre-K-12 platform identity that v0.12.0 removed, so the
+tool recognises the wide range of educational, payroll and operational platforms
+its tickets name — Canvas, Canva, Entra ID, Aurion, Sora and the rest.
+
+### Added
+
+- `js/data/platform-catalogue.js` — generic platform identity with categories,
+  source names and metadata, reconciled from the checked-in source inventory.
+- `docs/pre-k12-teaching-learning-school-operations-platforms-complete.md` — the
+  authoritative 206-assignment source inventory.
+- `tests/catalogue-coverage.test.mjs` — proves identity, categories and metadata
+  reconcile against the source, and that no literal alias has two owners.
+- `tests/run.mjs` executes the reconciliation suite alongside the acceptance
+  assertions.
+
+### Changed
+
+- `js/data/systems.js` combines organisation config with generic catalogue
+  identity. Configured systems keep their IDs and `critical` flags; unconfigured
+  catalogue platforms are recognised read-only (`critical: false`).
+- Guarded aliases replace unsafe bare brand words for ambiguous names (Clever,
+  Compass, Formative, Flat for Education, Oliver, Scratch, Moodle, Canva, Teams).
+- `js/config.js` gains `soleInstance`, marking a system the organisation has
+  exactly one of (Canvas). A current failure of a sole-instance system has no
+  alternative path, so it raises **urgency** (never impact) unless the ticket
+  scopes it to one person, states a workaround, or says it is resolved. A bare
+  _"Canvas is down"_ is no longer P3.
+- `js/config.js` gains `sharedInstance` (Canvas) and `failureFloor` (Edumate the
+  SIS, Aurion the payroll system → `'P1'`; Tyro, FatZebra, BPay and a generic
+  payment gateway → `'P2'`). A confirmed failure of a shared-instance platform
+  widens the affected scope to all tenants — one school's Canvas outage is all
+  schools' outage. A confirmed SIS or payroll failure sets a P1 floor regardless
+  of scope, so one school's Edumate instance down, or Aurion down at all, is P1
+  immediately. A payment gateway failure floors at P2 (escalate with the vendor),
+  not P1. Workarounds, resolved incidents and slow/degraded symptoms do not
+  trigger any floor.
+- `js/engine/policy.js` adds the `system.sis-failure` and `system.gateway-failure`
+  floor rules.
+- `PRIORITY-FRAMEWORK.md` documents the deployment facts that shape scope and
+  floor (shared instance, sole instance, failure floor).
+
+### Unchanged
+
+- Catalogue categories are recognition and routing context only. They never
+  contribute to Impact, Urgency or the priority matrix, which remain
+  evidence-driven. (The sole-instance, shared-instance and failure-floor signals
+  are organisation config facts, not catalogue categories.)
+- The input-relevance boundary is retained. A ticket with no recognised system,
+  technical symptom or risk is still **unassessed** and asks what needs support;
+  it is not scored. The v0.12.0 removal of the domain/work-type inference layer
+  that used to let an IT-subject-less ticket score is deliberate and unchanged.
+
+### Verified
+
+- `npm run check` green: ESLint, Prettier, `tsc --noEmit`, 103 acceptance
+  assertions, catalogue reconciliation (206/206) and the privacy source scan.
+
 ## [0.14.0] - 2026-10-03 — Readable and Maintainable
 
 A structure-only release. The triage model and every result are unchanged; the

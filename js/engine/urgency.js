@@ -134,6 +134,25 @@ export function assessUrgency(doc, ctx) {
     add(1, 'System-wide processing has stopped');
   }
 
+  // A sole-instance system has no alternative path: if it is actually failing
+  // and no workaround is confirmed, the work cannot continue at all. This is a
+  // time consequence ("what happens if we wait"), so it raises urgency, never
+  // impact. It is deliberately silent for slow/degraded systems, for a stated
+  // (even partial) workaround, for a resolved incident, and when the ticket
+  // scopes the problem to a single person (that is not an institutional path
+  // being lost).
+  const individualImpact = scopeResult.scope === 'individual' || scopeResult.scope === 'few-users';
+  const soleInstanceFailure =
+    Boolean(ctx.systemResult?.primary?.soleInstance) &&
+    symptom.hasFailure &&
+    !individualImpact &&
+    ctx.decisionContext?.status !== 'resolved' &&
+    workaroundResult.workaround !== 'yes' &&
+    workaroundResult.workaround !== 'partial';
+  if (soleInstanceFailure) {
+    add(1.5, 'A single point of failure with no alternative path is unavailable');
+  }
+
   const regression = scanPositive(doc, REGRESSION_PHRASES);
   if (regression.length) {
     add(regression[0].entry.w, regression[0].entry.label, regression[0].quote);

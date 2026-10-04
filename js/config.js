@@ -20,13 +20,48 @@ export const organisationConfig = {
 
   /**
    * Known systems. `aliases` are matched case-insensitively on word boundaries.
-   * `critical: true` marks a system whose failure tends to block a business
-   * process (it contributes to impact, it does not decide priority by itself).
+   *
+   * Per-system deployment facts, all optional:
+   *   - `critical: true`   the system tends to block a business process; it
+   *                        contributes to impact, but does not decide priority.
+   *   - `soleInstance: true`  the organisation has exactly one of it, so a
+   *                        current failure has no alternative path. Raises
+   *                        urgency (never impact), only on an actual failure,
+   *                        and not when the ticket scopes it to one person,
+   *                        states a workaround, or says it is resolved.
+   *   - `sharedInstance: true`  every tenant (school/faculty) shares one
+   *                        instance, so a failure reported for one tenant means
+   *                        the shared instance is down for all of them. A
+   *                        confirmed failure widens the affected scope to all
+   *                        tenants.
+   *   - `failureFloor: 'P1'`  a confirmed current failure of this system sets a
+   *                        minimum priority, regardless of scope or deadline.
+   *                        `'P1'` is reserved for the student information and
+   *                        payroll systems (Edumate, Aurion), where even one
+   *                        instance down is an institutional incident. `'P2'`
+   *                        covers payment gateways (Tyro, FatZebra, BPay),
+   *                        which are vendor-dependent and escalated rather
+   *                        than fixed in-house.
+   *
+   * These describe *this* deployment. A different organisation reusing the site
+   * changes them here (for example, a university would mark Moodle
+   * `sharedInstance` and PeopleSoft `failureFloor: 'P1'`).
    */
   systems: {
-    canvas: { name: 'Canvas', aliases: ['canvas', 'lms'], critical: true },
+    canvas: {
+      name: 'Canvas',
+      aliases: ['canvas', 'lms'],
+      critical: true,
+      soleInstance: true,
+      sharedInstance: true
+    },
     seesaw: { name: 'Seesaw', aliases: ['seesaw'], critical: true },
-    edumate: { name: 'Edumate', aliases: ['edumate', 'sis'], critical: true },
+    edumate: {
+      name: 'Edumate',
+      aliases: ['edumate', 'sis'],
+      critical: true,
+      failureFloor: 'P1'
+    },
     enrolhq: { name: 'EnrolHQ', aliases: ['enrolhq', 'enrol hq'], critical: true },
     laserfiche: { name: 'Laserfiche', aliases: ['laserfiche', 'lf'], critical: false },
     powerbi: { name: 'Power BI', aliases: ['power bi', 'powerbi', 'pbi'], critical: false },
@@ -35,7 +70,12 @@ export const organisationConfig = {
       aliases: ['entra', 'entra id', 'azure ad', 'aad', 'azure active directory'],
       critical: true
     },
-    aurion: { name: 'Aurion', aliases: ['aurion'], critical: true },
+    aurion: {
+      name: 'Aurion',
+      aliases: ['aurion'],
+      critical: true,
+      failureFloor: 'P1'
+    },
     anz: { name: 'ANZ', aliases: ['anz', 'aba file', 'aba'], critical: true },
     calumo: { name: 'Calumo', aliases: ['calumo'], critical: false },
     wonde: { name: 'Wonde', aliases: ['wonde'], critical: true },
@@ -144,11 +184,33 @@ export const organisationConfig = {
     apvalet: {
       name: 'APValet',
       aliases: ['apvalet', 'ap valet', 'apvalet payment'],
-      critical: false
+      critical: true,
+      failureFloor: 'P2'
     },
-    fatzebra: { name: 'FatZebra', aliases: ['fatzebra', 'fat zebra'], critical: false },
-    tyro: { name: 'Tyro', aliases: ['tyro', 'tyro payment', 'tyro payments'], critical: false },
-    bpay: { name: 'BPay', aliases: ['bpay', 'bpay portal'], critical: false },
+    fatzebra: {
+      name: 'FatZebra',
+      aliases: ['fatzebra', 'fat zebra'],
+      critical: true,
+      failureFloor: 'P2'
+    },
+    tyro: {
+      name: 'Tyro',
+      aliases: ['tyro', 'tyro payment', 'tyro payments'],
+      critical: true,
+      failureFloor: 'P2'
+    },
+    bpay: {
+      name: 'BPay',
+      aliases: ['bpay', 'bpay portal'],
+      critical: true,
+      failureFloor: 'P2'
+    },
+    paymentgateway: {
+      name: 'Payment gateway',
+      aliases: ['payment gateway', 'card gateway', 'online payment', 'payment provider'],
+      critical: true,
+      failureFloor: 'P2'
+    },
     ascender: {
       name: 'Ascender Pay',
       aliases: ['ascender', 'ascender pay', 'ascenderpay'],

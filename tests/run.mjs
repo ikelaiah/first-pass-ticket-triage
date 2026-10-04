@@ -14,6 +14,10 @@ import { runTests } from './triage.test.mjs';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 
+// Also executes the catalogue reconciliation suite, whose top-level asserts
+// fail the process if the checked-in platform inventory stops reconciling.
+await import('./catalogue-coverage.test.mjs');
+
 const { results, passed, failed, total } = runTests();
 
 let currentGroup = '';
