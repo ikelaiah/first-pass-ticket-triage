@@ -25,6 +25,11 @@ runtime dependencies.
 4. Read the verdict, then **Ask the requester** for the unknowns that could change it.
 5. Answer any you already know in **Refine assessment** — the priority recalculates live.
 
+v0.15.0: **Wider recognition, sharper deployment rules.** The generic Pre-K-12
+platform catalogue is restored, so the tool names the educational, payroll and
+operational platforms tickets refer to. Organisation systems gain shared-instance
+blast-radius, sole-instance, and SIS/payroll/payment failure floors.
+
 v0.14.0: **Readable and maintainable.** The pipeline, phrase dictionaries and
 result card were split into focused modules; the three re-implemented matchers
 now share one helper. No behaviour change.
@@ -188,7 +193,8 @@ first-pass-triage/
 │   │   ├── phrases.js          the phrase-dictionary barrel
 │   │   ├── phrases/            one module per facet (scope, urgency, deadline,
 │   │   │                       workaround, symptoms, risks, framework, shared)
-│   │   ├── systems.js          configured system detection
+│   │   ├── systems.js          system detection (config + generic catalogue)
+│   │   ├── platform-catalogue.js  generic Pre-K-12 platform identity
 │   │   └── examples.js         the example tickets
 │   └── ui/
 │       ├── render-result.js    composes the result card
@@ -199,6 +205,7 @@ first-pass-triage/
 ├── tests/
 │   ├── tests.html              browser test page
 │   ├── triage.test.mjs         the acceptance assertions
+│   ├── catalogue-coverage.test.mjs  source-inventory reconciliation
 │   └── run.mjs                 Node runner + privacy source scan
 ├── docs/                       developer and user documentation
 │   ├── user-guide.md           how to use the tool
@@ -207,6 +214,8 @@ first-pass-triage/
 │   ├── contributing.md         dev setup, checks and pull requests
 │   ├── extending.md            add wording, a risk, a facet or an example
 │   ├── framework.md            pointer to the priority contract
+│   ├── pre-k12-teaching-learning-school-operations-platforms-complete.md
+│   │                           the checked-in platform source inventory
 │   └── docsprout.json/layout.json  DocSprout (local preview only)
 ├── serve.bat / serve.ps1       local dev server for Windows (not deployed)
 ├── eslint.config.js            ESLint (development only)
@@ -239,6 +248,13 @@ release, then run `docsprout serve`. They are not deployed as a site.
 Organisation-specific values live in [js/config.js](https://github.com/ikelaiah/first-pass-ticket-triage/blob/main/js/config.js): the school
 count and the known systems and their aliases. Adding a system or an alias needs
 no engine changes.
+
+Generic Pre-K-12 platform identity lives in `js/data/platform-catalogue.js`. It
+is derived from the checked-in source inventory
+(`docs/pre-k12-teaching-learning-school-operations-platforms-complete.md`) and
+reconciled on every test run by `tests/catalogue-coverage.test.mjs`. Catalogue
+identity is recognition and routing context only: platform categories never
+contribute to Impact, Urgency or the priority matrix.
 
 ---
 

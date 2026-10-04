@@ -47,9 +47,36 @@ expectation honest.
 
 ## Add a system or alias
 
-Edit `js/config.js`. Add `{ name, aliases, critical }`. No engine change is
-needed. `critical` only means the system tends to block a business process; it
-does not decide priority by itself.
+Edit `js/config.js`. Add `{ name, aliases, critical, soleInstance, sharedInstance, failureFloor }`.
+No engine change is needed.
+
+- `critical` only means the system tends to block a business process; it does
+  not decide priority by itself.
+- `soleInstance` marks a system the organisation has exactly one of, so a
+  current failure has no alternative path and raises urgency (never impact)
+  unless the ticket scopes it to one person, states a workaround, or says it is
+  resolved.
+- `sharedInstance` marks a platform every tenant shares. A confirmed failure
+  reported for one tenant widens the affected scope to all tenants, because they
+  run on the same instance.
+- `failureFloor` (for example `'P1'`) marks a system whose confirmed failure sets
+  a minimum priority regardless of scope or deadline. Use `'P1'` for the student
+  information and payroll systems; use `'P2'` for vendor-dependent payment
+  gateways. Slow/degraded, a resolved incident, a holding workaround and a mere
+  mention do not trigger it.
+
+These are deployment facts: a university reusing the site would mark its LMS
+`sharedInstance` and its SIS `failureFloor: 'P1'`, exactly as a K-12
+corporation marks its own.
+
+Organisation-specific systems take precedence. Generic Pre-K-12 platforms live in
+`js/data/platform-catalogue.js`, which is reconciled against the checked-in
+source inventory
+(`docs/pre-k12-teaching-learning-school-operations-platforms-complete.md`) by
+`tests/catalogue-coverage.test.mjs`. To add a generic platform, add the row to the
+source document first, then the matching catalogue entity; the test proves
+identity, categories and metadata reconcile and that no literal alias has two
+owners. Categories are routing context only — they never affect scoring.
 
 ## Change scoring
 

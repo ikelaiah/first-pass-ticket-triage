@@ -21,7 +21,8 @@ export function policyEvidence(context) {
     recoverability,
     containment,
     urgencyResult,
-    blockedProcess
+    blockedProcess,
+    systemResult
   } = context;
   return {
     risks,
@@ -40,7 +41,8 @@ export function policyEvidence(context) {
     inScope,
     harmTiming: harmTiming?.timing || 'unknown',
     recoverability: recoverability?.value || 'unknown',
-    containment: containment || {}
+    containment: containment || {},
+    failureFloor: systemResult?.failureFloor || null
   };
 }
 

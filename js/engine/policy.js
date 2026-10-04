@@ -44,6 +44,12 @@ export const TRIAGE_POLICY_DECISIONS = Object.freeze([
     rationale: 'A shared delivery pipeline with an active build failure is High impact.'
   },
   {
+    id: 'system.sis-failure',
+    impact: 'high',
+    urgency: 'high',
+    rationale: 'A confirmed failure of the student information system is an institutional incident.'
+  },
+  {
     id: 'privacy.active',
     impact: 'high',
     urgency: 'high',
@@ -118,6 +124,7 @@ const DEFAULT_EVIDENCE = {
   risks: {},
   modifiers: {},
   criticalSystem: false,
+  failureFloor: null,
   containment: { contained: false, propagating: false, recurring: false, undetected: false }
 };
 
@@ -184,6 +191,36 @@ export function applyTriagePolicy(context) {
       'No IT system, application-support request or technical symptom was recognised.'
     );
     return { impact, urgency, rules, policyIds, floorApplied };
+  }
+
+  // A system the deployment marks with a failure floor is an institutional
+  // incident the moment it actually fails: no scope or deadline changes that.
+  // P1 is reserved for the student information and payroll systems, where even
+  // one instance down is critical. P2 covers payment gateways, which are
+  // vendor-dependent and escalated rather than fixed in-house. Slow/degraded, a
+  // resolved incident and a mere mention deliberately do not reach here, and a
+  // stated workaround or alternative process keeps the ordinary rule.
+  const workaroundHolding = evidence.workaround === 'yes' || evidence.workaround === 'partial';
+  if (
+    evidence.failureFloor &&
+    !workaroundHolding &&
+    (evidence.symptom.hasFailure || evidence.symptom.isOutage)
+  ) {
+    if (evidence.failureFloor === 'P2') {
+      raise(
+        'high',
+        'medium',
+        'system.gateway-failure',
+        'A confirmed payment gateway failure is being escalated with the vendor.'
+      );
+    } else {
+      raise(
+        'high',
+        'high',
+        'system.sis-failure',
+        'A confirmed failure of a critical business system is being remediated.'
+      );
+    }
   }
 
   // A committed statutory or operational future deadline sets a Medium floor.

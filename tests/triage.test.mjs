@@ -294,6 +294,112 @@ test('a manual impact override wins', () => {
   eq(r.suggestedPriority, priorityFor('high', r.urgency));
 });
 
+/* ------------------------------------------------------- sole-instance -- */
+
+group('Sole-instance systems');
+
+test('a bare outage of the only LMS is not under-prioritised', () => {
+  const r = P('Canvas is down.');
+  ok(r.suggestedPriority !== 'P3' && r.suggestedPriority !== 'P4', 'got ' + r.suggestedPriority);
+  eq(r.urgency, 'high');
+});
+
+test('a sole-instance outage for all schools is P1', () => {
+  const r = P('Canvas is down for all schools.');
+  eq(r.suggestedPriority, 'P1');
+});
+
+test('a non-sole-instance system is unaffected', () => {
+  const r = P('Edrolo is down.');
+  eq(r.suggestedPriority, 'P3');
+});
+
+test('a resolved sole-instance outage is not scored as live', () => {
+  const r = P('Canvas sync failed this morning across all schools but it is fixed now.');
+  eq(r.suggestedPriority, 'P4');
+});
+
+test('a degraded sole-instance system is not an outage', () => {
+  eq(P('Canvas is slow for one user.').suggestedPriority, 'P4');
+});
+
+/* ------------------------------------------------------ shared instance -- */
+
+group('Shared-instance blast radius');
+
+test('a shared-instance LMS down for one tenant escalates to all tenants', () => {
+  const r = P('Canvas is down for one school.');
+  eq(r.scope, 'all-schools');
+  eq(r.suggestedPriority, 'P1');
+});
+
+test('a shared-instance outage is not escalated for a single user', () => {
+  const r = P('One student cannot access Canvas.');
+  ok(r.scope !== 'all-schools', 'scope wrongly escalated to ' + r.scope);
+});
+
+test('a stated workaround absorbs a shared-instance outage', () => {
+  eq(P('Canvas is broken but I can work without it for now.').suggestedPriority, 'P3');
+});
+
+test('a resolved shared-instance outage is not scored as live', () => {
+  eq(
+    P('Canvas sync failed this morning across all schools but it is fixed now.').suggestedPriority,
+    'P4'
+  );
+});
+
+/* --------------------------------------------------------- SIS floor -- */
+
+group('SIS failure floor');
+
+test('a SIS failure for one school is P1 immediately', () => {
+  const r = P('Edumate is down for one school.');
+  eq(r.suggestedPriority, 'P1');
+});
+
+test('a SIS failure with no scope is P1', () => {
+  eq(P('Edumate is down.').suggestedPriority, 'P1');
+});
+
+test('a SIS mention that is merely slow is not floored', () => {
+  eq(P('Edumate is slow for one user.').suggestedPriority, 'P4');
+});
+
+test('a SIS failure with a holding workaround keeps the ordinary priority', () => {
+  const r = P(
+    'EnrolHQ to Edumate has stopped for all schools but enrolment staff can ' +
+      'manually process urgent applications for the next three days.'
+  );
+  eq(r.suggestedPriority, 'P2');
+});
+
+test('a resolved SIS failure is not scored as live', () => {
+  eq(P('Edumate is down but it is fixed now.').suggestedPriority, 'P4');
+});
+
+/* ------------------------------------------------- payroll / payments -- */
+
+group('Payroll system and payment gateway floors');
+
+test('a payroll system failure is P1 immediately', () => {
+  eq(P('Aurion is down.').suggestedPriority, 'P1');
+  eq(P('Aurion is down for one school.').suggestedPriority, 'P1');
+});
+
+test('a payroll system that is merely slow is not floored', () => {
+  eq(P('Aurion is slow for one user.').suggestedPriority, 'P4');
+});
+
+test('a payment gateway failure is P2, not P1', () => {
+  eq(P('The payment gateway is down.').suggestedPriority, 'P2');
+  eq(P('Tyro payments are failing.').suggestedPriority, 'P2');
+});
+
+test('a resolved payment gateway failure is not scored as live', () => {
+  eq(P('The payment gateway is down but it is fixed now.').suggestedPriority, 'P4');
+});
+
 /* -------------------------------------------------------------- projections -- */
 
 group('Advisory projections');

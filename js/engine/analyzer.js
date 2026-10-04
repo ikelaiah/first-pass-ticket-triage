@@ -19,7 +19,7 @@
 import { createDocument, has } from './negation.js';
 import { createEvidenceLedger } from './evidence.js';
 import { detectSystems } from '../data/systems.js';
-import { extractScopeEvidence, projectScope, scopeLabel } from './scope.js';
+import { extractScopeEvidence, projectScope, scopeLabel, scopeDefinition } from './scope.js';
 import { extractWorkaroundEvidence, projectWorkaround, workaroundLabel } from './workaround.js';
 import { detectDeadline, deadlineLabel } from './deadline.js';
 import { detectSymptom } from './symptom.js';
@@ -72,9 +72,48 @@ export function analyse(rawText, overrides = {}) {
   const recoverability = detectRecoverability(doc);
 
   const scopeEvidence = extractScopeEvidence(doc, evidenceLedger);
-  const detectedScope = projectScope(scopeEvidence);
+  let detectedScope = projectScope(scopeEvidence);
+
   const workaroundEvidence = extractWorkaroundEvidence(doc, evidenceLedger);
   const detectedWorkaround = projectWorkaround(workaroundEvidence);
+
+  // Shared-instance blast radius: when a platform runs on one instance shared by
+  // every tenant, a confirmed failure reported for a single tenant means the
+  // shared instance is down for all of them. Widen the affected scope so the
+  // impact reflects the true population. Guarded: only a real failure (not
+  // slow/degraded), not a resolved incident, not a problem scoped to one or two
+  // people, and not one a stated workaround is already absorbing.
+  const narrowIndividualScope = ['individual', 'few-users'].some((s) => s === detectedScope.scope);
+  const workaroundAbsorbing =
+    detectedWorkaround.workaround === 'yes' || detectedWorkaround.workaround === 'partial';
+  const sharedInstanceFailure =
+    systemResult.sharedInstanceSystem &&
+    symptom.hasFailure &&
+    !narrowIndividualScope &&
+    !workaroundAbsorbing &&
+    decisionContext.status !== 'resolved';
+  if (
+    sharedInstanceFailure &&
+    scopeDefinition(detectedScope.scope).rank < scopeDefinition('all-schools').rank
+  ) {
+    detectedScope = {
+      ...detectedScope,
+      scope: 'all-schools',
+      label: scopeLabel('all-schools'),
+      sharedInstanceEscalated: true,
+      evidence: [
+        ...detectedScope.evidence,
+        {
+          quote: systemResult.primary ? systemResult.primary.name : 'shared platform',
+          meaning:
+            'A shared-instance platform failure for one tenant affects every ' +
+            'tenant that uses the same instance',
+          source: 'system'
+        }
+      ]
+    };
+  }
+
   const detectedDeadline = detectDeadline(doc);
   const riskResult = detectRisks(doc, { symptom, scope: detectedScope });
 
@@ -313,7 +352,9 @@ export function analyse(rawText, overrides = {}) {
     riskResult: effectiveRisk,
     driver,
     harmTiming,
-    consequence: blockedProcess
+    consequence: blockedProcess,
+    systemResult,
+    decisionContext
   });
 
   const impactBase = impactResult.impact;
@@ -337,7 +378,8 @@ export function analyse(rawText, overrides = {}) {
       recoverability,
       containment,
       urgencyResult,
-      blockedProcess
+      blockedProcess,
+      systemResult
     })
   });
   urgencyResult = {
@@ -403,7 +445,9 @@ export function analyse(rawText, overrides = {}) {
       riskResult: riskSim,
       driver,
       harmTiming,
-      consequence: blockedProcess
+      consequence: blockedProcess,
+      systemResult,
+      decisionContext
     });
     return priorityFor(imp.impact, urg.urgency);
   };

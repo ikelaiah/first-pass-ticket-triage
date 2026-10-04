@@ -145,6 +145,12 @@ Urgency answers: **what happens if we wait?**
 A committed statutory or operational future deadline sets a Medium floor;
 preferences and "can wait" wording do not.
 
+**A sole-instance system is a single point of failure.** When the organisation
+has exactly one of a system (for example the only LMS), a current failure has no
+alternative path, so it raises urgency — never impact — unless the ticket scopes
+the problem to one person, states a workaround, or says it is resolved. This is
+why _"Canvas is down"_ is not P3.
+
 **Asserted urgency is not urgency.** Words such as _urgent_, _critical_, _ASAP_
 and _immediately_ are treated as evidence that the requester is worried, not as
 evidence of consequence. An SLA breach is different: it is a measurable
@@ -170,6 +176,26 @@ nothing** — who asked does not determine what breaks, and scores zero.
 Numbers are parsed. The broadest credible scope wins. **Unknown stays Unknown**
 — scope is never guessed; it lowers confidence and produces a follow-up
 question. A scope named only as a comparison is ignored.
+
+### Deployment facts that shape scope and floor
+
+Some scope and priority behaviour comes from how the organisation actually runs
+a system, not from the ticket wording. These live in `js/config.js`:
+
+- **Shared instance.** When every tenant shares one instance of a platform (for
+  example 18 schools on one Canvas), a confirmed failure reported for a single
+  tenant means the shared instance is down for all of them. The affected scope
+  widens to all tenants. A stated workaround, a resolved incident, or a problem
+  scoped to one or two people does not widen.
+- **Sole instance.** The organisation has exactly one of the system, so a
+  current failure has no alternative path and raises urgency.
+- **Failure floor.** A confirmed failure of a system marked with a floor sets a
+  minimum priority immediately — one school's instance down is still P1. The
+  student information system (Edumate) and the payroll system (Aurion) floor at
+  **P1**; payment gateways (Tyro, FatZebra, BPay) floor at **P2**, because they
+  are vendor-dependent and escalated rather than fixed in-house. Slow/degraded, a
+  resolved incident, a holding workaround and a mere mention do not trigger the
+  floor.
 
 ---
 

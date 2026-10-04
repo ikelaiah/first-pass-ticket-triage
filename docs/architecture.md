@@ -57,7 +57,8 @@ It returns a plain object that the UI renders.
 | `js/engine/overrides.js`            | Validation of manual refinement overrides.                                                                                       |
 | `js/data/phrases.js`                | The phrase-dictionary barrel; re-exports every facet module.                                                                     |
 | `js/data/phrases/*`                 | One module per facet (`scope`, `urgency`, `deadline`, `workaround`, `symptoms`, `risks`, `framework`) plus `shared`.             |
-| `js/data/systems.js`                | Configured system detection.                                                                                                     |
+| `js/data/systems.js`                | System detection: organisation config combined with generic catalogue identity.                                                  |
+| `js/data/platform-catalogue.js`     | Generic Pre-K-12 platform identity, categories and metadata (recognition/routing only).                                          |
 | `js/data/examples.js`               | The worked examples — also the test oracle.                                                                                      |
 | `js/config.js`                      | Organisation settings: school count and systems.                                                                                 |
 | `js/ui/render-result.js`            | Composes the result card from `js/ui/render/*`.                                                                                  |

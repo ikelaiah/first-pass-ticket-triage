@@ -2,3 +2,7 @@ node_modules
 package-lock.json
 LICENSE
 CHANGELOG.md
+
+# Checked-in data source, parsed by tests/catalogue-coverage.test.mjs.
+# Prettier rewrites table rows and breaks the reconciliation.
+docs/pre-k12-teaching-learning-school-operations-platforms-complete.md
