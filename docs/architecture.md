@@ -57,10 +57,10 @@ It returns a plain object that the UI renders.
 | `js/engine/overrides.js`            | Validation of manual refinement overrides.                                                                                       |
 | `js/data/phrases.js`                | The phrase-dictionary barrel; re-exports every facet module.                                                                     |
 | `js/data/phrases/*`                 | One module per facet (`scope`, `urgency`, `deadline`, `workaround`, `symptoms`, `risks`, `framework`) plus `shared`.             |
-| `js/data/systems.js`                | System detection: organisation config combined with generic catalogue identity.                                                  |
+| `js/data/systems.js`                | System detection: deployment profile combined with generic catalogue identity.                                                   |
 | `js/data/platform-catalogue.js`     | Generic Pre-K-12 platform identity, categories and metadata (recognition/routing only).                                          |
 | `js/data/examples.js`               | The worked examples — also the test oracle.                                                                                      |
-| `js/config.js`                      | Organisation settings: school count and systems.                                                                                 |
+| `js/deployment.js`                  | The active deployment profile: one organisation's systems and deployment facts.                                                  |
 | `js/ui/render-result.js`            | Composes the result card from `js/ui/render/*`.                                                                                  |
 | `js/ui/render/*`                    | `banner`, `ask`, `chain`, `eight-questions`, `projections`, `panel`.                                                             |
 | `js/ui/*` (other)                   | The matrix, refinement controls, reply, handoff, share, clipboard, dom.                                                          |

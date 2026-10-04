@@ -25,6 +25,12 @@ runtime dependencies.
 4. Read the verdict, then **Ask the requester** for the unknowns that could change it.
 5. Answer any you already know in **Refine assessment** — the priority recalculates live.
 
+v0.16.0: **Deployment profile and correctness fixes.** The organisation config is
+now a single, replaceable deployment profile (`js/deployment.js`), shown in the
+UI footer and documented in [docs/deployment.md](docs/deployment.md). Five audit
+fixes: failure-floor attribution, escalated-scope labelling, broader
+resolved-incident coverage, and config consistency.
+
 v0.15.0: **Wider recognition, sharper deployment rules.** The generic Pre-K-12
 platform catalogue is restored, so the tool names the educational, payroll and
 operational platforms tickets refer to. Organisation systems gain shared-instance
@@ -160,7 +166,7 @@ first-pass-triage/
 ├── css/styles.css              the only stylesheet
 ├── js/
 │   ├── app.js                  DOM wiring only
-│   ├── config.js               organisation-specific settings (systems)
+│   ├── deployment.js           the active deployment profile (one organisation)
 │   ├── engine/
 │   │   ├── analyzer.js         the pipeline: evidence → impact/urgency → matrix
 │   │   ├── negation.js         normalisation, clause splitting, negation-aware matching
@@ -193,7 +199,7 @@ first-pass-triage/
 │   │   ├── phrases.js          the phrase-dictionary barrel
 │   │   ├── phrases/            one module per facet (scope, urgency, deadline,
 │   │   │                       workaround, symptoms, risks, framework, shared)
-│   │   ├── systems.js          system detection (config + generic catalogue)
+│   │   ├── systems.js          system detection (profile + generic catalogue)
 │   │   ├── platform-catalogue.js  generic Pre-K-12 platform identity
 │   │   └── examples.js         the example tickets
 │   └── ui/
@@ -245,16 +251,25 @@ release, then run `docsprout serve`. They are not deployed as a site.
 
 ## 🔧 Configuration
 
-Organisation-specific values live in [js/config.js](https://github.com/ikelaiah/first-pass-ticket-triage/blob/main/js/config.js): the school
-count and the known systems and their aliases. Adding a system or an alias needs
-no engine changes.
+The engine is generic; a **deployment profile** is not. Everything specific to
+one organisation lives in
+[js/deployment.js](https://github.com/ikelaiah/first-pass-ticket-triage/blob/main/js/deployment.js):
+the profile name, school count, and the known systems with their aliases and
+deployment facts (`critical`, `soleInstance`, `sharedInstance`, `failureFloor`).
 
-Generic Pre-K-12 platform identity lives in `js/data/platform-catalogue.js`. It
-is derived from the checked-in source inventory
-(`docs/pre-k12-teaching-learning-school-operations-platforms-complete.md`) and
-reconciled on every test run by `tests/catalogue-coverage.test.mjs`. Catalogue
-identity is recognition and routing context only: platform categories never
-contribute to Impact, Urgency or the priority matrix.
+> The checked-in profile describes **the author's employer** — a K-12
+> corporation of 19 schools. If you are reusing this tool for a different
+> organisation, replace the profile. See
+> [docs/deployment.md](docs/deployment.md) for a worked example.
+
+Adding a system or an alias needs no engine changes.
+
+Generic Pre-K-12 platform identity lives separately in
+`js/data/platform-catalogue.js`. It is derived from the checked-in source
+inventory (`docs/pre-k12-teaching-learning-school-operations-platforms-complete.md`)
+and reconciled on every test run by `tests/catalogue-coverage.test.mjs`.
+Catalogue identity is recognition and routing context only: platform categories
+never contribute to Impact, Urgency or the priority matrix.
 
 ---
 

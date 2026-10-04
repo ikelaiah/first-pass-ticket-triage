@@ -7,7 +7,7 @@
  * assessment but keeps the cell). The list is capped at six.
  */
 import { has } from './negation.js';
-import { organisationConfig } from '../config.js';
+import { deploymentProfile } from '../deployment.js';
 import { SEVERITY } from './symptom.js';
 import { priorityFor } from './priority-matrix.js';
 import { CONTEXT_ELSEWHERE_PHRASES } from '../data/phrases.js';
@@ -97,7 +97,7 @@ export function buildMissingInformation(context) {
     missing.push('How many users, teams or schools are affected');
     addQuestion(
       'Is this affecting one person, one school, several schools or all ' +
-        organisationConfig.schoolCount +
+        deploymentProfile.schoolCount +
         ' schools?',
       pq([{ scope: 'all-schools' }, { scope: 'one-school' }])
     );

@@ -47,7 +47,7 @@ expectation honest.
 
 ## Add a system or alias
 
-Edit `js/config.js`. Add `{ name, aliases, critical, soleInstance, sharedInstance, failureFloor }`.
+Edit `js/deployment.js`. Add `{ name, aliases, critical, soleInstance, sharedInstance, failureFloor }`.
 No engine change is needed.
 
 - `critical` only means the system tends to block a business process; it does
@@ -63,11 +63,13 @@ No engine change is needed.
   a minimum priority regardless of scope or deadline. Use `'P1'` for the student
   information and payroll systems; use `'P2'` for vendor-dependent payment
   gateways. Slow/degraded, a resolved incident, a holding workaround and a mere
-  mention do not trigger it.
+  mention do not trigger it. The floor is attributed to the system actually
+  failing, so a benign mention near another system's failure does not lend it.
 
 These are deployment facts: a university reusing the site would mark its LMS
 `sharedInstance` and its SIS `failureFloor: 'P1'`, exactly as a K-12
-corporation marks its own.
+corporation marks its own. See [deployment.md](deployment.md) for a worked
+example of replacing the profile.
 
 Organisation-specific systems take precedence. Generic Pre-K-12 platforms live in
 `js/data/platform-catalogue.js`, which is reconciled against the checked-in

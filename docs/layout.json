@@ -15,6 +15,7 @@
       "title": "Reference",
       "pages": [
         { "title": "Architecture", "path": "architecture.md" },
+        { "title": "Deployment profile", "path": "deployment.md" },
         { "title": "Glossary", "path": "glossary.md" }
       ]
     },

@@ -400,6 +400,65 @@ test('a resolved payment gateway failure is not scored as live', () => {
   eq(P('The payment gateway is down but it is fixed now.').suggestedPriority, 'P4');
 });
 
+/* ------------------------------------------------- floor attribution -- */
+
+group('Failure floor attribution');
+
+test('a benign SIS mention does not lend its P1 floor to another system failure', () => {
+  const r = P('Edumate is fine, Tyro payments are failing.');
+  eq(r.suggestedPriority, 'P2');
+});
+
+test('the failing floored system keeps its own floor', () => {
+  eq(P('Tyro is fine but Edumate is down.').suggestedPriority, 'P1');
+});
+
+/* ------------------------------------------------- escalated scope -- */
+
+group('Escalated scope reporting');
+
+test('a shared-instance escalation reports the scope, not "not stated"', () => {
+  const r = P('Canvas is down.');
+  eq(r.scope, 'all-schools');
+  eq(r.detail.scope.explicit, true);
+  ok(
+    r.chain.impact.drivers.some((d) => /Scope: All 19 Schools/.test(d.label)),
+    'impact driver did not name the escalated scope: ' +
+      JSON.stringify(r.chain.impact.drivers.map((d) => d.label))
+  );
+});
+
+/* ------------------------------------------------- resolved wording -- */
+
+group('Resolved wording coverage');
+
+test('common resolution phrasings are recognised', () => {
+  const resolved = [
+    'Canvas is broken but fixed now.',
+    'The issue is sorted now.',
+    'We are back up.',
+    'Problem solved.',
+    'All good now.',
+    'It has since been fixed.'
+  ];
+  for (const text of resolved) {
+    eq(analyse(text).suggestedPriority, 'P4', text);
+  }
+});
+
+test('a request to restore is not a resolution', () => {
+  const r = P(
+    'A staff member deleted the Year 12 assessment folder and we need it restored today.'
+  );
+  ok(['P1', 'P2'].includes(r.suggestedPriority), 'got ' + r.suggestedPriority);
+});
+
+test('reopened incidents are not treated as resolved', () => {
+  eq(P('Canvas is not fixed and still down.').inScope, true);
+  eq(P('Canvas is fixed but failing again.').decisionContext.status, 'active-or-unspecified');
+  eq(P('The issue is resolved but it recurred.').decisionContext.status, 'active-or-unspecified');
+});
+
 /* -------------------------------------------------------------- projections -- */
 
 group('Advisory projections');

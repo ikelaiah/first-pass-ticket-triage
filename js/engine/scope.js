@@ -7,7 +7,7 @@
 import { clauseIndexOf, scanPositive } from './negation.js';
 import { createEvidenceLedger } from './evidence.js';
 import { SCOPE_DEFINITIONS, SCOPE_PHRASES, ALL_USERS_PHRASES } from '../data/phrases.js';
-import { organisationConfig } from '../config.js';
+import { deploymentProfile } from '../deployment.js';
 
 const BY_ID = new Map(SCOPE_DEFINITIONS.map((d) => [d.id, d]));
 
@@ -18,7 +18,7 @@ export function scopeDefinition(id) {
 
 export function scopeLabel(id) {
   const def = scopeDefinition(id);
-  if (def.id === 'all-schools') return 'All ' + organisationConfig.schoolCount + ' Schools';
+  if (def.id === 'all-schools') return 'All ' + deploymentProfile.schoolCount + ' Schools';
   return def.label;
 }
 
@@ -74,7 +74,7 @@ function scopeForPeople(n) {
 
 function scopeForSchools(n) {
   if (n <= 1) return 'one-school';
-  if (n >= organisationConfig.schoolCount) return 'all-schools';
+  if (n >= deploymentProfile.schoolCount) return 'all-schools';
   return 'multiple-schools';
 }
 
