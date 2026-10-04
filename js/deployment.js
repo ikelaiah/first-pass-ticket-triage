@@ -1,17 +1,25 @@
 /**
- * Organisation-specific configuration.
+ * ============================================================================
+ * DEPLOYMENT PROFILE — K-12 CORPORATION (the author's employer)
+ * ----------------------------------------------------------------------------
+ * The ENGINE is generic. THIS FILE IS NOT. Every value below describes ONE
+ * real organisation: 19 schools, whose systems happen to be Canvas, Edumate,
+ * Aurion and the rest. The rules engine reads this profile; it hard-codes
+ * none of it.
  *
- * Everything specific to *this* organisation lives here so the rules engine
- * stays generic. This file is intentionally public: change or replace these
- * deployment values when reusing the static site, and never put credentials,
- * tokens or other secrets here.
+ * If you are reusing this tool for a different organisation (a university, a
+ * different school group, a business), REPLACE THE VALUES BELOW — or replace
+ * the whole file and keep the export name `deploymentProfile`. See
+ * docs/deployment.md for a worked example of another deployment.
  *
- * v0.12.0 removed the scheduled-job, source-of-truth, system-status and
- * business-cycle blocks. They drove inference layers (expected behaviour,
- * known answers, upstream checks) that guessed at facts the ticket did not
- * state. Those are now normal follow-up questions instead.
+ * This file is intentionally public. Never put credentials, tokens or other
+ * secrets here.
+ * ============================================================================
  */
-export const organisationConfig = {
+export const deploymentProfile = {
+  /** Human-readable name for this deployment, shown in the UI footer. */
+  profileName: 'K-12 Corporation',
+
   /** Number of schools serviced. Used for labels and "all N schools" detection. */
   schoolCount: 19,
 
@@ -39,13 +47,26 @@ export const organisationConfig = {
    *                        `'P1'` is reserved for the student information and
    *                        payroll systems (Edumate, Aurion), where even one
    *                        instance down is an institutional incident. `'P2'`
-   *                        covers payment gateways (Tyro, FatZebra, BPay),
+   *                        covers payment gateways (Tyro, FatZebra, BPay,
+   *                        APValet, Inlogik and the generic payment gateway),
    *                        which are vendor-dependent and escalated rather
    *                        than fixed in-house.
    *
-   * These describe *this* deployment. A different organisation reusing the site
-   * changes them here (for example, a university would mark Moodle
-   * `sharedInstance` and PeopleSoft `failureFloor: 'P1'`).
+   * ---------------------------------------------------------------------------
+   * Example: a DIFFERENT deployment (illustrative — not this organisation)
+   * ---------------------------------------------------------------------------
+   * A university on one shared Moodle and a PeopleSoft student system would
+   * write, instead of the systems below:
+   *
+   *   moodle:    { name: 'Moodle',    aliases: ['moodle'],
+   *                critical: true, sharedInstance: true }
+   *   peoplesoft:{ name: 'PeopleSoft', aliases: ['peoplesoft', 'sis'],
+   *                critical: true, failureFloor: 'P1' }
+   *
+   * Moodle is shared, so a faculty-wide outage implies the shared instance is
+   * down for every faculty; PeopleSoft is the SIS, so any confirmed failure is
+   * P1. The same engine, a different profile.
+   * ---------------------------------------------------------------------------
    */
   systems: {
     canvas: {
@@ -180,7 +201,12 @@ export const organisationConfig = {
       aliases: ['wherescape', 'where scape', 'whereescape', 'data warehousing'],
       critical: false
     },
-    inlogik: { name: 'Inlogik', aliases: ['inlogik'], critical: false },
+    inlogik: {
+      name: 'Inlogik',
+      aliases: ['inlogik'],
+      critical: true,
+      failureFloor: 'P2'
+    },
     apvalet: {
       name: 'APValet',
       aliases: ['apvalet', 'ap valet', 'apvalet payment'],
@@ -306,4 +332,4 @@ export const organisationConfig = {
     'or an agreed SLA.'
 };
 
-export default organisationConfig;
+export default deploymentProfile;

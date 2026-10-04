@@ -13,7 +13,7 @@ import {
   IMPACT_ORDER,
   URGENCY_ORDER
 } from '../engine/priority-matrix.js';
-import { organisationConfig } from '../config.js';
+import { deploymentProfile } from '../deployment.js';
 import { panel } from './render/panel.js';
 import { askSection, jumpNav } from './render/ask.js';
 import { severityBlocks, miniMatrix, heroLevels, factChips, refinedLine } from './render/banner.js';
@@ -117,7 +117,7 @@ export function renderResult(container, result, options = {}) {
               'User guide'
             )
           ]),
-          el('p', { class: 'muted' }, organisationConfig.disclaimer)
+          el('p', { class: 'muted' }, deploymentProfile.disclaimer)
         ]),
         el('div', { class: 'empty-matrix' }, [
           el(
@@ -225,7 +225,7 @@ export function renderResult(container, result, options = {}) {
           panel('Missing information', missingSection(result), 'panel-missing')
         ])
       ]),
-      el('p', { class: 'advisory' }, organisationConfig.disclaimer)
+      el('p', { class: 'advisory' }, deploymentProfile.disclaimer)
     ])
   );
 }

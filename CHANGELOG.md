@@ -1,5 +1,52 @@
 # Changelog
 
+## [0.16.0] - 2026-10-04 — Deployment profile and correctness fixes
+
+Makes explicit that the organisation configuration is a single, replaceable
+**deployment profile**, and fixes five correctness issues found in the v0.15.0
+audit. The engine remains generic.
+
+### Changed
+
+- `js/config.js` is renamed to `js/deployment.js` and exported as
+  `deploymentProfile`, with a banner stating it describes one organisation (a
+  K-12 corporation) and can be replaced wholesale. All importers updated.
+- A `profileName` field is shown in the UI footer, so it is obvious which
+  deployment profile is active.
+- `docs/deployment.md` documents what a profile controls and gives a worked
+  example of replacing it (a university on shared Moodle and a PeopleSoft SIS).
+- The UNSW/PeopleSoft/Moodle case is kept as a clearly-labelled illustrative
+  block in `js/deployment.js`, not as configuration tied to a real organisation.
+
+### Fixed
+
+- **Failure floor attribution.** The SIS/payroll/payment floor was applied from
+  any *mentioned* system, so a benign "Edumate is fine, Tyro payments are
+  failing" escalated to P1. The floor is now attributed to the system actually
+  failing. (`js/data/systems.js` `failingFloor`, wired through the analyzer.)
+- **Escalated-scope label.** A shared-instance escalation used the all-schools
+  impact weight while still reporting "Scope not stated"; it now reports the
+  scope it used ("Scope: All 19 Schools") with `explicit: true`.
+- **Resolved-incident coverage.** `js/engine/decision-context.js` now recognises
+  "but fixed now", "it's fixed", "back up", "problem solved", "all good now",
+  "was already resolved", "it has since been fixed" and reopens on "recurred" /
+  "resurfaced", while still refusing a *request* to restore ("we need it restored
+  today").
+- **Config consistency.** `inlogik` is now a P2 payment system like APValet; the
+  floor comment lists all floored gateway systems.
+
+### Docs
+
+- `tests/tests.html` states that the catalogue reconciliation and privacy scan
+  are Node-only (they need `node:assert`/`node:fs`).
+- README, architecture, extending and PRIORITY-FRAMEWORK updated for the
+  deployment-profile rename.
+
+### Verified
+
+- `npm run check` green: ESLint, Prettier, `tsc --noEmit`, 109 acceptance
+  assertions, catalogue reconciliation (206/206) and the privacy source scan.
+
 ## [0.15.0] - 2026-10-04 — Platform catalogue restored
 
 Restores the generic Pre-K-12 platform identity that v0.12.0 removed, so the

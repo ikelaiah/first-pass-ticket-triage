@@ -180,7 +180,8 @@ question. A scope named only as a comparison is ignored.
 ### Deployment facts that shape scope and floor
 
 Some scope and priority behaviour comes from how the organisation actually runs
-a system, not from the ticket wording. These live in `js/config.js`:
+a system, not from the ticket wording. These live in the deployment profile,
+`js/deployment.js` ([docs/deployment.md](docs/deployment.md)):
 
 - **Shared instance.** When every tenant shares one instance of a platform (for
   example 18 schools on one Canvas), a confirmed failure reported for a single

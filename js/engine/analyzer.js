@@ -18,7 +18,7 @@
  */
 import { createDocument, has } from './negation.js';
 import { createEvidenceLedger } from './evidence.js';
-import { detectSystems } from '../data/systems.js';
+import { detectSystems, failingFloor } from '../data/systems.js';
 import { extractScopeEvidence, projectScope, scopeLabel, scopeDefinition } from './scope.js';
 import { extractWorkaroundEvidence, projectWorkaround, workaroundLabel } from './workaround.js';
 import { detectDeadline, deadlineLabel } from './deadline.js';
@@ -70,6 +70,8 @@ export function analyse(rawText, overrides = {}) {
   const systemResult = detectSystems(doc);
   const symptom = detectSymptom(doc);
   const recoverability = detectRecoverability(doc);
+  // The floor belongs to the system actually failing, not any system mentioned.
+  const failureFloor = failingFloor(systemResult, symptom);
 
   const scopeEvidence = extractScopeEvidence(doc, evidenceLedger);
   let detectedScope = projectScope(scopeEvidence);
@@ -100,6 +102,12 @@ export function analyse(rawText, overrides = {}) {
       ...detectedScope,
       scope: 'all-schools',
       label: scopeLabel('all-schools'),
+      // The escalation is evidence-backed (a shared instance), so the scope is
+      // definite even though the ticket did not literally state "all schools".
+      // Marking it explicit keeps the impact label honest instead of reading
+      // "scope not stated" next to an all-schools weight.
+      explicit: true,
+      escalated: true,
       sharedInstanceEscalated: true,
       evidence: [
         ...detectedScope.evidence,
@@ -379,7 +387,8 @@ export function analyse(rawText, overrides = {}) {
       containment,
       urgencyResult,
       blockedProcess,
-      systemResult
+      systemResult,
+      failureFloor
     })
   });
   urgencyResult = {

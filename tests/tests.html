@@ -23,6 +23,10 @@
         font-weight: 700;
         margin: 1rem 0;
       }
+      .muted {
+        color: #666;
+        margin: 1rem 0;
+      }
       .pass {
         color: #1a7f37;
       }
@@ -56,6 +60,11 @@
   <body>
     <h1>First Pass: Test Suite</h1>
     <p class="summary" id="summary">Running…</p>
+    <p class="muted">
+      This page runs the acceptance suite. The catalogue reconciliation and the static privacy
+      source scan need Node.js and run only under
+      <code>npm test</code>.
+    </p>
     <button type="button" id="toggle">Show failures only</button>
     <div id="results"></div>
     <script type="module">

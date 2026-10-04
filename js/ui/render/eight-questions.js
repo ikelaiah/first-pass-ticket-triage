@@ -6,7 +6,7 @@
  * "key driver" badge.
  */
 import { el } from '../dom.js';
-import { organisationConfig } from '../../config.js';
+import { deploymentProfile } from '../../deployment.js';
 
 export function eightQuestionsPanel(result) {
   if (!result.eightFacets) return null;
@@ -80,7 +80,7 @@ export function eightQuestionsPanel(result) {
       f.i1Scope.quote,
       i1State === 'unknown'
         ? 'Ask: one person / team / cohort / one school / several / all ' +
-            organisationConfig.schoolCount +
+            deploymentProfile.schoolCount +
             '?'
         : null
     ),

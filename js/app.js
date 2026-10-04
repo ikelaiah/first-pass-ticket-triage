@@ -10,7 +10,7 @@ import { EXAMPLES, exampleGroups, exampleById } from './data/examples.js';
 import { renderResult, statusSentence } from './ui/render-result.js';
 import { renderMatrix, renderDefinitions } from './ui/render-matrix.js';
 import { initRefineControls } from './ui/refine-controls.js';
-import { organisationConfig } from './config.js';
+import { deploymentProfile } from './deployment.js';
 import { readTicketFromLocation, writeTicketToLocation, tooLongForShare } from './ui/share.js';
 import { CLAIMED_URGENCY_PHRASES, BLOCKED_PHRASES } from './data/phrases.js';
 import { has, createDocument } from './engine/negation.js';
@@ -39,7 +39,8 @@ const dom = {
   definitions: document.getElementById('priority-definitions'),
   privacyToggle: document.getElementById('privacy-toggle'),
   privacyDetail: document.getElementById('privacy-detail'),
-  schoolCount: document.querySelectorAll('[data-school-count]')
+  schoolCount: document.querySelectorAll('[data-school-count]'),
+  deploymentProfile: document.querySelectorAll('[data-deployment-profile]')
 };
 
 const state = { text: '', result: null };
@@ -244,7 +245,10 @@ function initTheme() {
 
 function init() {
   for (const node of dom.schoolCount) {
-    node.textContent = String(organisationConfig.schoolCount);
+    node.textContent = String(deploymentProfile.schoolCount);
+  }
+  for (const node of dom.deploymentProfile) {
+    node.textContent = deploymentProfile.profileName;
   }
   initTheme();
   populateExamples();
